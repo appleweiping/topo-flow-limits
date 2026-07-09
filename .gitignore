@@ -22,3 +22,5 @@ paper/*.blg
 paper/*.synctex.gz
 paper/*.fdb_latexmk
 paper/*.fls
+paper/page-*.png
+paper/build*.log
