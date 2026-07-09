@@ -124,6 +124,41 @@ def exact_recovery_probability(
     return float((1.0 - p_miss) ** n_active * (1.0 - p_fa) ** n_inactive)
 
 
+def whitened_variances(
+    Gp_diag: np.ndarray, sigma_curl: float, sigma_noise: float
+) -> tuple[np.ndarray, np.ndarray]:
+    """Per-triangle whitened-domain variances.
+
+    After whitening ``yhat = G^+ c``, triangle ``tau`` has
+    ``v0_tau = sigma_noise^2 (G^+)_{tau tau}`` (inactive) and
+    ``v1_tau = sigma_curl^2 + v0_tau`` (active). The effective per-triangle
+    curl-SNR is ``rho^eff_tau = sigma_curl^2 / v0_tau``; ``(G^+)_{tau tau}`` is the
+    geometry/confusability factor (``1/3`` for an isolated triangle, larger when
+    curl signatures overlap).
+    """
+    v0 = sigma_noise**2 * np.asarray(Gp_diag, float)
+    v1 = sigma_curl**2 + v0
+    return v0, v1
+
+
+def heterogeneous_exact_recovery_probability(
+    v0s: np.ndarray, v1s: np.ndarray, active: np.ndarray, T: int
+) -> float:
+    """Exact recovery probability of the whitened detector: each triangle is
+    tested independently with its own Bayes threshold, so the probability
+    factorizes over triangles."""
+    active = np.asarray(active, bool)
+    prob = 1.0
+    for tau in range(len(v0s)):
+        v0, v1 = float(v0s[tau]), float(v1s[tau])
+        gamma = two_variance_bayes_threshold(v0, v1, T)
+        if active[tau]:
+            prob *= 1.0 - chi2.cdf(gamma / v1, df=T)   # 1 - P(miss)
+        else:
+            prob *= chi2.cdf(gamma / v0, df=T)          # 1 - P(false alarm)
+    return float(prob)
+
+
 def recovery_contour_rho(
     sigma_noise: float, T: int, n_active: int, n_inactive: int, level: float = 0.5
 ) -> float:

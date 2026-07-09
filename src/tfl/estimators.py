@@ -73,6 +73,54 @@ def energy_detector_support(
     return scores > thresh
 
 
+def whitened_curl_scores(dataset: FlowDataset) -> np.ndarray:
+    """Whitened triangle scores ``(1/T) sum_t yhat_{tau,t}^2`` where
+    ``yhat = G^+ c`` decorrelates the curl statistic.
+
+    Since ``c = G[:,S] y + B2.T n``, applying the Moore-Penrose inverse of the
+    triangle Gram matrix gives ``yhat = (G^+ G)[:,S] y + G^+ B2.T n``. On the
+    identifiable part ``G^+ G`` acts as identity, so ``yhat_tau ~ y_tau`` for
+    active triangles and pure noise (covariance ``sigma_noise^2 G^+``) otherwise.
+    This removes edge-sharing leakage that the raw curl-energy detector suffers.
+    """
+    C = curl_statistics(dataset)
+    G = triangle_gram(dataset)
+    Gp = np.linalg.pinv(G)
+    Yhat = Gp @ C
+    return np.mean(Yhat**2, axis=1)
+
+
+def whitened_curl_detector_support(
+    dataset: FlowDataset, sigma_curl: float, sigma_noise: float
+) -> np.ndarray:
+    """Geometry-aware detector: per-triangle two-variance test on the whitened
+    scores, each with its own noise level ``v0_tau = sigma_noise^2 (G^+)_{tau tau}``
+    and signal level ``v1_tau = sigma_curl^2 + v0_tau``. This is the matching
+    estimator for the edge-sharing (confusable) regime.
+    """
+    from tfl.limits import two_variance_bayes_threshold
+
+    scores = whitened_curl_scores(dataset)
+    G = triangle_gram(dataset)
+    Gp_diag = np.clip(np.diag(np.linalg.pinv(G)), 1e-12, None)
+    T = dataset.T
+    support = np.zeros(len(scores), dtype=bool)
+    for tau, s in enumerate(scores):
+        v0 = sigma_noise**2 * Gp_diag[tau]
+        v1 = sigma_curl**2 + v0
+        gamma_sum = two_variance_bayes_threshold(v0, v1, T)
+        support[tau] = s > gamma_sum / T
+    return support
+
+
+def effective_curl_snr(dataset: FlowDataset, sigma_curl: float, sigma_noise: float) -> np.ndarray:
+    """Per-triangle effective curl-SNR ``rho^eff_tau = sigma_curl^2 /
+    (sigma_noise^2 (G^+)_{tau tau})`` governing whitened-domain identifiability."""
+    G = triangle_gram(dataset)
+    Gp_diag = np.clip(np.diag(np.linalg.pinv(G)), 1e-12, None)
+    return sigma_curl**2 / (sigma_noise**2 * Gp_diag)
+
+
 def energy_detector_bayes_support(
     dataset: FlowDataset, sigma_curl: float, sigma_noise: float
 ) -> np.ndarray:

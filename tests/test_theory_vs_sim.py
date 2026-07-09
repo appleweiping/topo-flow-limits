@@ -133,6 +133,50 @@ def test_exact_recovery_probability_matches_simulation():
         assert abs(emp - ana) < 0.06, f"rho={rho} T={T}: emp {emp:.3f} vs ana {ana:.3f}"
 
 
+def test_whitened_detector_beats_naive_under_confusability():
+    """On an edge-sharing strip the whitened detector recovers the support while
+    the naive curl-energy detector does not, and it matches the geometry-aware
+    theory."""
+    from tfl.generative import triangle_strip_complex
+    from tfl.estimators import (
+        energy_detector_bayes_support,
+        whitened_curl_detector_support,
+        hamming_error,
+        exact_recovery,
+        triangle_gram,
+    )
+    from tfl.limits import whitened_variances, heterogeneous_exact_recovery_probability
+
+    cx = triangle_strip_complex(9)
+    p = cx.n_triangles
+    active = np.zeros(p, dtype=bool)
+    active[1::2] = True
+    sn, rho = 1.0, 8.0
+    sc = float(np.sqrt(rho / 3.0))
+    params = FlowParams(sigma_curl=sc, sigma_grad=2.0, sigma_harm=1.0, sigma_noise=sn)
+
+    Gp_diag = np.diag(np.linalg.pinv(triangle_gram(_ds := sample_flows(cx, active, params, 5, np.random.default_rng(0)))))
+    v0s, v1s = whitened_variances(Gp_diag, sc, sn)
+
+    rng = np.random.default_rng(4)
+    T = 60
+    R = 400
+    naive_h = white_h = white_exact = 0
+    for _ in range(R):
+        ds = sample_flows(cx, active, params, T, rng)
+        naive_h += hamming_error(energy_detector_bayes_support(ds, sc, sn), active)
+        est_w = whitened_curl_detector_support(ds, sc, sn)
+        white_h += hamming_error(est_w, active)
+        white_exact += exact_recovery(est_w, active)
+    naive_h /= R
+    white_h /= R
+    white_exact /= R
+
+    assert white_h < 0.1 < naive_h, f"naive {naive_h:.2f} should fail, whitened {white_h:.2f} should win"
+    theory = heterogeneous_exact_recovery_probability(v0s, v1s, active, T)
+    assert abs(white_exact - theory) < 0.05
+
+
 def test_invisibility_floor_decreases_with_budget():
     """The curl-SNR floor rho*(T) shrinks as the snapshot budget grows, and
     scales like 1/sqrt(T) in the small-rho regime."""
