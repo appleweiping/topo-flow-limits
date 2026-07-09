@@ -1,0 +1,176 @@
+"""Estimators for the latent filled-triangle support ``S``.
+
+Mechanism (the crux of the whole approach)
+-------------------------------------------
+Take the curl of the observed flow, ``c_t = B2.T f_t``. Because ``B2.T B1.T = 0``
+and the harmonic space is both curl- and divergence-free, the **gradient and
+harmonic nuisances are annihilated**:
+
+    c_t = B2.T f_t = (B2.T B2_S) y_t + B2.T n_t .
+
+So the curl statistic sees only the active-triangle signal plus projected noise.
+Writing the triangle Gram matrix ``G = B2.T B2`` (``G_{στ}=3`` if ``σ==τ``, ``±1``
+if the triangles share exactly one edge, ``0`` otherwise), the curl covariance is
+
+    Sigma_c = sigma_curl^2 * G[:,S] G[:,S].T  +  sigma_noise^2 * G .
+
+Recovering ``S`` from ``Sigma_c`` is a sparse PSD dictionary-selection problem in
+the atoms ``{g_tau g_tau.T}`` (``g_tau`` = column ``tau`` of ``G``) — a lifted
+non-negative lasso, which is where the achievability guarantee comes from.
+
+This module provides:
+  * ``curl_statistics`` / ``curl_energy_scores`` — the sufficient statistics;
+  * ``energy_detector_support`` — per-triangle variance test (naive baseline &
+    the estimator analyzed in the well-separated regime);
+  * ``sparse_curl_covariance_support`` — the proposed convex estimator (handles
+    edge-sharing confusability);
+  * ``greedy_support`` — a greedy baseline standing in for greedy topology
+    learning.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+from scipy.stats import chi2
+
+from tfl.generative import FlowDataset
+
+
+def curl_statistics(dataset: FlowDataset) -> np.ndarray:
+    """Per-snapshot curls ``C`` of shape ``(n_candidate_triangles, T)``."""
+    return dataset.B2_all.T @ dataset.F
+
+
+def curl_energy_scores(dataset: FlowDataset) -> np.ndarray:
+    """Empirical curl energy ``(1/T) sum_t c_{tau,t}^2`` per candidate triangle."""
+    C = curl_statistics(dataset)
+    return np.mean(C**2, axis=1)
+
+
+def triangle_gram(dataset: FlowDataset) -> np.ndarray:
+    """Triangle Gram matrix ``G = B2.T B2``."""
+    return dataset.B2_all.T @ dataset.B2_all
+
+
+def energy_detector_support(
+    dataset: FlowDataset,
+    sigma_noise: float,
+    fpr: float = 0.05,
+) -> np.ndarray:
+    """Recover ``S`` by testing each triangle's curl energy against the
+    noise-only null.
+
+    Under H0 (triangle inactive, no active edge-neighbours) the curl scalar has
+    variance ``3 * sigma_noise^2`` and ``T * energy / (3 sigma_noise^2) ~ chi2_T``.
+    We flag a triangle active when its energy exceeds the upper ``fpr`` quantile.
+    This detector is exactly the analyzed estimator in the well-separated regime
+    and the naive baseline otherwise.
+    """
+    scores = curl_energy_scores(dataset)
+    T = dataset.T
+    null_var = 3.0 * sigma_noise**2
+    thresh = null_var * chi2.ppf(1.0 - fpr, df=T) / T
+    return scores > thresh
+
+
+def sparse_curl_covariance_support(
+    dataset: FlowDataset,
+    sigma_noise: float,
+    lam: float | None = None,
+    tol: float = 1e-4,
+) -> np.ndarray:
+    """Proposed convex estimator.
+
+    Fit the empirical curl covariance with a non-negative combination of the
+    rank-one atoms ``g_tau g_tau.T`` plus the known noise floor ``sigma_noise^2 G``:
+
+        min_{w >= 0}  || Sigmahat_c - sigma_noise^2 G - sum_tau w_tau g_tau g_tau.T ||_F^2
+                       + lam * sum_tau w_tau
+
+    Support estimate is ``{tau : w_tau > tol * max(w)}``. Solved with cvxpy; the
+    ``lam`` default is a mild data-driven value. Handles edge-sharing
+    confusability that the plain energy detector cannot.
+    """
+    import cvxpy as cp
+
+    C = curl_statistics(dataset)
+    T = dataset.T
+    Sig = (C @ C.T) / T
+    G = triangle_gram(dataset)
+    p = G.shape[0]
+
+    residual_target = Sig - sigma_noise**2 * G
+    atoms = [np.outer(G[:, t], G[:, t]) for t in range(p)]
+
+    if lam is None:
+        lam = 0.5 * np.linalg.norm(residual_target, "fro") / max(p, 1)
+
+    w = cp.Variable(p, nonneg=True)
+    approx = sum(w[t] * atoms[t] for t in range(p))
+    obj = cp.Minimize(cp.sum_squares(residual_target - approx) + lam * cp.sum(w))
+    prob = cp.Problem(obj)
+    prob.solve(solver=cp.CLARABEL)
+
+    wv = np.asarray(w.value).ravel() if w.value is not None else np.zeros(p)
+    wv = np.clip(wv, 0, None)
+    if wv.max() <= 0:
+        return np.zeros(p, dtype=bool)
+    return wv > tol * wv.max()
+
+
+def greedy_support(
+    dataset: FlowDataset,
+    sigma_noise: float,
+    max_k: int | None = None,
+    improve_frac: float = 0.02,
+) -> np.ndarray:
+    """Greedy baseline (stand-in for greedy topology learning).
+
+    Repeatedly add the candidate triangle whose rank-one atom best reduces the
+    Frobenius residual to the empirical curl covariance, stopping when the
+    relative improvement falls below ``improve_frac``.
+    """
+    C = curl_statistics(dataset)
+    T = dataset.T
+    Sig = (C @ C.T) / T
+    G = triangle_gram(dataset)
+    p = G.shape[0]
+    if max_k is None:
+        max_k = p
+
+    target = Sig - sigma_noise**2 * G
+    chosen: list[int] = []
+    residual = target.copy()
+    prev_norm = np.linalg.norm(residual, "fro")
+
+    for _ in range(max_k):
+        best_t, best_coef, best_new = -1, 0.0, prev_norm
+        for t in range(p):
+            if t in chosen:
+                continue
+            A = np.outer(G[:, t], G[:, t])
+            denom = float(np.sum(A * A))
+            if denom <= 0:
+                continue
+            coef = max(0.0, float(np.sum(residual * A)) / denom)
+            new_norm = np.linalg.norm(residual - coef * A, "fro")
+            if new_norm < best_new:
+                best_new, best_t, best_coef = new_norm, t, coef
+        if best_t < 0 or (prev_norm - best_new) < improve_frac * prev_norm:
+            break
+        chosen.append(best_t)
+        residual = residual - best_coef * np.outer(G[:, best_t], G[:, best_t])
+        prev_norm = best_new
+
+    support = np.zeros(p, dtype=bool)
+    support[chosen] = True
+    return support
+
+
+def hamming_error(estimate: np.ndarray, truth: np.ndarray) -> int:
+    """Number of mislabeled triangles (false positives + false negatives)."""
+    return int(np.sum(np.asarray(estimate, bool) != np.asarray(truth, bool)))
+
+
+def exact_recovery(estimate: np.ndarray, truth: np.ndarray) -> bool:
+    return hamming_error(estimate, truth) == 0
