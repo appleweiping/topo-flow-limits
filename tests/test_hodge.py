@@ -83,6 +83,23 @@ def test_curl_flow_lives_entirely_in_curl_component():
     assert np.allclose(c, f, atol=1e-9)
 
 
+def test_curl_dimension_ratio_on_complete_graph():
+    """Geometry-side identifiability: on K_n the curl subspace dimension is
+    rank(B2) = C(n-1, 2), so the identifiable fraction of the C(n,3) candidate
+    triangles is exactly 3/n."""
+    from itertools import combinations
+    from math import comb
+
+    for n in (5, 7, 9, 11):
+        edges = [(i, j) for i, j in combinations(range(n), 2)]
+        triangles = [(i, j, k) for i, j, k in combinations(range(n), 3)]
+        cx = Complex(n_nodes=n, edges=edges, triangles=triangles)
+        _, B2 = build_incidences(cx)
+        rank = int(np.linalg.matrix_rank(B2))
+        assert rank == comb(n - 1, 2)
+        assert abs(rank / comb(n, 3) - 3.0 / n) < 1e-9
+
+
 def test_harmonic_space_dimension_matches_betti_1():
     """dim ker(L1) = first Betti number b1. A filled tetrahedron surface is
     simply connected at the 1-level: b1 = 0. Remove all triangles and the same

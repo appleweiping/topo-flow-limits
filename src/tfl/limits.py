@@ -141,17 +141,38 @@ def whitened_variances(
     return v0, v1
 
 
+def per_triangle_threshold(
+    v0: float, v1: float, T: int, mode: str = "bayes", alpha: float = 0.05, p: int = 1
+) -> float:
+    """Energy threshold (on the SUM statistic) for one triangle.
+
+    * ``mode="bayes"``: equal-prior Bayes-optimal threshold — right when active
+      triangles are a constant fraction of the candidates.
+    * ``mode="fwer"``: noise-only upper quantile at per-test level ``alpha/p``
+      (Bonferroni) — right for the sparse regime (few active among many
+      candidates), where the equal-prior rule over-detects.
+    """
+    if mode == "bayes":
+        return two_variance_bayes_threshold(v0, v1, T)
+    if mode == "fwer":
+        return v0 * chi2.ppf(1.0 - alpha / max(p, 1), df=T)
+    raise ValueError(f"unknown threshold mode {mode!r}")
+
+
 def heterogeneous_exact_recovery_probability(
-    v0s: np.ndarray, v1s: np.ndarray, active: np.ndarray, T: int
+    v0s: np.ndarray, v1s: np.ndarray, active: np.ndarray, T: int,
+    mode: str = "bayes", alpha: float = 0.05,
 ) -> float:
     """Exact recovery probability of the whitened detector: each triangle is
-    tested independently with its own Bayes threshold, so the probability
-    factorizes over triangles."""
+    tested independently with its own threshold, so the probability factorizes
+    over triangles. ``mode`` selects the threshold rule (see
+    :func:`per_triangle_threshold`)."""
     active = np.asarray(active, bool)
+    p = len(v0s)
     prob = 1.0
-    for tau in range(len(v0s)):
+    for tau in range(p):
         v0, v1 = float(v0s[tau]), float(v1s[tau])
-        gamma = two_variance_bayes_threshold(v0, v1, T)
+        gamma = per_triangle_threshold(v0, v1, T, mode=mode, alpha=alpha, p=p)
         if active[tau]:
             prob *= 1.0 - chi2.cdf(gamma / v1, df=T)   # 1 - P(miss)
         else:

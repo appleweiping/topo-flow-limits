@@ -1,0 +1,51 @@
+{
+  "currencies": [
+    "USD",
+    "AUD",
+    "CAD",
+    "CHF",
+    "EUR",
+    "GBP",
+    "JPY",
+    "NOK",
+    "SEK"
+  ],
+  "n_days": 257,
+  "n_edges": 36,
+  "n_candidate_triangles": 84,
+  "curl_dimension": 28,
+  "gradient_energy": 59143.06399432625,
+  "curl_energy": 1.0611373251788127e-26,
+  "harmonic_energy": 3.884702563780657e-26,
+  "curl_to_gradient_ratio": 1.7941872698387937e-31,
+  "Kn_grid": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "identifiability_ratio_numeric": [
+    0.6,
+    0.5,
+    0.42857142857142855,
+    0.375,
+    0.3333333333333333,
+    0.3,
+    0.2727272727272727,
+    0.25
+  ],
+  "identifiability_ratio_theory": [
+    0.6,
+    0.5,
+    0.42857142857142855,
+    0.375,
+    0.3333333333333333,
+    0.3,
+    0.2727272727272727,
+    0.25
+  ]
+}

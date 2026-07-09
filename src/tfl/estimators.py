@@ -91,24 +91,30 @@ def whitened_curl_scores(dataset: FlowDataset) -> np.ndarray:
 
 
 def whitened_curl_detector_support(
-    dataset: FlowDataset, sigma_curl: float, sigma_noise: float
+    dataset: FlowDataset, sigma_curl: float, sigma_noise: float,
+    mode: str = "bayes", alpha: float = 0.05,
 ) -> np.ndarray:
     """Geometry-aware detector: per-triangle two-variance test on the whitened
     scores, each with its own noise level ``v0_tau = sigma_noise^2 (G^+)_{tau tau}``
     and signal level ``v1_tau = sigma_curl^2 + v0_tau``. This is the matching
     estimator for the edge-sharing (confusable) regime.
+
+    ``mode="bayes"`` (equal-prior threshold) suits a constant active fraction;
+    ``mode="fwer"`` (Bonferroni noise-quantile) suits the sparse regime with many
+    candidate triangles and few active.
     """
-    from tfl.limits import two_variance_bayes_threshold
+    from tfl.limits import per_triangle_threshold
 
     scores = whitened_curl_scores(dataset)
     G = triangle_gram(dataset)
     Gp_diag = np.clip(np.diag(np.linalg.pinv(G)), 1e-12, None)
     T = dataset.T
-    support = np.zeros(len(scores), dtype=bool)
+    p = len(scores)
+    support = np.zeros(p, dtype=bool)
     for tau, s in enumerate(scores):
         v0 = sigma_noise**2 * Gp_diag[tau]
         v1 = sigma_curl**2 + v0
-        gamma_sum = two_variance_bayes_threshold(v0, v1, T)
+        gamma_sum = per_triangle_threshold(v0, v1, T, mode=mode, alpha=alpha, p=p)
         support[tau] = s > gamma_sum / T
     return support
 
