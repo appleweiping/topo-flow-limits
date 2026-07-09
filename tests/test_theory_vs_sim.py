@@ -103,6 +103,36 @@ def test_small_rho_chernoff_scaling():
         assert abs(C / (rho**2 / 16.0) - 1.0) < 0.05
 
 
+def test_exact_recovery_probability_matches_simulation():
+    """The finite-sample exact-recovery formula matches end-to-end simulation on
+    an edge-disjoint complex (with gradient+harmonic nuisance present)."""
+    from tfl.generative import disjoint_triangle_complex
+    from tfl.estimators import energy_detector_bayes_support, exact_recovery
+    from tfl.limits import exact_recovery_probability
+
+    cx = disjoint_triangle_complex(n_tri=6, n_cycles=1, cycle_len=5)
+    p = cx.n_triangles
+    active = np.zeros(p, dtype=bool)
+    active[::2] = True
+    n_active = int(active.sum())
+    n_inactive = p - n_active
+
+    sigma_noise = 1.0
+    rng = np.random.default_rng(3)
+    for rho, T in ((1.5, 30), (3.0, 20)):
+        sc = np.sqrt(rho * sigma_noise**2 / 3.0)
+        params = FlowParams(sigma_curl=sc, sigma_grad=2.0, sigma_harm=1.0, sigma_noise=sigma_noise)
+        R = 800
+        hits = 0
+        for _ in range(R):
+            ds = sample_flows(cx, active, params, T, rng)
+            est = energy_detector_bayes_support(ds, sc, sigma_noise)
+            hits += exact_recovery(est, active)
+        emp = hits / R
+        ana = exact_recovery_probability(sc, sigma_noise, T, n_active, n_inactive)
+        assert abs(emp - ana) < 0.06, f"rho={rho} T={T}: emp {emp:.3f} vs ana {ana:.3f}"
+
+
 def test_invisibility_floor_decreases_with_budget():
     """The curl-SNR floor rho*(T) shrinks as the snapshot budget grows, and
     scales like 1/sqrt(T) in the small-rho regime."""

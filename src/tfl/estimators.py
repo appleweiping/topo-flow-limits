@@ -73,6 +73,23 @@ def energy_detector_support(
     return scores > thresh
 
 
+def energy_detector_bayes_support(
+    dataset: FlowDataset, sigma_curl: float, sigma_noise: float
+) -> np.ndarray:
+    """Energy detector using the Bayes-optimal two-variance threshold.
+
+    In the well-separated (edge-disjoint) regime every triangle shares the same
+    ``(v0, v1)``, so a single optimal threshold applies and this estimator meets
+    the Chernoff detection limit — the achievability side of the phase transition.
+    """
+    from tfl.limits import curl_variances, two_variance_bayes_threshold
+
+    scores = curl_energy_scores(dataset)  # mean of c^2 over snapshots
+    v0, v1 = curl_variances(sigma_curl, sigma_noise)
+    gamma_sum = two_variance_bayes_threshold(v0, v1, dataset.T)  # threshold on SUM c^2
+    return scores > gamma_sum / dataset.T
+
+
 def sparse_curl_covariance_support(
     dataset: FlowDataset,
     sigma_noise: float,

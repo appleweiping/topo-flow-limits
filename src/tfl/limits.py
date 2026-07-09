@@ -90,9 +90,61 @@ def two_variance_bayes_error(v0: float, v1: float, T: int, n_grid: int = 4000) -
     return float(total.min())
 
 
+def two_variance_bayes_threshold(v0: float, v1: float, T: int, n_grid: int = 4000) -> float:
+    """Energy threshold ``gamma*`` achieving the minimum Bayes error for the
+    two-variance test (declare active when energy ``> gamma*``)."""
+    if v1 <= v0:
+        v0, v1 = min(v0, v1), max(v0, v1)
+    hi = chi2.ppf(1 - 1e-9, df=T) * v1
+    gammas = np.linspace(0.0, hi, n_grid)
+    total = 0.5 * (chi2.sf(gammas / v0, df=T) + chi2.cdf(gammas / v1, df=T))
+    return float(gammas[int(np.argmin(total))])
+
+
 def single_triangle_bayes_error(sigma_curl: float, sigma_noise: float, T: int) -> float:
     v0, v1 = curl_variances(sigma_curl, sigma_noise)
     return two_variance_bayes_error(v0, v1, T)
+
+
+def exact_recovery_probability(
+    sigma_curl: float, sigma_noise: float, T: int, n_active: int, n_inactive: int
+) -> float:
+    """Exact P(exact support recovery) in the well-separated (edge-disjoint)
+    regime, where triangles are classified independently by the common
+    Bayes-optimal energy threshold ``gamma*``.
+
+    ``P = (1 - P_miss)^{n_active} * (1 - P_fa)^{n_inactive}`` with
+    ``P_miss = chi2_T(gamma*/v1)`` and ``P_fa = 1 - chi2_T(gamma*/v0)``. This is
+    the finite-sample achievability curve the simulation validates.
+    """
+    v0, v1 = curl_variances(sigma_curl, sigma_noise)
+    gamma = two_variance_bayes_threshold(v0, v1, T)
+    p_miss = chi2.cdf(gamma / v1, df=T)
+    p_fa = chi2.sf(gamma / v0, df=T)
+    return float((1.0 - p_miss) ** n_active * (1.0 - p_fa) ** n_inactive)
+
+
+def recovery_contour_rho(
+    sigma_noise: float, T: int, n_active: int, n_inactive: int, level: float = 0.5
+) -> float:
+    """Curl-SNR ``rho`` at which exact-recovery probability equals ``level``
+    (the theoretical phase-transition contour). Monotone bisection on ``rho``."""
+    def P_of_rho(rho: float) -> float:
+        sc = np.sqrt(rho * sigma_noise**2 / 3.0)
+        return exact_recovery_probability(sc, sigma_noise, T, n_active, n_inactive)
+
+    lo, hi = 1e-4, 1e4
+    if P_of_rho(hi) < level:
+        return np.inf
+    if P_of_rho(lo) > level:
+        return 0.0
+    for _ in range(200):
+        mid = np.sqrt(lo * hi)
+        if P_of_rho(mid) < level:
+            lo = mid
+        else:
+            hi = mid
+    return float(np.sqrt(lo * hi))
 
 
 def snapshots_for_target_error(

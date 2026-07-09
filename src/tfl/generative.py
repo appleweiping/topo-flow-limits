@@ -38,6 +38,60 @@ def all_triangles(n_nodes: int, edges: list[tuple[int, int]]) -> list[tuple[int,
     return tris
 
 
+def disjoint_triangle_complex(
+    n_tri: int, n_cycles: int = 1, cycle_len: int = 5
+) -> Complex:
+    """Connected complex whose candidate triangles are **edge-disjoint**.
+
+    ``n_tri`` triangles on fresh node-triples, chained by single bridge edges
+    (no new 3-cliques), plus ``n_cycles`` empty cycles of length ``cycle_len``
+    (fresh nodes) that inject a harmonic subspace of dimension ``n_cycles``.
+    This is the well-separated regime where the per-triangle Chernoff theory
+    applies exactly.
+    """
+    edges: list[Edge] = []
+    triangles: list[Triangle] = []
+    node = 0
+    tri_last: list[int] = []
+    for _ in range(n_tri):
+        a, b, c = node, node + 1, node + 2
+        edges += [(a, b), (a, c), (b, c)]
+        triangles.append((a, b, c))
+        tri_last.append(c)
+        node += 3
+    # chain bridges between consecutive triangles
+    for i in range(n_tri - 1):
+        u, v = tri_last[i], (i + 1) * 3
+        edges.append((min(u, v), max(u, v)))
+    # empty cycles for harmonic nuisance
+    for _ in range(n_cycles):
+        start = node
+        ring = list(range(start, start + cycle_len))
+        for a, b in zip(ring, ring[1:] + ring[:1]):
+            edges.append((min(a, b), max(a, b)))
+        node += cycle_len
+    # bridge first cycle to the triangle chain so the complex is connected
+    if n_cycles > 0 and n_tri > 0:
+        u, v = tri_last[-1], 3 * n_tri
+        edges.append((min(u, v), max(u, v)))
+    return Complex(n_nodes=node, edges=sorted(set(edges)), triangles=triangles)
+
+
+def triangle_strip_complex(n_tri: int) -> Complex:
+    """A chain of **edge-sharing** candidate triangles ``(i, i+1, i+2)`` on the
+    squared path graph P_k^2 (edges ``{i,i+1}`` and ``{i,i+2}``). Consecutive
+    triangles share edge ``{i+1, i+2}`` — the confusability regime the plain
+    energy detector cannot handle."""
+    n_nodes = n_tri + 2
+    edges: list[Edge] = []
+    for i in range(n_nodes - 1):
+        edges.append((i, i + 1))
+    for i in range(n_nodes - 2):
+        edges.append((i, i + 2))
+    triangles = [(i, i + 1, i + 2) for i in range(n_nodes - 2)]
+    return Complex(n_nodes=n_nodes, edges=sorted(set(edges)), triangles=triangles)
+
+
 @dataclass(frozen=True)
 class FlowParams:
     """Component standard deviations of the flow generative model.
