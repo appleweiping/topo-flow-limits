@@ -90,7 +90,7 @@ def test_curl_dimension_ratio_on_complete_graph():
     from itertools import combinations
     from math import comb
 
-    for n in (5, 7, 9, 11):
+    for n in range(5, 13):
         edges = [(i, j) for i, j in combinations(range(n), 2)]
         triangles = [(i, j, k) for i, j, k in combinations(range(n), 3)]
         cx = Complex(n_nodes=n, edges=edges, triangles=triangles)
