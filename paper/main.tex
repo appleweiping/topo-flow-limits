@@ -1,16 +1,9 @@
-\documentclass[conference]{IEEEtran}
-% NOTE: IEEEtran is used for a reliably compiling draft; the camera-ready ICASSP
-% submission uses the official spconf.sty template (drop-in change of the
-% \documentclass and title block).
-%
-% !!! BEFORE SUBMISSION: ICASSP does NOT perform blind review. Replace the
-% !!! author placeholder below with the real author list and affiliations, in
-% !!! the same order as entered in the submission system.
-
-\usepackage{amsmath,amssymb,amsthm}
-\usepackage{graphicx}
-\usepackage{bm}
-\usepackage[hidelinks]{hyperref}
+% ICASSP submission format: spconf.sty + IEEEbib.bst (official paper-kit files).
+% Page budget: at most 4 pages of technical content; page 5 contains ONLY
+% references (enforced by the \newpage before the bibliography).
+\documentclass{article}
+\usepackage{spconf,amsmath,amssymb,amsthm,graphicx,bm}
+\ninept
 \graphicspath{{figures/}{../results/figures/}}
 
 \newtheorem{theorem}{Theorem}
@@ -19,23 +12,21 @@
 \newtheorem{corollary}{Corollary}
 \newtheorem{remark}{Remark}
 
+\emergencystretch=1.5em
+
 \DeclareMathOperator{\curl}{curl}
 \DeclareMathOperator{\rank}{rank}
-\DeclareMathOperator{\tr}{tr}
 \newcommand{\B}{\bm{B}}
 \newcommand{\R}{\mathbb{R}}
-\newcommand{\E}{\mathbb{E}}
 \newcommand{\Scal}{\mathcal{S}}
 \newcommand{\Tcal}{\mathcal{T}}
 
+\title{When are triangles invisible? Fundamental limits of\\ higher-order structure identifiability from edge flows}
+
+\name{Weiping Yan\thanks{Code: \texttt{github.com/appleweiping/topo-flow-limits}.}}
+\address{University of Minnesota, Twin Cities\\ Minneapolis, MN, USA}
+
 \begin{document}
-
-\title{When Are Triangles Invisible? Fundamental Limits of\\ Higher-Order Structure Identifiability from Edge Flows}
-
-\author{\IEEEauthorblockN{Author Name}%
-\IEEEauthorblockA{Affiliation, Department\\
-City, Country \qquad Email: author@example.com}}
-
 \maketitle
 
 \begin{abstract}
@@ -58,15 +49,17 @@ SNR-independent obstruction: supports are identifiable only modulo $\ker\B_2$, a
 on the complete graph $K_n$ the observable curl subspace has dimension
 $\binom{n-1}{2}$ --- a $3/n$ degrees-of-freedom ratio relative to the
 $\binom{n}{3}$ candidate triangle coefficients. All theorems are validated against
-Monte-Carlo simulation, and both obstructions are further illustrated on real
-foreign-exchange flows, whose arbitrage-free (curl-free) structure the theory
-predicts. Code and data are released for full reproducibility.
+Monte-Carlo simulation and illustrated on real data from both sides of the limit:
+arbitrage-free foreign-exchange flows, where the theory predicts (and we measure)
+that both obstructions bind, and road-network traffic flows, whose favorable
+planar geometry admits recovery at exactly the predicted snapshot budget. Code and
+data are released for full reproducibility.
 \end{abstract}
 
-\begin{IEEEkeywords}
+\begin{keywords}
 Topological signal processing, simplicial complexes, Hodge decomposition,
 identifiability, detection theory, edge flows.
-\end{IEEEkeywords}
+\end{keywords}
 
 \section{Introduction}
 Graph signal processing captures pairwise structure, but many networked
@@ -92,11 +85,11 @@ HodgeRank \cite{jiang2011statistical} established the curl of an edge flow as th
 signature of higher-order inconsistency (e.g.\ arbitrage). What is missing is the
 \emph{converse side} of the problem: none of these works characterizes when the
 task is information-theoretically solvable, at what snapshot budget, and how the
-answer depends on the geometry of the complex. Detectability thresholds
-for simplicial/hypergraph stochastic block models observe the higher-order
-structure \emph{directly}; here the structure is latent and observed only through
-the flows it shapes. This paper supplies the missing fundamental limits, using
-classical detection and information-theoretic tools
+answer depends on the geometry of the complex. Detectability thresholds for
+simplicial/hypergraph stochastic block models observe the higher-order structure
+\emph{directly}; here the structure is latent and observed only through the flows
+it shapes. This paper supplies the missing fundamental limits, using classical
+detection and information-theoretic tools
 \cite{poor1994introduction,cover2006elements}. Our contributions are:
 \begin{enumerate}
 \item A \emph{curl-annihilation} reduction (Lemma~\ref{lem:curl}): the latent
@@ -106,7 +99,7 @@ Gaussian Chernoff information (Prop.~\ref{prop:single}), and making support
 recovery over edge-disjoint candidates obey an \emph{exact} finite-sample product
 law (Prop.~\ref{prop:disjoint}).
 \item A sharp \emph{curl-invisibility} phase transition (Theorem~\ref{thm:invis}):
-the structure is unrecoverable below
+the structure is unrecoverable whenever $\rho$ falls below
 $\rho^\star(N)=\Theta(\sqrt{\log(1/\delta)/N})$, with $C(\rho)\sim\rho^2/16$.
 \item A \emph{geometry-aware} whitened detector for edge-sharing (confusable)
 candidates with exact per-triangle marginal laws and effective SNR
@@ -117,8 +110,10 @@ curl-energy thresholding.
 supports are identifiable only modulo $\ker\B_2$; on $K_n$ the observable curl
 subspace carries only a $3/n$ degrees-of-freedom ratio.
 \end{enumerate}
-Every result is validated against Monte-Carlo simulation, and both obstructions
-are illustrated on real foreign-exchange flows.
+Every result is validated against Monte-Carlo simulation, and the limits are
+illustrated on real data from both sides: foreign-exchange flows (both
+obstructions bind; nothing is recoverable) and road-network traffic flows
+(favorable geometry; planted structure is recovered at the predicted budget).
 
 \section{Background and signal model}
 \subsection{Hodge structure and notation}
@@ -267,11 +262,13 @@ regardless of the correlation structure of $\bm e_t$.
 \end{corollary}
 
 \begin{remark}[Independence approximation]\label{rem:indep}
-The product $\prod_\tau(1-P_{\mathrm{err},\tau})$ is exact for edge-disjoint
-candidates (Prop.~\ref{prop:disjoint}) and is otherwise an approximation. In our
-benchmarks $\bm G$ is diagonally dominant, the off-diagonal correlations of
-$\bm G^{-1}$ are weak, and the product law, the union bound, and Monte-Carlo
-coincide within $0.025$ (Fig.~\ref{fig:conf}, right).
+The product $\prod_\tau(1-P_{\mathrm{err},\tau})$ is exact whenever the whitened
+scores are independent --- for edge-disjoint candidates
+(Prop.~\ref{prop:disjoint}), or more generally whenever $\bm G$ is diagonal ---
+and is an approximation otherwise. In our benchmarks $\bm G$ is diagonally
+dominant, the off-diagonal correlations of $\bm G^{-1}$ are weak, and the product
+law, the union bound, and Monte-Carlo coincide within $0.025$
+(Fig.~\ref{fig:conf}, right).
 \end{remark}
 
 \subsection{The rank obstruction}
@@ -345,7 +342,7 @@ detector never recovers. Right: whitened detector vs.\ the exact marginal theory
 \label{fig:conf}
 \end{figure}
 
-\subsection{Illustration on real foreign-exchange flows}
+\subsection{FX flows: both obstructions bind (converse side)}
 We form edge flows from $257$ trading days of ECB daily reference rates over nine
 currencies (complete graph $K_9$; Fig.~\ref{fig:fx}). This study \emph{illustrates
 the obstructions} --- it is not a recovery benchmark, since real FX carries no
@@ -366,6 +363,38 @@ degrees-of-freedom ratio equals $3/n$.}
 \label{fig:fx}
 \end{figure}
 
+\subsection{Road traffic: favorable geometry and achievability}
+Road networks sit on the opposite side of the limit
+(Fig.~\ref{fig:traffic}). (A)~On three standard traffic-assignment networks
+(TNTP: Sioux Falls, Eastern-Massachusetts, Anaheim
+\cite{transportationnetworks}), the planar-like street geometry contains few
+$3$-cliques and $\B_2$ has \emph{full column rank} in all three --- curl
+degrees-of-freedom ratio exactly $1$, against $3/n$ on $K_n$: every candidate
+triangle is identifiable. Unlike FX, the real user-equilibrium flows carry
+genuine rotational energy ($2.4\%$ curl on Sioux Falls, $4.6\%$ on Anaheim).
+(B)~Achievability at the predicted budget: on Anaheim ($p=54$ candidate
+triangles, pairwise edge-disjoint, so $\bm G=3\bm I$ and the product law is
+exact), we plant $18$ active triangles on top of the \emph{real} equilibrium
+flow (plus Gaussian gradient/harmonic nuisance) at $\rho=3$ and run the whitened
+detector on temporally centered scores --- centering removes any constant
+background flow exactly at the cost of one degree of freedom, so the theory
+curves use $N{-}1$. Empirical recovery matches the exact product law across the
+whole transition. Planted signals are used because real traffic carries no
+labelled triangle support; what is real is the geometry and the equilibrium-flow
+background the detector must be invariant to. Together with the FX study this
+closes the loop: the same theory that certifies impossibility on $K_9$
+predicts---quantitatively---when recovery succeeds on real road geometry.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{real_traffic.png}
+\caption{Road-network traffic. (A)~All three TNTP networks have full-column-rank
+$\B_2$: DoF ratio $1$ (green) vs.\ $K_9$'s $3/n$ (red). (B)~Planted-support
+recovery on Anaheim's real geometry over the real equilibrium flow: empirical
+matches the exact df-$(N{-}1)$ product law.}
+\label{fig:traffic}
+\end{figure}
+
 \section{Conclusion}
 We characterized when higher-order structure can be identified from edge flows:
 a curl-invisibility phase transition in the curl-SNR, exact per-triangle marginal
@@ -373,12 +402,15 @@ laws with a geometry-aware effective SNR after whitening, a rigorous union-bound
 recovery guarantee, and a rank obstruction that no SNR can overcome. The results
 delimit when algorithmic TSP inference
 \cite{gurugubelli2024simplicial,buciulea2025learning,hoppe2023representing} can
-succeed, and both obstructions bind on real data. Open directions include
-sub-Gaussian converses, identifiability under partial edge sampling
-\cite{chen2015discrete}, plug-in estimation of the variance parameters, and sharp
-sparse-support thresholds (Remark~\ref{rem:sparse}).
+succeed, and real data instantiate both sides: FX flows where the obstructions
+bind, road networks where recovery succeeds at the predicted budget. Open
+directions include sub-Gaussian converses, identifiability under partial edge
+sampling \cite{chen2015discrete}, plug-in estimation of the variance parameters,
+and sharp sparse-support thresholds (Remark~\ref{rem:sparse}).
 
-\bibliographystyle{IEEEtran}
+% ICASSP allows a 5th page containing ONLY references.
+\newpage
+\bibliographystyle{IEEEbib}
 \bibliography{refs}
 
 \end{document}

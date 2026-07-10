@@ -73,7 +73,7 @@ def energy_detector_support(
     return scores > thresh
 
 
-def whitened_curl_scores(dataset: FlowDataset) -> np.ndarray:
+def whitened_curl_scores(dataset: FlowDataset, center: bool = False) -> np.ndarray:
     """Whitened triangle scores ``(1/T) sum_t yhat_{tau,t}^2`` where
     ``yhat = G^+ c`` decorrelates the curl statistic.
 
@@ -82,17 +82,24 @@ def whitened_curl_scores(dataset: FlowDataset) -> np.ndarray:
     identifiable part ``G^+ G`` acts as identity, so ``yhat_tau ~ y_tau`` for
     active triangles and pure noise (covariance ``sigma_noise^2 G^+``) otherwise.
     This removes edge-sharing leakage that the raw curl-energy detector suffers.
+
+    ``center=True`` subtracts the temporal mean of the whitened scores first,
+    which removes ANY constant background flow (e.g. a real equilibrium flow
+    underlying the snapshots) at the cost of one degree of freedom: centered
+    sums of squares follow ``v * chi^2_{T-1}`` instead of ``v * chi^2_T``.
     """
     C = curl_statistics(dataset)
     G = triangle_gram(dataset)
     Gp = np.linalg.pinv(G)
     Yhat = Gp @ C
+    if center:
+        Yhat = Yhat - Yhat.mean(axis=1, keepdims=True)
     return np.mean(Yhat**2, axis=1)
 
 
 def whitened_curl_detector_support(
     dataset: FlowDataset, sigma_curl: float, sigma_noise: float,
-    mode: str = "bayes", alpha: float = 0.05,
+    mode: str = "bayes", alpha: float = 0.05, center: bool = False,
 ) -> np.ndarray:
     """Geometry-aware detector: per-triangle two-variance test on the whitened
     scores, each with its own noise level ``v0_tau = sigma_noise^2 (G^+)_{tau tau}``
@@ -102,20 +109,24 @@ def whitened_curl_detector_support(
     ``mode="bayes"`` (equal-prior threshold) suits a constant active fraction;
     ``mode="fwer"`` (Bonferroni noise-quantile) suits the sparse regime with many
     candidate triangles and few active.
+
+    ``center=True`` makes the detector invariant to any constant background flow
+    (real-data regime); thresholds then use ``T - 1`` degrees of freedom.
     """
     from tfl.limits import per_triangle_threshold
 
-    scores = whitened_curl_scores(dataset)
+    scores = whitened_curl_scores(dataset, center=center)
     G = triangle_gram(dataset)
     Gp_diag = np.clip(np.diag(np.linalg.pinv(G)), 1e-12, None)
     T = dataset.T
+    df = T - 1 if center else T
     p = len(scores)
     support = np.zeros(p, dtype=bool)
     for tau, s in enumerate(scores):
         v0 = sigma_noise**2 * Gp_diag[tau]
         v1 = sigma_curl**2 + v0
-        gamma_sum = per_triangle_threshold(v0, v1, T, mode=mode, alpha=alpha, p=p)
-        support[tau] = s > gamma_sum / T
+        gamma_sum = per_triangle_threshold(v0, v1, df, mode=mode, alpha=alpha, p=p)
+        support[tau] = s * T > gamma_sum
     return support
 
 

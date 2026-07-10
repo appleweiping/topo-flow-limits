@@ -177,6 +177,57 @@ def test_whitened_detector_beats_naive_under_confusability():
     assert abs(white_exact - theory) < 0.05
 
 
+def test_road_network_geometry_and_centered_recovery():
+    """Guards the traffic study (R6): (a) the vendored TNTP road networks have
+    FULL-column-rank B2 (curl DoF ratio exactly 1, unlike K_n's 3/n) and
+    edge-disjoint triangles (G = 3I); (b) with a constant real-flow background,
+    the CENTERED whitened detector matches the exact df=N-1 product law, while
+    theory would be mis-calibrated without centering."""
+    from pathlib import Path
+    from tfl.tntp import load_tntp_network
+    from tfl.hodge import build_incidences
+    from tfl.estimators import whitened_curl_detector_support, exact_recovery
+    from tfl.limits import whitened_variances, heterogeneous_exact_recovery_probability
+
+    data = Path(__file__).resolve().parent.parent / "data" / "traffic"
+    # (nodes, edges, triangles, pairwise edge-disjoint?) — EMA has 10 sharing pairs
+    expected = {
+        "SiouxFalls": (24, 38, 2, True),
+        "EMA": (74, 129, 33, False),
+        "Anaheim": (416, 634, 54, True),
+    }
+    for name, (nn, ne, p, disjoint) in expected.items():
+        net = load_tntp_network(data / f"{name}_net.tntp", name=name)
+        cx = net.complex
+        assert (cx.n_nodes, len(cx.edges), len(cx.triangles)) == (nn, ne, p)
+        _, B2 = build_incidences(cx)
+        assert np.linalg.matrix_rank(B2) == p          # DoF ratio 1 on ALL of them
+        G = B2.T @ B2
+        assert np.allclose(G, 3.0 * np.eye(p)) == disjoint
+
+    # (b) centered recovery on SiouxFalls (2 triangles -> fast MC)
+    net = load_tntp_network(data / "SiouxFalls_net.tntp", data / "SiouxFalls_flow.tntp")
+    cx = net.complex
+    from tfl.hodge import build_incidences as _bi
+    B1, B2 = _bi(cx)
+    f_bg = net.real_flow / np.sqrt(np.mean(net.real_flow**2)) * 5.0  # strong background
+    active = np.array([True, False])
+    sn, sc = 1.0, 1.0                                   # rho = 3
+    params = FlowParams(sigma_curl=sc, sigma_grad=1.0, sigma_harm=0.5, sigma_noise=sn)
+    v0s, v1s = whitened_variances(np.full(2, 1.0 / 3.0), sc, sn)
+    rng = np.random.default_rng(3)
+    N, R = 20, 400
+    hits = 0
+    for _ in range(R):
+        ds = sample_flows(cx, active, params, N, rng)
+        ds.F += f_bg[:, None]
+        est = whitened_curl_detector_support(ds, sc, sn, mode="bayes", center=True)
+        hits += exact_recovery(est, active)
+    emp = hits / R
+    th = heterogeneous_exact_recovery_probability(v0s, v1s, active, N - 1)
+    assert abs(emp - th) < 0.07, f"centered detector {emp:.3f} vs df=N-1 theory {th:.3f}"
+
+
 def test_union_bound_is_rigorous_lower_bound():
     """The union bound must lower-bound both the independence approximation
     (algebraically: 1 - sum(e) <= prod(1-e)) and the empirical exact-recovery

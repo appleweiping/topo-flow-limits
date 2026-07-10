@@ -1,0 +1,103 @@
+{
+  "geometry": [
+    {
+      "network": "SiouxFalls",
+      "n_nodes": 24,
+      "n_edges": 38,
+      "n_triangles": 2,
+      "rank_B2": 2,
+      "dof_ratio": 1.0,
+      "triangles_edge_disjoint": true,
+      "real_flow_energy_frac": {
+        "gradient": 0.7235199616408393,
+        "curl": 0.023866707324827503,
+        "harmonic": 0.25261333103433237
+      }
+    },
+    {
+      "network": "EMA",
+      "n_nodes": 74,
+      "n_edges": 129,
+      "n_triangles": 33,
+      "rank_B2": 33,
+      "dof_ratio": 1.0,
+      "triangles_edge_disjoint": false
+    },
+    {
+      "network": "Anaheim",
+      "n_nodes": 416,
+      "n_edges": 634,
+      "n_triangles": 54,
+      "rank_B2": 54,
+      "dof_ratio": 1.0,
+      "triangles_edge_disjoint": true,
+      "real_flow_energy_frac": {
+        "gradient": 0.03390542015203786,
+        "curl": 0.04626590172012947,
+        "harmonic": 0.9198286781278325
+      }
+    },
+    {
+      "network": "K9 (FX, contrast)",
+      "n_nodes": 9,
+      "n_edges": 36,
+      "n_triangles": 84,
+      "rank_B2": 28,
+      "dof_ratio": 0.3333333333333333,
+      "triangles_edge_disjoint": false
+    }
+  ],
+  "recovery": {
+    "network": "Anaheim",
+    "n_candidates": 54,
+    "n_active": 18,
+    "rho": 3.0,
+    "sigma_noise": 1.0,
+    "sigma_grad": 1.0,
+    "sigma_harm": 0.5,
+    "background": "real UE flow, unit RMS",
+    "detector": "whitened, centered (df=N-1)",
+    "N_grid": [
+      6,
+      10,
+      15,
+      22,
+      32,
+      46,
+      66,
+      95
+    ],
+    "empirical": [
+      0.0,
+      0.035,
+      0.155,
+      0.46,
+      0.83,
+      0.965,
+      1.0,
+      1.0
+    ],
+    "theory_product_exact": [
+      0.00045091349390018285,
+      0.019971555714619085,
+      0.15789622787739477,
+      0.5019541089442351,
+      0.8330616175422279,
+      0.9702345665003714,
+      0.9975267226413976,
+      0.999929239230746
+    ],
+    "union_bound": [
+      0.0,
+      0.0,
+      0.0,
+      0.31546680081520395,
+      0.8176817370886943,
+      0.9697916138541237,
+      0.9975237194610966,
+      0.999929236775886
+    ],
+    "n_trials": 200,
+    "seed": 7
+  }
+}
