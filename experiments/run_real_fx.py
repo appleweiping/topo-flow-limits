@@ -8,11 +8,12 @@ regime along BOTH axes of the theory:
     so its curl energy is ~machine-zero relative to the gradient energy: there is
     no higher-order signal to detect at any snapshot budget.
 
-(B) Geometry-side invisibility. On the complete currency graph K_n the number of
-    candidate triangles C(n,3) far exceeds the curl-subspace dimension
-    rank(B2) = C(n-1,2). Their ratio is exactly 3/n, so most triangle patterns
-    are unidentifiable from edge flows regardless of SNR. On K9 (this dataset)
-    only a 28-dimensional shadow of 84 candidate triangles is observable.
+(B) Geometry-side (rank) obstruction. On the complete currency graph K_n the
+    number of candidate triangle coefficients C(n,3) far exceeds the
+    curl-subspace dimension rank(B2) = C(n-1,2); the degrees-of-freedom ratio
+    is exactly 3/n. Without sparsity or other priors, supports are therefore
+    identifiable only modulo ker(B2). On K9 (this dataset) the observable curl
+    shadow of the 84 triangle coefficients is only 28-dimensional.
 
 Data are cached in ``data/fx_rates.json`` (fetched once from api.frankfurter.app),
 so the experiment is fully offline-reproducible.
@@ -116,14 +117,15 @@ def _plot(out: dict) -> None:
                  f"({out['n_days']} days, {len(out['currencies'])} currencies)")
 
     ns = np.array(out["Kn_grid"])
-    a1.plot(ns, out["identifiability_ratio_numeric"], "o", ms=7, label="numeric  rank(B2)/#triangles")
+    a1.plot(ns, out["identifiability_ratio_numeric"], "o", ms=7,
+            label=r"numeric  rank$(B_2)/\binom{n}{3}$")
     a1.plot(ns, out["identifiability_ratio_theory"], "-", label=r"theory  $3/n$")
     a1.axvline(len(out["currencies"]), color="grey", ls=":", label=f"this dataset  K{len(out['currencies'])}")
     a1.set_xlabel("complete graph size  n")
-    a1.set_ylabel("identifiable fraction")
-    a1.set_title("(B) Geometry-side invisibility\n"
+    a1.set_ylabel("curl degrees-of-freedom ratio")
+    a1.set_title("(B) Geometry-side (rank) obstruction\n"
                  f"K{len(out['currencies'])}: {out['curl_dimension']} curl dims vs "
-                 f"{out['n_candidate_triangles']} triangles")
+                 f"{out['n_candidate_triangles']} triangle coefficients")
     a1.legend()
     a1.grid(alpha=0.3)
 
@@ -134,6 +136,6 @@ def _plot(out: dict) -> None:
 if __name__ == "__main__":
     res = run()
     print("real FX: curl/gradient = %.2e (SNR-side curl-invisibility)" % res["curl_to_gradient_ratio"])
-    print("K%d geometry: %d curl dims vs %d candidate triangles (ratio %.3f = 3/n)" % (
+    print("K%d geometry: %d curl dims vs %d triangle coefficients (DoF ratio %.3f = 3/n)" % (
         len(res["currencies"]), res["curl_dimension"], res["n_candidate_triangles"],
         res["curl_dimension"] / res["n_candidate_triangles"]))

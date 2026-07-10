@@ -177,6 +177,46 @@ def test_whitened_detector_beats_naive_under_confusability():
     assert abs(white_exact - theory) < 0.05
 
 
+def test_union_bound_is_rigorous_lower_bound():
+    """The union bound must lower-bound both the independence approximation
+    (algebraically: 1 - sum(e) <= prod(1-e)) and the empirical exact-recovery
+    rate of the whitened detector under correlated (edge-sharing) noise."""
+    from tfl.generative import triangle_strip_complex
+    from tfl.estimators import whitened_curl_detector_support, exact_recovery, triangle_gram
+    from tfl.limits import (
+        whitened_variances,
+        heterogeneous_exact_recovery_probability,
+        heterogeneous_recovery_union_bound,
+    )
+
+    cx = triangle_strip_complex(9)
+    p = cx.n_triangles
+    active = np.zeros(p, dtype=bool)
+    active[1::2] = True
+    sn, rho = 1.0, 8.0
+    sc = float(np.sqrt(rho / 3.0))
+    params = FlowParams(sigma_curl=sc, sigma_grad=2.0, sigma_harm=1.0, sigma_noise=sn)
+
+    ds0 = sample_flows(cx, active, params, 5, np.random.default_rng(0))
+    Gp_diag = np.diag(np.linalg.pinv(triangle_gram(ds0)))
+    v0s, v1s = whitened_variances(Gp_diag, sc, sn)
+
+    rng = np.random.default_rng(7)
+    for T in (12, 25, 60):
+        indep = heterogeneous_exact_recovery_probability(v0s, v1s, active, T)
+        union = heterogeneous_recovery_union_bound(v0s, v1s, active, T)
+        assert union <= indep + 1e-12
+        R = 300
+        hits = sum(
+            exact_recovery(whitened_curl_detector_support(
+                sample_flows(cx, active, params, T, rng), sc, sn), active)
+            for _ in range(R)
+        )
+        emp = hits / R
+        # rigorous bound: empirical rate must not fall below it (MC tolerance)
+        assert emp >= union - 0.05, f"T={T}: emp {emp:.3f} < union {union:.3f}"
+
+
 def test_invisibility_floor_decreases_with_budget():
     """The curl-SNR floor rho*(T) shrinks as the snapshot budget grows, and
     scales like 1/sqrt(T) in the small-rho regime."""

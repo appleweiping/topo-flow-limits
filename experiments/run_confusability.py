@@ -29,6 +29,7 @@ from tfl.estimators import (  # noqa: E402
 from tfl.limits import (  # noqa: E402
     whitened_variances,
     heterogeneous_exact_recovery_probability,
+    heterogeneous_recovery_union_bound,
 )
 from _util import save_json, savefig  # noqa: E402
 
@@ -60,6 +61,7 @@ def run(
     ham = {"naive": [], "whitened": [], "greedy": []}
     exact_w = []
     theory_w = []
+    union_w = []
     rng = np.random.default_rng(seed)
     for T in T_grid:
         h = {"naive": 0.0, "whitened": 0.0, "greedy": 0.0}
@@ -79,11 +81,15 @@ def run(
         theory_w.append(
             heterogeneous_exact_recovery_probability(v0s, v1s, active, int(T))
         )
+        union_w.append(
+            heterogeneous_recovery_union_bound(v0s, v1s, active, int(T))
+        )
 
     out = {
         "n_tri": p, "n_active": int(active.sum()), "rho": rho, "sigma_noise": sigma_noise,
         "T_grid": [int(x) for x in T_grid], "hamming": ham,
         "exact_whitened": exact_w, "theory_whitened": theory_w,
+        "union_bound_whitened": union_w,
         "rho_eff": (sc**2 / v0s).tolist(), "n_trials": n_trials,
     }
     save_json("confusability.json", out)
@@ -107,7 +113,7 @@ def _plot(out: dict) -> None:
     a0.plot(T, out["hamming"]["naive"], "o-", label="naive curl-energy")
     a0.plot(T, out["hamming"]["greedy"], "s-", label="greedy")
     a0.plot(T, out["hamming"]["whitened"], "^-", label="whitened (proposed)")
-    a0.set_xlabel("snapshots  T")
+    a0.set_xlabel("number of snapshots  N")
     a0.set_ylabel("mean Hamming error")
     a0.set_title(f"Edge-sharing strip, curl-SNR $\\rho$={out['rho']}\n"
                  f"(p={out['n_tri']} candidates, {out['n_active']} active)")
@@ -115,12 +121,15 @@ def _plot(out: dict) -> None:
     a0.grid(alpha=0.3)
 
     a1.plot(T, out["exact_whitened"], "^-", label="whitened: empirical")
-    a1.plot(T, out["theory_whitened"], "k--", label="whitened: theory")
-    a1.set_xlabel("snapshots  T")
+    a1.plot(T, out["theory_whitened"], "k--",
+            label="marginal law, indep. approx.")
+    a1.plot(T, out["union_bound_whitened"], "k:",
+            label="rigorous union bound")
+    a1.set_xlabel("number of snapshots  N")
     a1.set_ylabel("P(exact recovery)")
-    a1.set_title("Whitened detector matches\ngeometry-aware theory")
+    a1.set_title("Whitened detector vs\ngeometry-aware theory")
     a1.set_ylim(-0.03, 1.03)
-    a1.legend()
+    a1.legend(loc="lower right")
     a1.grid(alpha=0.3)
 
     fig.tight_layout()
@@ -130,6 +139,6 @@ def _plot(out: dict) -> None:
 if __name__ == "__main__":
     res = run()
     print("confusability done; naive worsens with leakage, whitened tracks theory")
-    print("Hamming at T=%d: naive=%.2f whitened=%.2f greedy=%.2f" % (
+    print("Hamming at N=%d: naive=%.2f whitened=%.2f greedy=%.2f" % (
         res["T_grid"][-1], res["hamming"]["naive"][-1],
         res["hamming"]["whitened"][-1], res["hamming"]["greedy"][-1]))

@@ -21,18 +21,18 @@ def main() -> None:
     t0 = time.perf_counter()
     print("[1/3] phase transition (curl-invisibility, exact recovery vs theory) ...")
     pt = run_phase_transition.run()
-    print("      p=%d active=%d; exact-theory rho* at T=%d -> %.3f"
+    print("      p=%d active=%d; exact-theory rho* at N=%d -> %.3f"
           % (pt["n_tri"], pt["n_active"], pt["T_grid"][-1], pt["theory_exact"][-1]))
 
     print("[2/3] confusability (naive vs whitened on edge-sharing strip) ...")
     cf = run_confusability.run()
-    print("      Hamming@T=%d: naive=%.2f whitened=%.2f greedy=%.2f"
+    print("      Hamming@N=%d: naive=%.2f whitened=%.2f greedy=%.2f"
           % (cf["T_grid"][-1], cf["hamming"]["naive"][-1],
              cf["hamming"]["whitened"][-1], cf["hamming"]["greedy"][-1]))
 
-    print("[3/3] real FX (curl-invisibility in the wild + geometry limit) ...")
+    print("[3/3] real FX (curl-invisibility in the wild + rank obstruction) ...")
     fx = run_real_fx.run()
-    print("      curl/grad=%.1e ; K%d: %d curl dims vs %d triangles"
+    print("      curl/grad=%.1e ; K%d: %d curl dims vs %d triangle coefficients"
           % (fx["curl_to_gradient_ratio"], len(fx["currencies"]),
              fx["curl_dimension"], fx["n_candidate_triangles"]))
 

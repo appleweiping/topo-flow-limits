@@ -159,25 +159,60 @@ def per_triangle_threshold(
     raise ValueError(f"unknown threshold mode {mode!r}")
 
 
-def heterogeneous_exact_recovery_probability(
+def _per_triangle_error_probs(
     v0s: np.ndarray, v1s: np.ndarray, active: np.ndarray, T: int,
-    mode: str = "bayes", alpha: float = 0.05,
-) -> float:
-    """Exact recovery probability of the whitened detector: each triangle is
-    tested independently with its own threshold, so the probability factorizes
-    over triangles. ``mode`` selects the threshold rule (see
-    :func:`per_triangle_threshold`)."""
+    mode: str, alpha: float,
+) -> np.ndarray:
+    """Marginal per-triangle error probabilities of the whitened detector.
+
+    The *marginal* law of each whitened score is an exact two-variance test
+    (rigorous whenever ``B2`` has full column rank, since then ``G`` is
+    invertible and ``yhat = G^{-1} c`` has mean exactly ``y_tau 1{tau in S}``
+    with noise variance ``sigma_n^2 (G^{-1})_{tau tau}``). Correlations across
+    triangles affect only the JOINT law, not these marginals.
+    """
     active = np.asarray(active, bool)
     p = len(v0s)
-    prob = 1.0
+    errs = np.zeros(p)
     for tau in range(p):
         v0, v1 = float(v0s[tau]), float(v1s[tau])
         gamma = per_triangle_threshold(v0, v1, T, mode=mode, alpha=alpha, p=p)
         if active[tau]:
-            prob *= 1.0 - chi2.cdf(gamma / v1, df=T)   # 1 - P(miss)
+            errs[tau] = chi2.cdf(gamma / v1, df=T)      # P(miss)
         else:
-            prob *= chi2.cdf(gamma / v0, df=T)          # 1 - P(false alarm)
-    return float(prob)
+            errs[tau] = chi2.sf(gamma / v0, df=T)       # P(false alarm)
+    return errs
+
+
+def heterogeneous_exact_recovery_probability(
+    v0s: np.ndarray, v1s: np.ndarray, active: np.ndarray, T: int,
+    mode: str = "bayes", alpha: float = 0.05,
+) -> float:
+    """Independence APPROXIMATION to the whitened detector's exact-recovery
+    probability: the product of the (exact) per-triangle marginal success
+    probabilities.
+
+    This product is exact when the whitened scores are independent — e.g. for
+    edge-disjoint candidates — and is an approximation otherwise, because the
+    whitened noise covariance ``sigma_n^2 G^{+}`` retains off-diagonal terms.
+    For a bound that is rigorous under arbitrary correlations use
+    :func:`heterogeneous_recovery_union_bound`. Empirically the approximation
+    tracks Monte-Carlo closely when ``G`` is diagonally dominant (see the
+    confusability experiment)."""
+    errs = _per_triangle_error_probs(v0s, v1s, active, T, mode, alpha)
+    return float(np.prod(1.0 - errs))
+
+
+def heterogeneous_recovery_union_bound(
+    v0s: np.ndarray, v1s: np.ndarray, active: np.ndarray, T: int,
+    mode: str = "bayes", alpha: float = 0.05,
+) -> float:
+    """RIGOROUS lower bound on the whitened detector's exact-recovery
+    probability: ``P(exact) >= 1 - sum_tau P_err,tau`` (union bound over the
+    exact per-triangle marginal error probabilities). Valid regardless of the
+    correlation structure of the whitened scores."""
+    errs = _per_triangle_error_probs(v0s, v1s, active, T, mode, alpha)
+    return float(max(0.0, 1.0 - errs.sum()))
 
 
 def recovery_contour_rho(

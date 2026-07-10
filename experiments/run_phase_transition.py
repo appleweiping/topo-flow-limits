@@ -104,9 +104,9 @@ def _plot(out: dict) -> None:
     ax.plot(T_grid, out["theory_exact"], "w-", lw=2.4,
             label="exact theory (50% contour)")
     ax.plot(T_grid, out["theory_floor"], "w:", lw=1.8,
-            label=r"asymptotic floor $\rho^*\!\sim\!1/\sqrt{T}$")
+            label=r"asymptotic floor $\rho^\star\!\sim\!1/\sqrt{N}$")
     ax.set_yscale("log")
-    ax.set_xlabel("snapshots  T")
+    ax.set_xlabel("number of snapshots  N")
     ax.set_ylabel(r"curl-SNR  $\rho$")
     ax.set_title("Curl-invisibility phase transition\n(exact triangle recovery)")
     ax.legend(loc="upper right", framealpha=0.85)
@@ -117,4 +117,4 @@ def _plot(out: dict) -> None:
 if __name__ == "__main__":
     res = run()
     print("phase transition done; p=%d, active=%d" % (res["n_tri"], res["n_active"]))
-    print("exact-theory rho* at T=%d: %.3f" % (res["T_grid"][-1], res["theory_exact"][-1]))
+    print("exact-theory rho* at N=%d: %.3f" % (res["T_grid"][-1], res["theory_exact"][-1]))

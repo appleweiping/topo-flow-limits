@@ -14,11 +14,13 @@ by the test suite before it is allowed into the manuscript.
 > question those papers skip: **when is that estimation possible at all?** The
 > answer: the hidden triangles are visible *only* through the **curl** of the flows,
 > and they become provably invisible in two independent ways — (1) when the curl
-> signal-to-noise ratio drops below a sharp threshold `ρ*(T) ~ 1/√T`
+> signal-to-noise ratio drops below a sharp threshold `ρ*(N) ~ 1/√N`
 > (**curl-invisibility phase transition**), and (2) when the graph's geometry makes
-> triangle signatures linearly dependent (**rank obstruction**: on a complete graph
-> only a `3/n` fraction of triangles is identifiable at *any* SNR). Both effects
-> show up, exactly as predicted, in real foreign-exchange data.
+> triangle signatures linearly dependent (**rank obstruction**: without sparsity
+> priors, supports are identifiable only modulo `ker B2`, and on a complete graph
+> the observable curl subspace carries only a `3/n` degrees-of-freedom ratio —
+> at *any* SNR). Both effects show up, exactly as predicted, in real
+> foreign-exchange data.
 
 ---
 
@@ -56,7 +58,7 @@ tells you *which* triangles are filled. A growing literature infers the filled s
 from edge-flow data — with greedy searches, MAP estimators, sparse recovery. All of
 these are **algorithms**. None of them answers the prior question:
 
-> Given `T` snapshots of edge flows with a given noise level, is the filled-triangle
+> Given `N` snapshots of edge flows with a given noise level, is the filled-triangle
 > set *identifiable at all*? How many snapshots do you need? Does the answer depend
 > on the shape of the graph?
 
@@ -107,14 +109,17 @@ reconstruction, $B_1B_2=0$, Betti dimension counts).
 
 The 1-skeleton (nodes and edges) is known. The **latent** object is the set
 $S \subseteq \mathcal{T}$ of filled triangles among a candidate set (e.g. all
-3-cliques). We observe $T$ i.i.d. edge-flow snapshots
+3-cliques). We observe $N$ i.i.d. edge-flow snapshots
 
 ```math
 f_t \;=\; \underbrace{B_1^{\top} a_t}_{\text{gradient nuisance}}
 \;+\; \underbrace{B_{2,S}\, y_t}_{\text{signal (carries } S\text{)}}
 \;+\; \underbrace{h_t}_{\text{harmonic nuisance}}
-\;+\; \underbrace{n_t}_{\text{noise}}, \qquad t = 1,\dots,T,
+\;+\; \underbrace{n_t}_{\text{noise}}, \qquad t = 1,\dots,N,
 ```
+
+(in the code the snapshot-count argument is named `T`; the paper and this README
+use $N$ to avoid clashing with the candidate set $\mathcal{T}$)
 
 with $a_t \sim \mathcal N(0,\sigma_g^2 I)$, $y_t \sim \mathcal N(0,\sigma_c^2 I)$
 (one coordinate per *active* triangle), harmonic $h_t$, and
@@ -155,31 +160,33 @@ v_1 = 9\sigma_c^2 + 3\sigma_n^2 = v_0(1+\rho) \quad (\tau \in S),
 ```
 
 (the 3 and 9 come from each $B_2$ column having exactly three $\pm 1$ entries).
-The energy $E=\sum_t c_{\tau,t}^2$ is sufficient, $E/v_i \sim \chi^2_T$, and the
-minimum Bayes error has an exact closed form at every finite $T$ (implemented in
-`two_variance_bayes_error`) and decays like $e^{-T C(v_0,v_1)}$ where
+The energy $E=\sum_t c_{\tau,t}^2$ is sufficient, $E/v_i \sim \chi^2_N$, and the
+minimum Bayes error has an exact closed form at every finite $N$ (implemented in
+`two_variance_bayes_error`) and decays like $e^{-N C(v_0,v_1)}$ where
 $C$ is the **Gaussian Chernoff information** (`gaussian_chernoff_information`).
 
 ### R2 — The curl-invisibility phase transition
 
 As $\rho \to 0$, $C(\rho) = \rho^2/16 + o(\rho^2)$ (validated to 5% accuracy at
-$\rho \le 0.02$). Hence for a target error $\delta$ and budget $T$, detection
+$\rho \le 0.02$). Hence for a target error $\delta$ and budget $N$, detection
 requires
 
 ```math
-\rho \;\ge\; \rho^\star(T) \;=\; \Theta\!\Big(\sqrt{\tfrac{\log(1/\delta)}{T}}\Big),
+\rho \;\ge\; \rho^\star(N) \;=\; \Theta\!\Big(\sqrt{\tfrac{\log(1/\delta)}{N}}\Big),
 ```
 
 and **below $\rho^\star$ no estimator whatsoever can recover the structure** — the
 triangles are *information-theoretically invisible*. Numerically
-(`invisibility_curl_snr_floor`, $\delta=0.05$): $T{=}25 \to \rho^\star{=}3.07$,
-$T{=}100 \to 1.00$, $T{=}400 \to 0.41$, $T{=}1600 \to 0.19$ — the $1/\sqrt{T}$ law.
+(`invisibility_curl_snr_floor`, $\delta=0.05$): $N{=}25 \to \rho^\star{=}3.07$,
+$N{=}100 \to 1.00$, $N{=}400 \to 0.41$, $N{=}1600 \to 0.19$ — the $1/\sqrt{N}$ law.
 
 ### R3 — Exact finite-sample recovery law (edge-disjoint case)
 
-With independent triangles and the Bayes-optimal threshold, exact support recovery
-has probability $\prod_{\tau \in S}(1-P_{\rm miss}) \prod_{\tau \notin S}(1-P_{\rm fa})$
-with $\chi^2_T$ tail expressions (`exact_recovery_probability`). Its 50% contour is
+For edge-disjoint candidates the curl statistics are genuinely **independent**
+across triangles (disjoint column supports, white noise), so with the Bayes-optimal
+threshold, exact support recovery has probability — exactly, not approximately —
+$\prod_{\tau \in S}(1-P_{\rm miss}) \prod_{\tau \notin S}(1-P_{\rm fa})$
+with $\chi^2_N$ tail expressions (`exact_recovery_probability`). Its 50% contour is
 the phase boundary in Figure 1, and the **empirical contour matches it to a median
 ratio of 1.01** across the whole grid.
 
@@ -189,41 +196,56 @@ Edge-sharing triangles have correlated curl signatures: the triangle Gram matrix
 $G = B_2^{\top} B_2$ has $G_{\sigma\tau} = \pm 1$ when $\sigma,\tau$ share an edge.
 An active triangle then *leaks* energy onto its inactive neighbours, so naive
 curl-energy thresholding fails — **and gets worse as SNR grows** (more signal, more
-leakage). The fix: whiten with the pseudoinverse,
+leakage). The fix: when $B_2$ has full column rank ($G$ invertible), whiten:
 
 ```math
-\hat y_t = G^{+} c_t \;\Rightarrow\;
+\hat y_t = G^{-1} c_t \;\Rightarrow\;
 \hat y_{\tau,t} = y_{\tau,t}\,\mathbf{1}\{\tau\in S\} + e_{\tau,t},\qquad
-\mathrm{Cov}(e_t) = \sigma_n^2 G^{+},
+\mathrm{Cov}(e_t) = \sigma_n^2 G^{-1},
 ```
 
-turning each triangle back into a two-variance test with **its own effective SNR**
+which holds **exactly**, so the *marginal* law of every coordinate is a
+two-variance test with **its own effective SNR**
 
 ```math
-\rho^{\mathrm{eff}}_\tau = \frac{\sigma_c^2}{\sigma_n^2 (G^{+})_{\tau\tau}}.
+\rho^{\mathrm{eff}}_\tau = \frac{\sigma_c^2}{\sigma_n^2 (G^{-1})_{\tau\tau}}.
 ```
 
-$(G^{+})_{\tau\tau}$ is the *price of geometry*: $1/3$ for an isolated triangle
-(recovering R1 exactly), larger as signatures overlap. On the edge-sharing strip
-benchmark at $\rho{=}8,\ T{=}200$: naive Hamming error **2.59** (never recovers),
-greedy baseline 0.27, **whitened 0.00**, and the whitened empirical recovery matches
-the heterogeneous theory (`heterogeneous_exact_recovery_probability`) within 0.025.
+$`(G^{-1})_{\tau\tau}`$ is the *price of geometry*: it equals $`1/3`$ for an
+isolated triangle (recovering R1 exactly) and grows as signatures overlap. Two
+careful points about the **joint** recovery probability: the whitened noise
+coordinates remain correlated (off-diagonal entries of $`G^{-1}`$), so the joint
+law does **not** factorize in general. What is rigorous under arbitrary
+correlations is the **union bound** `heterogeneous_recovery_union_bound`:
+$`P(\hat S = S) \ge 1 - \sum_\tau P_{\mathrm{err},\tau}`$ over the exact marginal
+error probabilities. The product of marginals
+(`heterogeneous_exact_recovery_probability`) is an **independence approximation**
+— exact in the edge-disjoint case, and in our diagonally-dominant benchmarks it,
+the union bound, and Monte-Carlo all coincide within 0.025. On the edge-sharing
+strip at $\rho{=}8,\ N{=}200$: naive Hamming error **2.59** (never recovers),
+greedy baseline 0.27, **whitened 0.00**.
 
-### R5 — The rank obstruction: geometry-side invisibility
+### R5 — The rank obstruction: geometry-side degrees of freedom
 
 Whitening cannot beat linear dependence. Two triangle sets with
 $\mathrm{im}~B_{2,S} = \mathrm{im}~B_{2,S'}$ are indistinguishable **at any SNR
-and any $T$**. On the complete graph $K_n$ the curl subspace has dimension
-$\mathrm{rank}(B_2) = \binom{n-1}{2}$ while there are $\binom{n}{3}$ candidate
-triangles — the identifiable fraction is **exactly $3/n$** (proved via
+and any $N$** — so *without sparsity or other priors*, supports are identifiable
+only **modulo $\ker B_2$**. On the complete graph $K_n$ the curl subspace has
+dimension $\mathrm{rank}(B_2) = \binom{n-1}{2}$ against $\binom{n}{3}$ candidate
+triangle coefficients — a **degrees-of-freedom ratio of exactly $3/n$** (proved via
 $\mathrm{im}~B_2 = \ker B_1$ for the simply-connected 2-skeleton; verified
 numerically for $K_5,\dots,K_{12}$ in `test_curl_dimension_ratio_on_complete_graph`).
+Note the careful phrasing: this is a *DoF/rank* obstruction for arbitrary supports.
+Under a sparsity prior, specific small supports can remain identifiable even when
+candidates outnumber curl dimensions, subject to compressed-sensing-style
+(spark/coherence) conditions on the participating $B_2$ columns — characterizing
+those sparse thresholds is an open problem (see the paper's Remark 2).
 
 ---
 
 ## 5. The three figures, explained
 
-All are regenerated by `experiments/run_all.py` (~2–3 min, CPU) into
+All are regenerated by `experiments/run_all.py` (~2–5 min, CPU) into
 `results/figures/`; the copies in `paper/figures/` used by the manuscript are a
 manual copy of these outputs (kept in sync whenever figures change).
 
@@ -231,35 +253,39 @@ manual copy of these outputs (kept in sync whenever figures change).
 
 Heatmap of the empirical probability of *exact* filled-triangle recovery on an
 edge-disjoint planted complex (8 candidates, 4 active, gradient+harmonic nuisance
-present), sweeping snapshots $T \in [5, 90]$ vs curl-SNR $\rho \in [0.3, 30]$,
+present), sweeping snapshots $N \in [5, 90]$ vs curl-SNR $\rho \in [0.3, 30]$,
 200 trials per cell. **Solid white line** = exact finite-sample theory contour (R3);
 it lies right on the empirical 50% boundary (median ratio 1.01, all within ±25%).
 **Dotted white line** = asymptotic Chernoff+Bonferroni floor (R2), visibly the
-$1/\sqrt T$ law and conservative, as an asymptotic bound should be.
+$1/\sqrt N$ law and conservative, as an asymptotic bound should be.
 Produced by `experiments/run_phase_transition.py`, metrics in
 `results/phase_transition.json`.
 
 ### Figure 2 — `confusability.png` (why geometry matters)
 
-Left: mean Hamming error vs $T$ on a 9-triangle *edge-sharing strip* with
-alternating active triangles at $\rho = 8$. The naive curl-energy detector
-plateaus at ≈2.1–2.6 wrong triangles and **worsens with more data** (leakage is
-systematic, not noise); greedy stalls ≈0.3; the **whitened detector goes to 0**.
-Right: whitened detector's empirical exact-recovery probability vs its
-geometry-aware theoretical law — max deviation 0.025.
+Left: mean Hamming error vs $N$ on a 9-triangle *edge-sharing strip* with
+alternating active triangles at $\rho = 8$ (here $B_2$ has full column rank, so
+R4 applies with $G^{-1}$). The naive curl-energy detector plateaus at ≈2.1–2.6
+wrong triangles and **worsens with more data** (leakage is systematic, not noise);
+greedy stalls ≈0.3; the **whitened detector goes to 0**.
+Right: whitened detector's empirical exact-recovery probability vs the two
+theoretical curves — the independence approximation (dashed) and the rigorous
+union bound (dotted); all three agree within 0.025 in this regime.
 Produced by `experiments/run_confusability.py`, metrics in
 `results/confusability.json`.
 
-### Figure 3 — `real_fx.png` (both invisibilities in the wild)
+### Figure 3 — `real_fx.png` (both obstructions illustrated in the wild)
 
-Real data: 257 trading days (Dec 29, 2023 – Dec 31, 2024) of ECB daily reference
-rates, 9 currencies (USD, AUD, CAD, CHF, EUR, GBP, JPY, NOK, SEK) → complete graph
+Real data — **an illustration of the obstructions, not a recovery benchmark**
+(real FX has no ground-truth triangle support to recover): 257 trading days
+(Dec 29, 2023 – Dec 31, 2024) of ECB daily reference rates, 9 currencies
+(USD, AUD, CAD, CHF, EUR, GBP, JPY, NOK, SEK) → complete graph
 $K_9$, 36 edges, 84 candidate triangles. Edge flow on day $t$ = log-price difference (a real,
 heavy-tailed, temporally-correlated **gradient**).
 **(A)** Hodge energy split: curl/gradient ≈ $1.8\times10^{-31}$ — an arbitrage-free
 market is a *pure gradient*, i.e. genuinely curl-invisible: no estimator, however
 clever, can find higher-order structure because there is none in the observable
-component. **(B)** Identifiable fraction $\mathrm{rank}(B_2)/\binom{n}{3}$
+component. **(B)** Curl degrees-of-freedom ratio $\mathrm{rank}(B_2)/\binom{n}{3}$
 for $K_5,\dots,K_{12}$: the numeric rank sits exactly on the $3/n$ curve; $K_9$
 gives $28/84 = 1/3$. Produced by `experiments/run_real_fx.py`, metrics in
 `results/real_fx.json`.
@@ -298,8 +324,10 @@ topo-flow-limits/
 │                             (+ optimal threshold); invisibility_curl_snr_floor
 │                             (bisection on the Chernoff rate);
 │                             exact_recovery_probability & recovery_contour_rho
-│                             (finite-sample, edge-disjoint); whitened_variances &
-│                             heterogeneous_exact_recovery_probability (geometry-aware);
+│                             (finite-sample, edge-disjoint); whitened_variances,
+│                             heterogeneous_exact_recovery_probability (independence
+│                             approximation) & heterogeneous_recovery_union_bound
+│                             (rigorous bound, correlation-robust);
 │                             per_triangle_threshold (bayes | fwer/Bonferroni)
 │
 ├── experiments/
@@ -310,12 +338,12 @@ topo-flow-limits/
 │   ├── run_real_fx.py            Figure 3 + real_fx.json
 │   └── run_all.py                one-click: all of the above from fixed seeds
 │
-├── tests/                    16 tests — the theorems' guardrails (see §8)
+├── tests/                    17 tests — the theorems' guardrails (see §8)
 │   ├── test_hodge.py
 │   └── test_theory_vs_sim.py
 │
 ├── data/
-│   ├── fx_rates.json         cached real ECB rates (2024, 257 days) — offline repro
+│   ├── fx_rates.json         cached real ECB rates (257 days) — offline repro
 │   └── fetch_fx.py           refetch/extend the dataset (no API key needed)
 │
 ├── results/                  regenerated by run_all.py
@@ -324,8 +352,8 @@ topo-flow-limits/
 │
 └── paper/
     ├── main.tex              the manuscript (IEEEtran; swap to spconf for camera-ready)
-    ├── refs.bib              bibliography
-    ├── main.pdf              compiled draft (3 pages, zero overfull boxes)
+    ├── refs.bib              bibliography (19 entries, 17 cited in the draft)
+    ├── main.pdf              compiled draft (4 pages, zero overfull boxes)
     └── figures/              figure copies used by the manuscript
 ```
 
@@ -344,10 +372,10 @@ cd topo-flow-limits
 uv venv --python 3.11 .venv
 uv pip install --python .venv\Scripts\python.exe numpy scipy networkx cvxpy matplotlib pandas pytest
 
-# 1) validate all theory against Monte-Carlo (16 tests; ~25 s idle, up to ~90 s under load)
+# 1) validate all theory against Monte-Carlo (17 tests; ~40 s idle, up to ~2 min under load)
 .\.venv\Scripts\python.exe -m pytest -q
 
-# 2) regenerate every figure and metric (~2-3 min)
+# 2) regenerate every figure and metric (~2-5 min)
 .\.venv\Scripts\python.exe experiments\run_all.py
 ```
 
@@ -378,9 +406,9 @@ python data/fetch_fx.py
 Expected `run_all.py` output (seeds are fixed; numbers reproduce exactly):
 
 ```
-[1/3] phase transition ...  p=8 active=4; exact-theory rho* at T=90 -> 0.513
-[2/3] confusability ...     Hamming@T=200: naive=2.59 whitened=0.00 greedy=0.27
-[3/3] real FX ...           curl/grad=1.8e-31 ; K9: 28 curl dims vs 84 triangles
+[1/3] phase transition ...  p=8 active=4; exact-theory rho* at N=90 -> 0.513
+[2/3] confusability ...     Hamming@N=200: naive=2.59 whitened=0.00 greedy=0.27
+[3/3] real FX ...           curl/grad=1.8e-31 ; K9: 28 curl dims vs 84 triangle coefficients
 ```
 
 ---
@@ -394,14 +422,15 @@ Expected `run_all.py` output (seeds are fixed; numbers reproduce exactly):
 | `test_gradient_is_curl_free_and_curl_is_divergence_free` | operator sanity ($\mathrm{curl}\circ\mathrm{grad}=0$, $\mathrm{div}\circ\mathrm{curl}=0$) |
 | `test_curl_flow_lives_entirely_in_curl_component` | a $B_2 y$ flow has zero gradient/harmonic part |
 | `test_harmonic_space_dimension_matches_betti_1` | $\dim\ker L_1 = b_1$ (filled tetrahedron 0; hollow $K_4$ 3) |
-| `test_curl_dimension_ratio_on_complete_graph` | R5: $\mathrm{rank}(B_2)=\binom{n-1}{2}$ on $K_n$, fraction $3/n$ |
+| `test_curl_dimension_ratio_on_complete_graph` | R5: $\mathrm{rank}(B_2)=\binom{n-1}{2}$ on $K_n$ ($K_5,\dots,K_{12}$), DoF ratio $3/n$ |
 | `test_analytic_bayes_error_matches_gaussian_montecarlo` | R1 closed form vs direct Gaussian MC (±0.02) |
 | `test_curl_detection_is_immune_to_gradient_and_harmonic_nuisance` | Lemma 1 end-to-end with 25× nuisance (±0.03) |
-| `test_chernoff_is_error_exponent` | $-\log P_{\rm err}/T \downarrow C$ (within 10% at $T{=}640$) |
+| `test_chernoff_is_error_exponent` | $-\log P_{\rm err}/N \downarrow C$ (within 10% at $N{=}640$) |
 | `test_small_rho_chernoff_scaling` | R2: $C(\rho)/(\rho^2/16) \to 1$ (±5% at $\rho\le0.02$) |
 | `test_exact_recovery_probability_matches_simulation` | R3 finite-sample law vs full pipeline (±0.06) |
-| `test_whitened_detector_beats_naive_under_confusability` | R4: whitened ≪ naive, matches theory (±0.05) |
-| `test_invisibility_floor_decreases_with_budget` | R2: $\rho^\star(4T)/\rho^\star(T) \approx 1/2$ in the small $\rho$ regime |
+| `test_whitened_detector_beats_naive_under_confusability` | R4: whitened ≪ naive, matches marginal theory (±0.05) |
+| `test_union_bound_is_rigorous_lower_bound` | R4: union bound ≤ independence approx algebraically, and ≤ empirical rate under correlated noise |
+| `test_invisibility_floor_decreases_with_budget` | R2: $\rho^\star(4N)/\rho^\star(N) \approx 1/2$ in the small $\rho$ regime |
 
 Philosophy: **a limits paper dies if a constant is wrong**, so every closed form
 must beat a Monte-Carlo cross-examination before it is cited in the manuscript.
@@ -469,8 +498,12 @@ Stated plainly, because reviewers (and users) deserve to know:
    a baseline but is dominated by the whitened detector in our benchmarks; it is not
    used for any headline claim.
 5. **i.i.d. snapshots.** Temporal dependence (e.g. AR flows) shrinks the effective
-   $T$; the theory applies with $T \to T_{\rm eff}$ but we do not characterize
-   $T_{\rm eff}$ here.
+   sample size; the theory applies with $N \to N_{\rm eff}$ but we do not
+   characterize $N_{\rm eff}$ here.
+6. **Joint vs marginal laws under confusability.** The whitened per-triangle laws
+   are exact *marginals*; the joint recovery probability is guaranteed only via the
+   union bound. The product form is an independence approximation (exact for
+   edge-disjoint candidates) that happens to be tight in our benchmarks.
 
 ---
 
@@ -490,7 +523,7 @@ Stated plainly, because reviewers (and users) deserve to know:
 
 **问题**：拓扑信号处理需要知道网络中哪些三角形被"填充"（承载高阶相互作用），
 现有文献只给出**估计算法**（贪婪、MAP、稀疏恢复），没人回答更根本的问题——
-**给定 T 个边流快照和噪声水平，这个结构到底可不可辨识？**
+**给定 N 个边流快照和噪声水平，这个结构到底可不可辨识？**
 
 **核心机制（旋度湮灭）**：对边流取旋度 $c_t=B_2^\top f_t$ 会把梯度分量和谐和分量
 **精确消掉**（因为 $B_1B_2=0$ ，且谐和空间无旋），只剩下活跃三角形的信号加投影噪声。
@@ -498,24 +531,29 @@ Stated plainly, because reviewers (and users) deserve to know:
 
 **四个主要结果**：
 1. **两方差检验**：孤立三角形的检测化为方差 $3\sigma_n^2$ vs $9\sigma_c^2+3\sigma_n^2$
-   的高斯检验，最优误差指数是 Gaussian Chernoff 信息；
-2. **curl-invisibility 相变**：curl 信噪比 $\rho<\rho^\star(T)\sim 1/\sqrt T$ 时
+   的高斯检验，最优误差指数是 Gaussian Chernoff 信息；边不相交时精确恢复概率有
+   **严格的**有限样本乘积公式（此时各三角形统计量真独立）；
+2. **curl-invisibility 相变**：curl 信噪比 $\rho<\rho^\star(N)\sim 1/\sqrt N$ 时
    **任何估计器都不可能恢复结构**（小 $\rho$ 极限下 $C\sim\rho^2/16$ ）；
 3. **几何感知白化**：共边三角形互相"泄漏"能量，朴素能量检测会失败且 SNR 越高越糟；
-   用 $\hat y=G^+c$ 白化后每个三角形获得有效信噪比
-   $\rho^{\mathrm{eff}}_\tau=\sigma_c^2/(\sigma_n^2(G^+)_{\tau\tau})$ ，
-   实测完胜朴素法并与理论精确吻合（偏差 ≤0.025）；
-4. **秩障碍**：完全图 $K_n$ 上旋度子空间只有 $\binom{n-1}{2}$ 维，而候选三角形有
-   $\binom n3$ 个——**无论信噪比多高**，可辨识比例恰好是 $3/n$ 。
+   当 $B_2$ 满列秩时用 $\hat y=G^{-1}c$ 白化，每个三角形获得**严格的边际**两方差律，
+   有效信噪比 $`\rho^{\mathrm{eff}}_\tau=\sigma_c^2/(\sigma_n^2(G^{-1})_{\tau\tau})`$ 。
+   注意：白化后噪声坐标仍相关，联合恢复概率一般**不**分解——严格保证由 union bound
+   给出，乘积式只是独立近似（实验里三者相差 ≤0.025）；
+4. **秩障碍（自由度障碍）**：无稀疏先验时支持集只能 modulo $\ker B_2$ 辨识；
+   完全图 $K_n$ 上旋度子空间只有 $\binom{n-1}{2}$ 维，而候选三角形系数有
+   $\binom n3$ 个——**无论信噪比多高**，自由度比恰好是 $3/n$ 。
+   （稀疏先验下特定小支持集仍可能可辨识，属压缩感知型条件，为开放问题。）
 
-**真实数据**：257 个交易日（2023-12-29 至 2024-12-31）的欧洲央行汇率
-（9 种货币，完全图 $K_9$ ）。无套利市场的边流是纯梯度 → 旋度能量只有梯度的
-$10^{-31}$ （机器零），且 $K_9$ 的可辨识比例 $28/84=1/3$ 正好落在 $3/n$ 曲线上——
+**真实数据（仅作演示，非恢复基准——真实汇率没有三角结构真值）**：
+257 个交易日（2023-12-29 至 2024-12-31）的欧洲央行汇率（9 种货币，完全图 $K_9$ ）。
+无套利市场的边流是纯梯度 → 旋度能量只有梯度的 $10^{-31}$ （机器零），
+且 $K_9$ 的旋度自由度比 $28/84=1/3$ 正好落在 $3/n$ 曲线上——
 理论预言的两种"不可见"在真实市场同时成立。
 
-**复现**：`pytest -q`（16 个测试，空闲约 25 秒、高负载下最多约 90 秒，
+**复现**：`pytest -q`（17 个测试，空闲约 40 秒、高负载下最多约 2 分钟，
 每条定理都对照蒙特卡洛验证）；`python experiments/run_all.py`
-（约 2–3 分钟重生成全部图表）；论文在 `paper/main.pdf`。全程只需 CPU。
+（约 2–5 分钟重生成全部图表）；论文在 `paper/main.pdf`（4 页）。全程只需 CPU。
 
 ---
 
