@@ -16,10 +16,12 @@ Gaussian test**. Two quantities govern it:
   ``exp(-T * C)``.
 
 Because ``C(v0, v1) -> 0`` as ``rho -> 0`` (with ``C ~ rho^2 / 16`` to leading
-order), for any fixed budget ``T`` there is a curl-SNR floor ``rho*(T)`` below
-which no estimator can identify the triangle: the **curl-invisibility phase**.
-Every closed form here is cross-checked against Monte-Carlo simulation in the
-test-suite before it enters the paper.
+order), for any fixed budget ``T`` there is a curl-SNR scale ``rho*(T)`` below
+which no estimator attains the target error exponent: the
+**curl-invisibility phase**. (``rho*`` solves the exponent equation; the exact
+finite-``T`` boundary sits an order-one factor below it — see
+:func:`invisibility_curl_snr_floor`.) Every closed form here is cross-checked
+against Monte-Carlo simulation in the test-suite before it enters the paper.
 """
 
 from __future__ import annotations
@@ -252,9 +254,18 @@ def snapshots_for_target_error(
 def invisibility_curl_snr_floor(
     sigma_noise: float, T: int, target_error: float = 0.05
 ) -> float:
-    """Curl-SNR floor ``rho*`` at budget ``T``: the smallest ``rho`` whose Chernoff
-    rate still meets ``exp(-T C) <= target_error``. Below ``rho*`` the triangle is
-    invisible. Solved by a monotone bisection on ``rho``."""
+    """Curl-SNR scale ``rho*`` at budget ``T``: the ``rho`` at which the optimal
+    error EXPONENT meets the budget, i.e. ``exp(-T C(rho)) = target_error``.
+
+    Calibration note: this solves the exponent equation, which is the
+    Chernoff (achievability-side) calibration of the phase boundary; it is a
+    scale, not a hard impossibility threshold. The converse content is at the
+    exponent level (no test achieves an error exponent better than ``C``), so
+    the exact finite-``T`` boundary sits below this value by an
+    order-one factor (the exact Bayes error can meet ``target_error`` at
+    ``rho`` roughly 40-50% smaller at moderate ``T``). Both interpretations
+    share the ``rho* ~ sqrt(log(1/target_error)/T)`` law. Solved by a
+    monotone bisection on ``rho``."""
     need_C = np.log(1.0 / target_error) / T
 
     def C_of_rho(rho: float) -> float:
@@ -273,3 +284,122 @@ def invisibility_curl_snr_floor(
         else:
             hi = mid
     return float(np.sqrt(lo * hi))
+
+
+# ---------------------------------------------------------------------------
+# Fano-type converses for JOINT support recovery (supplement, Sec. S1)
+# ---------------------------------------------------------------------------
+
+def gaussian_kl_two_variance(v_from: float, v_to: float) -> float:
+    """``KL( N(0, v_from) || N(0, v_to) )`` for zero-mean scalar Gaussians."""
+    r = v_from / v_to
+    return 0.5 * (r - 1.0 - np.log(r))
+
+
+def _log_binom(p: int, k: int) -> float:
+    from scipy.special import gammaln
+    return float(gammaln(p + 1) - gammaln(k + 1) - gammaln(p - k + 1))
+
+
+def fano_min_snapshots(p: int, k: int, rho: float, err: float = 0.5) -> float:
+    """Fano lower bound on the number of snapshots needed to recover a
+    uniformly random size-``k`` support among ``p`` edge-disjoint candidates
+    with error probability at most ``err`` (GAUSSIAN signals and noise).
+
+    Mechanics: with edge-disjoint candidates the curl coordinates are
+    independent, and taking the all-inactive law ``P_0`` as the Fano reference
+    gives ``I(S; C^N) <= N * k * KL(N(0,v1) || N(0,v0))`` exactly, with
+    ``KL_1 = (rho - log(1+rho))/2 ~ rho^2/4``. Fano then yields
+
+        N  >=  ( (1-err) * log C(p,k) - log 2 ) / ( k * KL_1 ) .
+
+    The bound scales as ``N >~ 4 (1-err) log(p/k) / rho^2``: JOINT recovery
+    pays a ``log p`` factor on top of the single-triangle Chernoff budget.
+    """
+    if not (0 < k < p):
+        raise ValueError("need 0 < k < p")
+    kl1 = gaussian_kl_two_variance(1.0 + rho, 1.0)  # KL(v1||v0), v0-normalized
+    numer = (1.0 - err) * _log_binom(p, k) - np.log(2.0)
+    if numer <= 0:
+        return 0.0
+    return float(numer / (k * kl1))
+
+
+def signal_agnostic_fano_min_snapshots(
+    p: int, k: int, rho: float, err: float = 0.5
+) -> float:
+    """Fano lower bound valid for ARBITRARY zero-mean triangle-signal
+    distributions with per-coordinate variance ``sigma_c^2`` (Gaussian noise).
+
+    Mechanics (max-entropy budget): under the uniform size-``k`` prior each
+    curl coordinate has marginal variance ``v0 (1 + rho k/p)``; per snapshot,
+    each coordinate's entropy is at most Gaussian at that variance while its
+    conditional entropy given the support is at least the Gaussian-noise
+    entropy, so ``I(S; c) <= (p/2) log(1 + rho k/p)``. Hence
+
+        N  >=  ( (1-err) * log C(p,k) - log 2 ) / ( (p/2) log(1 + rho k/p) ) .
+
+    Weaker than :func:`fano_min_snapshots` for small ``rho`` (by a factor
+    ``rho``), but it holds with no distributional assumption on the signal and
+    is the TIGHTER of the two for large ``rho``; a valid converse may take the
+    pointwise maximum of both.
+    """
+    if not (0 < k < p):
+        raise ValueError("need 0 < k < p")
+    cap = 0.5 * p * np.log1p(rho * k / p)
+    numer = (1.0 - err) * _log_binom(p, k) - np.log(2.0)
+    if numer <= 0:
+        return 0.0
+    return float(numer / cap)
+
+
+def fano_rho_floor(p: int, k: int, N: int, err: float = 0.5) -> float:
+    """Invert :func:`fano_min_snapshots` in ``rho``: the curl-SNR below which
+    NO estimator recovers a random size-``k`` support from ``N`` snapshots with
+    error <= ``err``. Monotone bisection on ``rho``."""
+    numer = (1.0 - err) * _log_binom(p, k) - np.log(2.0)
+    if numer <= 0:
+        return 0.0
+    need_kl = numer / (k * N)
+
+    def kl_of(rho: float) -> float:
+        return gaussian_kl_two_variance(1.0 + rho, 1.0)
+
+    lo, hi = 1e-9, 1e9
+    if kl_of(hi) < need_kl:
+        return float("inf")
+    for _ in range(200):
+        mid = np.sqrt(lo * hi)
+        if kl_of(mid) < need_kl:
+            lo = mid
+        else:
+            hi = mid
+    return float(np.sqrt(lo * hi))
+
+
+def median_sigma_envelope(
+    d: int, p: int, active_fraction: float, delta: float = 0.05,
+) -> tuple[float, float]:
+    """Finite-sample envelope for the median-based noise-variance estimate
+    (supplement, Lemma S3.1; requires EDGE-DISJOINT candidates so the inactive
+    normalized scores are i.i.d. — the DKW step needs independence): with
+    probability >= 1 - delta,
+
+        sigma_n_hat^2 / sigma_n^2  in  [q_d(a_lo), q_d(a_hi)] / q_d(1/2),
+
+    where ``q_d`` is the chi2_d quantile function,
+    ``a_lo = (1/2 - pi - eps)/(1 - pi)``, ``a_hi = (1/2 + eps)/(1 - pi)``,
+    ``eps = sqrt(log(2/delta) / (2 (1-pi) p))`` (DKW on the inactive scores),
+    valid whenever ``pi + eps < 1/2``. Raises ``ValueError`` outside that
+    regime (too few candidates / too many active for the median to be robust).
+    """
+    pi = float(active_fraction)
+    eps = float(np.sqrt(np.log(2.0 / delta) / (2.0 * (1.0 - pi) * p)))
+    if pi + eps >= 0.5:
+        raise ValueError(
+            f"median envelope needs active_fraction + eps < 1/2 "
+            f"(got pi={pi:.3f}, eps={eps:.3f})")
+    a_lo = (0.5 - pi - eps) / (1.0 - pi)
+    a_hi = (0.5 + eps) / (1.0 - pi)
+    q_mid = chi2.ppf(0.5, df=d)
+    return float(chi2.ppf(a_lo, df=d) / q_mid), float(chi2.ppf(a_hi, df=d) / q_mid)

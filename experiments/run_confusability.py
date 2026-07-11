@@ -41,7 +41,7 @@ def run(
     sigma_grad: float = 2.0,
     sigma_harm: float = 1.0,
     T_grid=None,
-    n_trials: int = 150,
+    n_trials: int = 600,
     seed: int = 0,
 ) -> dict:
     cx = triangle_strip_complex(n_tri)
@@ -53,7 +53,9 @@ def run(
                         sigma_harm=sigma_harm, sigma_noise=sigma_noise)
 
     if T_grid is None:
-        T_grid = np.unique(np.round(np.geomspace(10, 200, 9)).astype(int))
+        # start below the transition so Fig. 2 (right) actually stresses the
+        # marginal theory + union bound through the whole S-curve
+        T_grid = np.unique(np.round(np.geomspace(3, 200, 12)).astype(int))
 
     Gp_diag = np.diag(np.linalg.pinv(triangle_gram_of(cx)))
     v0s, v1s = whitened_variances(Gp_diag, sc, sigma_noise)

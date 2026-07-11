@@ -268,6 +268,151 @@ def test_union_bound_is_rigorous_lower_bound():
         assert emp >= union - 0.05, f"T={T}: emp {emp:.3f} < union {union:.3f}"
 
 
+def test_fano_bounds_are_valid_converses():
+    """Supplement S1: the Fano snapshot lower bounds must (a) lower-bound the
+    empirical 50%-recovery budget measured in the Fig. 1 experiment, (b) be
+    monotone decreasing in rho, and (c) exhibit the documented sparse/dense
+    regime ordering between the Gaussian-KL and signal-agnostic variants."""
+    import json
+    from pathlib import Path
+    from tfl.limits import fano_min_snapshots, signal_agnostic_fano_min_snapshots
+
+    res = json.loads((Path(__file__).resolve().parent.parent
+                      / "results" / "phase_transition.json").read_text())
+    T_grid = np.array(res["T_grid"], float)
+    rec = np.array(res["recovery"], float)          # (n_rho, n_T)
+    rho_grid = np.array(res["rho_grid"], float)
+    p, k = res["n_tri"], res["n_active"]
+    for i, rho in enumerate(rho_grid):
+        crossing = np.where(rec[i] >= 0.5)[0]
+        if len(crossing) == 0:
+            continue                                 # never recovers on this grid
+        n_emp = T_grid[crossing[0]]                  # empirical 50% budget
+        for bound in (fano_min_snapshots, signal_agnostic_fano_min_snapshots):
+            assert bound(p, k, float(rho), err=0.5) <= n_emp + 1e-9
+
+    rhos = np.geomspace(0.1, 30, 12)
+    for bound in (fano_min_snapshots, signal_agnostic_fano_min_snapshots):
+        vals = [bound(100, 10, float(r)) for r in rhos]
+        assert all(a >= b - 1e-12 for a, b in zip(vals, vals[1:]))  # decreasing
+
+    # tight anchor: pins the exact constant of the Gaussian Fano bound
+    from scipy.special import gammaln
+    from tfl.limits import gaussian_kl_two_variance
+    p_a, k_a, rho_a = 20, 5, 1.5
+    log_binom = gammaln(p_a + 1) - gammaln(k_a + 1) - gammaln(p_a - k_a + 1)
+    expect = (0.5 * log_binom - np.log(2)) / (k_a * gaussian_kl_two_variance(1 + rho_a, 1))
+    assert abs(fano_min_snapshots(p_a, k_a, rho_a, err=0.5) - expect) < 1e-9
+    # sparse + small rho: Gaussian-KL is the tighter (larger) bound
+    assert fano_min_snapshots(10_000, 10, 0.2) > signal_agnostic_fano_min_snapshots(10_000, 10, 0.2)
+    # dense + large rho: the signal-agnostic bound overtakes
+    assert signal_agnostic_fano_min_snapshots(100, 50, 100.0) > fano_min_snapshots(100, 50, 100.0)
+
+
+def test_partial_sampling_closed_form_matches_simulation():
+    """Supplement S2: on an edge-disjoint complex, exact recovery under
+    Bernoulli(q) edge sampling matches the closed form
+    [q^3 (1-P_miss)]^k [1 - q^3 P_fa]^(p-k)."""
+    from tfl.generative import (
+        disjoint_triangle_complex, edge_subsample_mask, observable_triangles,
+    )
+    from tfl.estimators import whitened_curl_detector_support, exact_recovery
+    from tfl.limits import whitened_variances, _per_triangle_error_probs
+
+    cx = disjoint_triangle_complex(6)
+    p = 6
+    active = np.zeros(p, bool)
+    active[:2] = True          # asymmetric split (k=2 vs p-k=4): pins the
+    sn, rho = 1.0, 8.0         # exponent placement in the closed form
+    sc = float(np.sqrt(rho / 3.0))
+    params = FlowParams(sigma_curl=sc, sigma_grad=1.0, sigma_harm=0.5, sigma_noise=sn)
+    N = 25
+    v0s, v1s = whitened_variances(np.full(p, 1.0 / 3.0), sc, sn)
+    errs = _per_triangle_error_probs(v0s, v1s, active, N, "bayes", 0.05)
+    p_miss, p_fa = float(errs[active][0]), float(errs[~active][0])
+
+    from tfl.hodge import build_incidences
+    B1, B2 = build_incidences(cx)
+    rng = np.random.default_rng(5)
+    for q in (0.8, 0.95):
+        hits, R = 0, 400
+        for _ in range(R):
+            ds = sample_flows(cx, active, params, N, rng)
+            emask = edge_subsample_mask(B2.shape[0], q, rng)
+            omask = observable_triangles(B2, emask)
+            ds.F *= emask[:, None]
+            est = np.zeros(p, bool)
+            if omask.any():
+                ds_obs = type(ds)(F=ds.F, B1=ds.B1, B2_all=ds.B2_all[:, omask],
+                                  active=active[omask], params=params,
+                                  candidate_triangles=[t for t, m in
+                                                       zip(cx.triangles, omask) if m])
+                est[omask] = whitened_curl_detector_support(ds_obs, sc, sn, mode="bayes")
+            hits += exact_recovery(est, active)
+        emp = hits / R
+        theory = (q**3 * (1 - p_miss))**2 * (1 - q**3 * p_fa)**4
+        assert abs(emp - theory) < 0.07, f"q={q}: emp {emp:.3f} vs theory {theory:.3f}"
+
+
+def test_median_sigma_envelope_and_plugin_consistency():
+    """Supplement S3: (a) the median-based noise estimate falls inside the
+    Lemma envelope at the advertised confidence; (b) the fully adaptive
+    detector matches the known-parameter detector at moderate N."""
+    from tfl.generative import disjoint_triangle_complex
+    from tfl.estimators import (
+        estimate_noise_sigma, adaptive_whitened_detector_support,
+        whitened_curl_detector_support, exact_recovery,
+    )
+    from tfl.limits import median_sigma_envelope
+
+    # (a) envelope coverage on a complex large enough for DKW to bite
+    # (pre-factorized sampling: build incidences/harmonic basis ONCE)
+    from tfl.hodge import build_incidences
+    from tfl.generative import harmonic_basis, FlowDataset
+
+    cx = disjoint_triangle_complex(200, n_cycles=1)
+    p = 200
+    active = np.zeros(p, bool)
+    active[:50] = True                                  # pi = 0.25
+    sn, sc = 1.0, 1.0                                   # rho = 3
+    params = FlowParams(sigma_curl=sc, sigma_grad=1.0, sigma_harm=0.5, sigma_noise=sn)
+    N = 50
+    lo, hi = median_sigma_envelope(N, p, 0.25, delta=0.05)
+    B1, B2 = build_incidences(cx)
+    H = harmonic_basis(B1, B2)
+    B2S = B2[:, active]
+    rng = np.random.default_rng(9)
+    inside = 0
+    R = 120
+    for _ in range(R):
+        F = B1.T @ (params.sigma_grad * rng.standard_normal((B1.shape[0], N)))
+        F += B2S @ (sc * rng.standard_normal((B2S.shape[1], N)))
+        F += H @ (params.sigma_harm * rng.standard_normal((H.shape[1], N)))
+        F += sn * rng.standard_normal((B1.shape[1], N))
+        ds = FlowDataset(F=F, B1=B1, B2_all=B2, active=active, params=params,
+                         candidate_triangles=list(cx.triangles))
+        ratio = estimate_noise_sigma(ds)**2 / sn**2
+        inside += (lo - 1e-12 <= ratio <= hi + 1e-12)
+    assert inside / R >= 0.93, f"envelope coverage {inside/R:.2f} < 0.93 [{lo:.3f},{hi:.3f}]"
+
+    # (b) adaptive == known at moderate N on the confusable strip
+    from tfl.generative import triangle_strip_complex
+    cx2 = triangle_strip_complex(9)
+    active2 = np.zeros(9, bool)
+    active2[1::2] = True
+    sc2 = float(np.sqrt(8.0 / 3.0))
+    params2 = FlowParams(sigma_curl=sc2, sigma_grad=2.0, sigma_harm=1.0, sigma_noise=1.0)
+    hk = hp = 0
+    R2, N2 = 250, 45
+    for _ in range(R2):
+        ds = sample_flows(cx2, active2, params2, N2, rng)
+        hk += exact_recovery(
+            whitened_curl_detector_support(ds, sc2, 1.0, mode="bayes"), active2)
+        est, _, _ = adaptive_whitened_detector_support(ds, mode="bayes")
+        hp += exact_recovery(est, active2)
+    assert abs(hk - hp) / R2 < 0.08, f"known {hk/R2:.2f} vs plugin {hp/R2:.2f}"
+
+
 def test_invisibility_floor_decreases_with_budget():
     """The curl-SNR floor rho*(T) shrinks as the snapshot budget grows, and
     scales like 1/sqrt(T) in the small-rho regime."""

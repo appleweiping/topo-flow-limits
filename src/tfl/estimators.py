@@ -256,3 +256,103 @@ def hamming_error(estimate: np.ndarray, truth: np.ndarray) -> int:
 
 def exact_recovery(estimate: np.ndarray, truth: np.ndarray) -> bool:
     return hamming_error(estimate, truth) == 0
+
+
+# ---------------------------------------------------------------------------
+# Plug-in variance estimation + fully adaptive detector (supplement, Sec. S3)
+# ---------------------------------------------------------------------------
+
+def estimate_noise_sigma(dataset: FlowDataset, center: bool = False) -> float:
+    """Median-based plug-in estimate of ``sigma_noise``.
+
+    For an INACTIVE triangle the whitened mean-score satisfies
+    ``score_tau * T / v0_tau ~ chi2_df`` with ``v0_tau = sigma_n^2 (G^+)_{tau tau}``
+    (``df = T-1`` if centered). Normalizing each score by ``(G^+)_{tau tau}`` and
+    taking the MEDIAN over candidates is therefore robust whenever fewer than
+    half the candidates are active (active scores are inflated by
+    ``sigma_c^2``, pushing them above the median):
+
+        sigma_n_hat^2 = median_tau( score_tau / (G^+)_{tau tau} ) * T / chi2_median(df).
+    """
+    from scipy.stats import chi2
+
+    scores = whitened_curl_scores(dataset, center=center)
+    G = triangle_gram(dataset)
+    Gp_diag = np.clip(np.diag(np.linalg.pinv(G)), 1e-12, None)
+    T = dataset.T
+    df = T - 1 if center else T
+    med = float(np.median(scores / Gp_diag))
+    return float(np.sqrt(med * T / chi2.median(df)))
+
+
+def estimate_curl_sigma(
+    dataset: FlowDataset, sigma_noise_hat: float,
+    center: bool = False, alpha: float = 0.01,
+) -> float:
+    """Plug-in estimate of ``sigma_curl`` from the excess energy of triangles
+    flagged by a conservative (Bonferroni, level ``alpha``) noise-only screen:
+    on the whitened scale ``E[score_tau] = sigma_c^2 + v0_tau`` for active
+    triangles, so ``sigma_c_hat^2 = mean(score_tau - v0_tau)`` over the screened
+    set. Returns 0.0 when the screen flags nothing (no evidence of signal)."""
+    from scipy.stats import chi2
+
+    scores = whitened_curl_scores(dataset, center=center)
+    G = triangle_gram(dataset)
+    Gp_diag = np.clip(np.diag(np.linalg.pinv(G)), 1e-12, None)
+    T = dataset.T
+    df = T - 1 if center else T
+    p = len(scores)
+    v0 = sigma_noise_hat**2 * Gp_diag
+    # conservative noise-only screen at FWER alpha
+    gamma = v0 * chi2.ppf(1.0 - alpha / p, df=df) / T
+    flagged = scores > gamma
+    if not flagged.any():
+        return 0.0
+    excess = scores[flagged] - v0[flagged]
+    return float(np.sqrt(max(float(np.mean(excess)), 0.0)))
+
+
+def adaptive_whitened_detector_support(
+    dataset: FlowDataset, mode: str = "bayes", alpha: float = 0.05,
+    center: bool = False, refine: bool = True,
+) -> tuple[np.ndarray, float, float]:
+    """Fully adaptive geometry-aware detector: estimates ``(sigma_n, sigma_c)``
+    from the data (:func:`estimate_noise_sigma`, :func:`estimate_curl_sigma`)
+    and runs :func:`whitened_curl_detector_support` with the plug-in values.
+    Returns ``(support, sigma_curl_hat, sigma_noise_hat)``. If the screen finds
+    no signal evidence (``sigma_c_hat = 0``) the returned support is empty.
+
+    ``refine=True`` adds one refit pass: after the first detection, sigma_n is
+    re-estimated on the OFF-support scores only (removing most of the
+    active-triangle contamination that biases the initial median upward at
+    small ``T``), and sigma_c on the on-support excess; the detector is then
+    re-run once. Note the refit set is selected by the same data, so the refit
+    is CONDITIONALLY BIASED (missed active triangles inflate it — measured
+    ~+5% at T=10 on the strip benchmark, vanishing for T >= 20); its accuracy
+    is established empirically, not by an unbiasedness argument. Requires
+    fewer than half the candidates active (median breakdown otherwise: the
+    screen then finds nothing and an empty support is returned, exactly as in
+    the genuine no-signal case).
+    """
+    sn_hat = estimate_noise_sigma(dataset, center=center)
+    sc_hat = estimate_curl_sigma(dataset, sn_hat, center=center)
+    if sc_hat <= 0:
+        return np.zeros(dataset.B2_all.shape[1], dtype=bool), 0.0, sn_hat
+    support = whitened_curl_detector_support(
+        dataset, sc_hat, sn_hat, mode=mode, alpha=alpha, center=center)
+
+    if refine and support.any() and not support.all():
+        scores = whitened_curl_scores(dataset, center=center)
+        G = triangle_gram(dataset)
+        Gp_diag = np.clip(np.diag(np.linalg.pinv(G)), 1e-12, None)
+        T = dataset.T
+        df = T - 1 if center else T
+        # mean-based refit on the DETECTED inactive set; conditionally biased
+        # by the selection (miss contamination at small T), see docstring
+        off = scores[~support] / Gp_diag[~support]
+        sn_hat = float(np.sqrt(np.mean(off) * T / df))
+        v0 = sn_hat**2 * Gp_diag[support]
+        sc_hat = float(np.sqrt(max(float(np.mean(scores[support] - v0)), 1e-12)))
+        support = whitened_curl_detector_support(
+            dataset, sc_hat, sn_hat, mode=mode, alpha=alpha, center=center)
+    return support, sc_hat, sn_hat

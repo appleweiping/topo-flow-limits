@@ -39,8 +39,8 @@ only through the \emph{curl} of the edge flows, which annihilates the gradient a
 harmonic parts of the signal. This reduces per-triangle detection to a two-variance
 Gaussian test whose optimal error exponent is a Gaussian Chernoff information, and
 yields a sharp \emph{curl-invisibility} phase: when the curl signal-to-noise ratio
-$\rho$ falls below $\rho^\star(N)=\Theta(\sqrt{\log(1/\delta)/N})$, no estimator can
-recover the structure from $N$ snapshots. When candidate triangles share edges, a
+$\rho$ falls below the scale $\rho^\star(N)=\Theta(\sqrt{\log(1/\delta)/N})$, no
+estimator attains the target error exponent from $N$ snapshots. When candidate triangles share edges, a
 geometry-aware whitening of the curl statistic yields exact per-triangle marginal
 detection laws with effective SNR $\rho^{\mathrm{eff}}_\tau=\sigma_c^2/(\sigma_n^2
 (\bm{G}^{-1})_{\tau\tau})$ governed by the triangle Gram matrix $\bm G$, together
@@ -52,8 +52,8 @@ $\binom{n}{3}$ candidate triangle coefficients. All theorems are validated again
 Monte-Carlo simulation and illustrated on real data from both sides of the limit:
 arbitrage-free foreign-exchange flows, where the theory predicts (and we measure)
 that both obstructions bind, and road-network traffic flows, whose favorable
-planar geometry admits recovery at exactly the predicted snapshot budget. Code and
-data are released for full reproducibility.
+geometry (full-column-rank $\B_2$) admits recovery of planted structure at the
+predicted snapshot budget. Code and data are released for full reproducibility.
 \end{abstract}
 
 \begin{keywords}
@@ -99,8 +99,8 @@ Gaussian Chernoff information (Prop.~\ref{prop:single}), and making support
 recovery over edge-disjoint candidates obey an \emph{exact} finite-sample product
 law (Prop.~\ref{prop:disjoint}).
 \item A sharp \emph{curl-invisibility} phase transition (Theorem~\ref{thm:invis}):
-the structure is unrecoverable whenever $\rho$ falls below
-$\rho^\star(N)=\Theta(\sqrt{\log(1/\delta)/N})$, with $C(\rho)\sim\rho^2/16$.
+no estimator attains the target error exponent once $\rho$ falls below the
+scale $\rho^\star(N)=\Theta(\sqrt{\log(1/\delta)/N})$, with $C(\rho)\sim\rho^2/16$.
 \item A \emph{geometry-aware} whitened detector for edge-sharing (confusable)
 candidates with exact per-triangle marginal laws and effective SNR
 $\rho^{\mathrm{eff}}_\tau$ (Theorem~\ref{thm:whiten}), a rigorous union-bound
@@ -194,14 +194,19 @@ g(s)=\tfrac12\big[\log(s w_0+(1-s)w_1)-s\log w_0-(1-s)\log w_1\big].
 With $\rho$ as in \eqref{eq:rho}, $C(\rho)\to0$ as $\rho\to0$ with
 $C(\rho)=\rho^2/16+o(\rho^2)$. Consequently, for target error $\delta$ and budget
 $N$, reliable detection requires
-$\rho\ge\rho^\star(N)=\Theta\big(\sqrt{\log(1/\delta)/N}\big)$; below
-$\rho^\star$ the triangle is unrecoverable by \emph{any} estimator.
+$\rho=\Omega\big(\sqrt{\log(1/\delta)/N}\big)$: below that scale the optimal
+error exponent falls short of the target for \emph{any} estimator, and the
+achievable region is $\rho\ge\rho^\star(N)=\Theta(\sqrt{\log(1/\delta)/N})$.
 \end{theorem}
 \begin{proof}[Proof sketch]
-The Chernoff information is the optimal Bayes error exponent for i.i.d.\
-observations, so no test beats $\exp(-NC)$; Taylor-expanding
-$C(v_0,v_0(1+\rho))$ at $\rho=0$ gives $\rho^2/16$, whence
-$\exp(-NC(\rho))\le\delta$ forces $\rho=\Omega(\sqrt{\log(1/\delta)/N})$.
+The Chernoff information is the optimal Bayes error \emph{exponent} for
+i.i.d.\ observations: every test satisfies
+$P_{\mathrm{err}}\ge e^{-NC(1+o(1))}$, and thresholding the energy attains
+the exponent. Taylor-expanding $C(v_0,v_0(1+\rho))$ at $\rho=0$ gives
+$\rho^2/16$, whence $e^{-NC(\rho)}\le\delta$ forces
+$\rho=\Omega(\sqrt{\log(1/\delta)/N})$. The plotted floor solves the exponent
+equation $e^{-NC(\rho^\star)}=\delta$ — a scale that is exact at the exponent
+level; the finite-$N$ boundary sits an order-one factor below it.
 \end{proof}
 
 \subsection{Support recovery: the edge-disjoint case}
@@ -221,8 +226,9 @@ boundary (Fig.~\ref{fig:phase}).
 \subsection{Confusable triangles: geometry-aware whitening}
 Edge-sharing candidates are \emph{confusable}: an active triangle leaks curl
 energy onto neighbours through the off-diagonal entries of $\bm G$, so naive
-curl-energy thresholding fails --- and \emph{worsens} as $\rho$ grows, since
-stronger signals leak harder (Fig.~\ref{fig:conf}, left). Whitening repairs this.
+curl-energy thresholding fails (Fig.~\ref{fig:conf}, left) --- and, once
+leakage dominates the noise, \emph{worsens} as $\rho$ grows, since stronger
+signals leak harder. Whitening repairs this.
 
 \begin{theorem}[Whitened marginal laws]\label{thm:whiten}
 Assume $\B_2$ has full column rank, so $\bm G$ is invertible. Let
@@ -266,9 +272,10 @@ The product $\prod_\tau(1-P_{\mathrm{err},\tau})$ is exact whenever the whitened
 scores are independent --- for edge-disjoint candidates
 (Prop.~\ref{prop:disjoint}), or more generally whenever $\bm G$ is diagonal ---
 and is an approximation otherwise. In our benchmarks $\bm G$ is diagonally
-dominant, the off-diagonal correlations of $\bm G^{-1}$ are weak, and the product
-law, the union bound, and Monte-Carlo coincide within $0.025$
-(Fig.~\ref{fig:conf}, right).
+dominant, the off-diagonal correlations of $\bm G^{-1}$ are weak, and the
+product law tracks Monte-Carlo within $0.03$ across the whole transition,
+while the union bound is a valid lower bound that is conservative in the
+transition region (Fig.~\ref{fig:conf}, right).
 \end{remark}
 
 \subsection{The rank obstruction}
@@ -310,15 +317,16 @@ Fig.~\ref{fig:phase} sweeps $(N,\rho)$ on an edge-disjoint planted complex
 exact-recovery probability undergoes a sharp transition; the solid curve is the
 exact product law of Prop.~\ref{prop:disjoint}, whose empirical $50\%$ contour it
 tracks to a median ratio of $1.01$ across the grid. The dotted curve is the
-asymptotic floor $\rho^\star\!\sim\!1/\sqrt{N}$ of Theorem~\ref{thm:invis}.
+Bonferroni-corrected Chernoff floor (Theorem~\ref{thm:invis} with
+$\delta\to\delta/p$), visibly the $1/\sqrt N$ law.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.92\linewidth]{phase_transition.png}
 \caption{Curl-invisibility phase transition for exact triangle recovery. Colour
 is empirical $P(\text{exact recovery})$; the solid line is the exact
-finite-sample law (Prop.~\ref{prop:disjoint}), the dotted line the $1/\sqrt N$
-asymptotic floor (Thm.~\ref{thm:invis}).}
+finite-sample law (Prop.~\ref{prop:disjoint}), the dotted line the
+Bonferroni-corrected Chernoff floor of Thm.~\ref{thm:invis} ($\delta\to\delta/p$).}
 \label{fig:phase}
 \end{figure}
 
@@ -327,10 +335,11 @@ On an edge-sharing triangle strip ($p=9$, alternating $4$ active, $\rho=8$;
 $\B_2$ has full column rank), the naive curl-energy detector plateaus at a mean
 Hamming error of ${\approx}2.6$ and does not improve with $N$, while the whitened
 detector of Theorem~\ref{thm:whiten} recovers the support exactly
-(Fig.~\ref{fig:conf}, left). Its empirical exact-recovery probability lies
-between the rigorous union bound (Cor.~\ref{cor:union}) and the independence
-approximation (Remark~\ref{rem:indep}), all three agreeing within $0.025$
-(Fig.~\ref{fig:conf}, right). A greedy residual-fitting baseline (standing in for
+(Fig.~\ref{fig:conf}, left). Its empirical exact-recovery probability tracks
+the independence approximation (Remark~\ref{rem:indep}) within Monte-Carlo
+error across the whole transition, and respects the rigorous union bound
+(Cor.~\ref{cor:union}), which is conservative in the transition region as a
+bound should be (Fig.~\ref{fig:conf}, right). A greedy residual-fitting baseline (standing in for
 greedy topology learning \cite{buciulea2025learning}) stalls at ${\approx}0.3$.
 
 \begin{figure}[t]
@@ -358,8 +367,9 @@ $K_5$--$K_{12}$).
 \centering
 \includegraphics[width=\linewidth]{real_fx.png}
 \caption{Real FX flows (illustration). (A)~SNR-side invisibility: curl energy is
-machine-zero relative to gradient. (B)~Geometry-side obstruction: curl
-degrees-of-freedom ratio equals $3/n$.}
+machine-zero relative to gradient (the harmonic bar is likewise numerical
+zero --- the fully filled $K_9$ has $b_1=0$). (B)~Geometry-side obstruction:
+curl degrees-of-freedom ratio equals $3/n$.}
 \label{fig:fx}
 \end{figure}
 
@@ -403,10 +413,15 @@ recovery guarantee, and a rank obstruction that no SNR can overcome. The results
 delimit when algorithmic TSP inference
 \cite{gurugubelli2024simplicial,buciulea2025learning,hoppe2023representing} can
 succeed, and real data instantiate both sides: FX flows where the obstructions
-bind, road networks where recovery succeeds at the predicted budget. Open
-directions include sub-Gaussian converses, identifiability under partial edge
-sampling \cite{chen2015discrete}, plug-in estimation of the variance parameters,
-and sharp sparse-support thresholds (Remark~\ref{rem:sparse}).
+bind, road networks where recovery succeeds at the predicted budget. The
+code repository additionally contains derivations extending the theory: Fano
+converses for joint recovery (a $\log\binom pk$ factor, with a signal-agnostic
+variant and a sub-Gaussian achievability counterpart), an exact $q^{3k}$
+recovery law for curl-based detectors on edge-disjoint candidates under
+Bernoulli($q$) edge sampling \cite{chen2015discrete} (general identifiability
+under partial observation remains open), and consistent plug-in variance
+estimation. Sharp sparse-support thresholds
+(Remark~\ref{rem:sparse}) remain open.
 
 % ICASSP allows a 5th page containing ONLY references.
 \newpage

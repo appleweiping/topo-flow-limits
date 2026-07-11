@@ -190,3 +190,22 @@ def curl_snr(cx_all: Complex, active: np.ndarray, params: FlowParams) -> float:
     noise_energy = params.sigma_noise**2 * n_edges
     denom = grad_energy + harm_energy + noise_energy
     return signal / denom if denom > 0 else np.inf
+
+
+# ---------------------------------------------------------------------------
+# Partial edge observation (supplement, Sec. S2)
+# ---------------------------------------------------------------------------
+
+def edge_subsample_mask(n_edges: int, q: float, rng: np.random.Generator) -> np.ndarray:
+    """Bernoulli(q) observation mask over edges (True = edge observed)."""
+    return rng.random(n_edges) < q
+
+
+def observable_triangles(B2_all: np.ndarray, edge_mask: np.ndarray) -> np.ndarray:
+    """Boolean mask over candidate triangles: a triangle's curl statistic is
+    computable iff ALL THREE of its edges are observed (its ``B2`` column is
+    supported on the observed edge set)."""
+    edge_mask = np.asarray(edge_mask, bool)
+    supported = np.abs(B2_all) > 0             # (n_edges, p) edge membership
+    missing = supported & ~edge_mask[:, None]  # edges of tau that are unobserved
+    return ~missing.any(axis=0)
