@@ -251,3 +251,73 @@ def test_sample_complexity_and_fano_are_consistent():
 def test_rho2_definition_links_first_and_second_order_snr():
     assert second_order_snr(2.0, 1.0) == pytest.approx(4.0)
     assert tetra_confuser_chernoff_small_snr(0.1, 1.0) == pytest.approx(1e-4)
+
+
+def test_exhaustive_k5_confuser_separations():
+    """EXHAUSTIVE over all 2^10 supports of K5: the unrestricted minimum
+    curl-domain separation over equal-image distinct pairs is 9 (the SUBSET
+    confuser: S vs S plus the fourth face of a hosted tetrahedron), while the
+    minimum over EQUAL-CARDINALITY pairs is 16 (tetrahedral swaps). This is
+    the verification the paper cites; an earlier revision wrongly claimed 16
+    was the unrestricted minimum."""
+    cx = complete_complex(5)
+    _, B2 = build_incidences(cx)
+    U = curl_domain_signatures(B2)
+    p = B2.shape[1]
+
+    supports = [tuple(s) for k in range(p + 1)
+                for s in combinations(range(p), k)]
+    # group supports by their curl-image projector (equal image <=> same key)
+    groups: dict[bytes, list[tuple]] = {}
+    Ms = {}
+    for s in supports:
+        cols = B2[:, list(s)]
+        if s:
+            Uc, sv, _ = np.linalg.svd(cols, full_matrices=False)
+            Ur = Uc[:, sv > 1e-9]
+            P = Ur @ Ur.T
+        else:
+            P = np.zeros((B2.shape[0], B2.shape[0]))
+        key = (np.round(P, 4) + 0.0).tobytes()  # +0.0 normalizes -0.0
+        groups.setdefault(key, []).append(s)
+        Us = U[:, list(s)]
+        Ms[s] = Us @ Us.T if s else np.zeros((U.shape[0], U.shape[0]))
+
+    min_all, min_eqk, n_pairs = np.inf, np.inf, 0
+    for members in groups.values():
+        for i in range(len(members)):
+            for j in range(i + 1, len(members)):
+                a, b = members[i], members[j]
+                n_pairs += 1
+                d = float(np.linalg.norm(Ms[a] - Ms[b]) ** 2)
+                min_all = min(min_all, d)
+                if len(a) == len(b):
+                    min_eqk = min(min_eqk, d)
+    assert n_pairs > 40000                      # the family is genuinely large
+    assert min_all == pytest.approx(9.0, abs=1e-9)
+    assert min_eqk == pytest.approx(16.0, abs=1e-9)
+
+
+def test_subset_confuser_exponent_equals_isolated_triangle_exponent():
+    """The unrestricted worst-case equal-image exponent equals the
+    isolated-triangle detection exponent: C_subset = (9/16) rho_2^2 (1+o(1))
+    = C(rho)|_{rho=3 rho_2}. Rank deficiency is free at the exponent level."""
+    from tfl.limits import (curl_variances, gaussian_chernoff_information,
+                            subset_confuser_chernoff_small_snr)
+
+    cx = complete_complex(5)
+    _, B2 = build_incidences(cx)
+    quad = candidate_tetrahedra(cx.triangles)[0]
+    p = B2.shape[1]
+    s3 = np.zeros(p, bool); s3[list(quad[:3])] = True
+    s4 = s3.copy(); s4[quad[3]] = True
+
+    rho2 = 1e-4
+    sc, sn = np.sqrt(rho2), 1.0
+    C_sub = confuser_pair_chernoff(B2, s3, s4, sc, sn)
+    v0, v1 = curl_variances(sc, sn)
+    C_single, _ = gaussian_chernoff_information(v0, v1)
+    assert C_sub == pytest.approx(9.0 / 16.0 * rho2**2, rel=2e-3)
+    assert C_sub == pytest.approx(C_single, rel=2e-3)
+    assert subset_confuser_chernoff_small_snr(sc, sn) == pytest.approx(
+        9.0 / 16.0 * rho2**2)

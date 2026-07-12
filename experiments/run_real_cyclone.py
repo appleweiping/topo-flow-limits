@@ -4,12 +4,21 @@ ERA5 edge flows.
 This is the experiment the FX/traffic studies could not provide: the latent
 triangle structure being recovered is genuinely present in nature (cyclone
 circulation), nothing is planted, and the recovery is validated against two
-independent ground truths:
+references:
 
-  INTERNAL  full-resolution relative vorticity (finite differences on the
-            0.7 deg grid the mesh detector never sees) -> ROC / AUC;
-  EXTERNAL  IBTrACS best-track cyclone positions (agency-verified, fully
-            independent of the reanalysis) -> precision / recall.
+  INTERNAL  relative vorticity by finite differences on the FULL SOURCE GRID
+            (0.7 deg; the mesh detector only sees 2.1-deg edge flows). Honest
+            scope: this is a SAME-FIELD consistency reference computed from
+            the same u,v arrays by a different functional at 3x finer
+            resolution -- not an independent measurement;
+  EXTERNAL  IBTrACS best-track cyclone positions (agency-verified, genuinely
+            independent of the reanalysis) -> ROC / precision.
+
+BASELINE  a classical non-simplicial comparator at the same information
+          budget: pointwise finite-difference vorticity computed from the
+          winds subsampled AT THE MESH NODES (2.1 deg), averaged per
+          triangle. The edge-flow detector should not lose to it; the
+          contribution here is the limits framework, not a new TC detector.
 
 Pipeline per 4-day window (16 six-hourly snapshots):
   wind field -> mesh edge flows F -> temporally centered curl-ENERGY scores
@@ -127,7 +136,16 @@ def main() -> None:
 
     all_scores, all_int_gt, all_ext_gt = [], [], []
     per_window = []
-    all_scores_wh = []
+    # classical baseline inputs: winds subsampled at the mesh nodes (2.1 deg)
+    lat_c = lat[np.unique(mesh.lat_idx)]
+    lon_c = lon[np.unique(mesh.lon_idx)]
+    u_c = u[:, np.unique(mesh.lat_idx)][:, :, np.unique(mesh.lon_idx)]
+    v_c = v[:, np.unique(mesh.lat_idx)][:, :, np.unique(mesh.lon_idx)]
+    coarse_mesh = triangular_mesh(lat_c, lon_c, 1)
+    assert len(coarse_mesh.cx.triangles) == len(mesh.cx.triangles)
+    coarse_pts = triangle_grid_points(coarse_mesh, lat_c, lon_c)
+
+    all_scores_wh, all_scores_base = [], []
     for w in windows:
         F = F_all[:, w]
         ds = dataset_from_flows(F, B1, B2, mesh.cx)
@@ -135,6 +153,9 @@ def main() -> None:
         C = C - C.mean(axis=1, keepdims=True)      # centered curl statistic
         scores = np.mean(C**2, axis=1) / area_norm  # energy on vorticity scale
         scores_wh = whitened_curl_scores(ds, center=True) / area_norm
+        # baseline: coarse pointwise FD vorticity from mesh-node winds
+        zeta_c = grid_vorticity(u_c[w], v_c[w], lat_c, lon_c)
+        scores_base = triangle_mean_abs_vorticity(zeta_c, coarse_pts)
 
         zeta = grid_vorticity(u[w], v[w], lat, lon)
         gt_vort = triangle_mean_abs_vorticity(zeta, tri_pts)
@@ -142,6 +163,7 @@ def main() -> None:
 
         all_scores.append(scores)
         all_scores_wh.append(scores_wh)
+        all_scores_base.append(scores_base)
         all_int_gt.append(gt_vort)
         all_ext_gt.append(ext)
         per_window.append({
@@ -151,6 +173,7 @@ def main() -> None:
 
     scores_flat = np.concatenate(all_scores)
     scores_wh_flat = np.concatenate(all_scores_wh)
+    scores_base_flat = np.concatenate(all_scores_base)
     int_gt_flat = np.concatenate(all_int_gt)
     ext_gt_flat = np.concatenate(all_ext_gt)
 
@@ -180,6 +203,17 @@ def main() -> None:
     rho_s_wh, _ = spearmanr(scores_wh_flat, int_gt_flat)
     print(f"decorrelated variant: AUC_int={auc_i_wh:.3f} AUC_ext={auc_e_wh:.3f} "
           f"spearman={rho_s_wh:.3f}")
+    # classical baseline at the same information budget
+    fpr_b, tpr_b, auc_i_base = roc_curve(scores_base_flat, int_labels)
+    _, _, auc_e_base = roc_curve(scores_base_flat, ext_gt_flat)
+    print(f"coarse-vorticity baseline: AUC_int={auc_i_base:.3f} "
+          f"AUC_ext={auc_e_base:.3f}")
+    # sensitivity of the internal AUC to the vorticity threshold
+    thresh_sweep = {}
+    for th in (1e-5, 2e-5, 3e-5, 4e-5, 5e-5):
+        _, _, a = roc_curve(scores_flat, int_gt_flat > th)
+        thresh_sweep[f"{th:.0e}"] = float(a)
+    print("threshold sweep (internal AUC):", thresh_sweep)
 
     # ---- degradation: snapshot budget vs detection quality ----
     # pick the most active window (most external positives) and degrade N
@@ -189,7 +223,9 @@ def main() -> None:
     gt_labels_w = triangle_mean_abs_vorticity(zeta, tri_pts) > VORT_THRESH
     rng = np.random.default_rng(0)
     noise_levels = [0.0, 0.5, 1.0, 2.0]
-    Ns = [2, 3, 4, 6, 8, 12, 16]
+    Ns = [3, 4, 6, 8, 12, 16]  # N >= 3 so the CENTERED statistic is used
+                               # uniformly (mixing statistics across N made
+                               # the curve non-monotone and uninterpretable)
     degradation = {}
     F_w = F_all[:, w]
     flow_rms = float(np.sqrt(np.mean(F_w**2)))
@@ -201,8 +237,7 @@ def main() -> None:
                 idx = rng.choice(WINDOW_LEN, size=N, replace=False)
                 F = F_w[:, idx] + nl * flow_rms * rng.standard_normal((F_w.shape[0], N))
                 C = B2.T @ F
-                if N >= 3:
-                    C = C - C.mean(axis=1, keepdims=True)
+                C = C - C.mean(axis=1, keepdims=True)
                 s = np.mean(C**2, axis=1) / area_norm
                 _, _, a = roc_curve(s, gt_labels_w)
                 vals.append(a)
@@ -234,6 +269,8 @@ def main() -> None:
     ax = fig.add_subplot(1, 3, 2)
     ax.plot(fpr_i, tpr_i, label=f"internal (vorticity), AUC={auc_i:.3f}")
     ax.plot(fpr_e, tpr_e, label=f"external (IBTrACS), AUC={auc_e:.3f}")
+    ax.plot(fpr_b, tpr_b, ":", color="gray",
+            label=f"baseline: coarse FD vorticity, AUC={auc_i_base:.3f}")
     ax.plot([0, 1], [0, 1], "k:", lw=0.8)
     ax.set_xlabel("false-positive rate")
     ax.set_ylabel("true-positive rate")
@@ -245,11 +282,11 @@ def main() -> None:
         ax.plot(Ns, degradation[str(nl)], "o-", label=f"noise x{nl}")
     ax2 = ax.twinx()
     ax2.plot(Ns, rho_floor, "k--", alpha=0.6, label=r"theory $\rho^\star(N)$")
-    ax2.set_ylabel(r"$\rho^\star(N)$ (theory floor)")
+    ax2.set_ylabel(r"$\rho^\star(N)$ (theory floor, reference)")
     ax2.set_yscale("log")
     ax.set_xlabel("snapshots N in window")
     ax.set_ylabel("AUC vs internal GT")
-    ax.set_title("(C) budget degradation vs theory scaling")
+    ax.set_title("(C) budget degradation (theory floor for reference)")
     ax.legend(loc="lower right", fontsize=8)
 
     fig.tight_layout()
@@ -278,6 +315,13 @@ def main() -> None:
                                  "note": "G^{-1} noise amplification hurts pure "
                                          "detection ranking on this nearly-regular "
                                          "full-rank mesh"},
+        "baseline_coarse_fd_vorticity": {
+            "auc_internal": float(auc_i_base), "auc_external": float(auc_e_base),
+            "note": "classical pointwise FD vorticity from winds subsampled at "
+                    "the mesh nodes (2.1 deg) — same information budget; the "
+                    "edge-flow statistic should match it (the contribution is "
+                    "the limits framework, not a new TC detector)"},
+        "internal_auc_vs_vorticity_threshold": thresh_sweep,
         "degradation": {"Ns": Ns, "noise_levels": noise_levels,
                         "auc_by_noise": degradation,
                         "theory_rho_floor": [float(r) for r in rho_floor]},

@@ -34,12 +34,15 @@ Higher-Order Structure Identifiability from Edge Flows''}
 \maketitle
 
 \noindent
-This supplement extends the main paper in three directions: \textbf{S1}
+This supplement extends the main paper in five directions: \textbf{S1}
 Fano-type converses for \emph{joint} support recovery (including a
 signal-distribution-agnostic bound and a sub-Gaussian achievability
 counterpart); \textbf{S2} identifiability under \emph{partial edge
 observation}; \textbf{S3} \emph{plug-in} estimation of the variance parameters
-and a fully adaptive detector. All statements are validated numerically by the
+and a fully adaptive detector; \textbf{S4} full proofs of the main paper's
+lifted-spark lemma and first- vs.\ second-order identifiability dichotomy,
+with exhaustive numerical verification; \textbf{S5} construction details of
+the cyclone recovery study. All statements are validated numerically by the
 released test-suite; Section~\ref{sec:repro} maps every figure to its script.
 Notation follows the main paper: $N$ snapshots, candidate set $\Tcal$ with
 $p=|\Tcal|$, latent support $\Scal$ with $|\Scal|=k$, curl-SNR
@@ -400,9 +403,9 @@ satisfy $\bm b_{012}-\bm b_{013}+\bm b_{023}-\bm b_{123}=\bm 0$ (boundary of
 the solid $3$-simplex), so any three faces span the same $3$-space as any
 other three. On $K_n$ ($n\ge4$) there are $\binom n4$ tetrahedra.
 
-\subsection{The price: exact separation and Chernoff exponent}
+\subsection{The price: exact separations and Chernoff exponents}
 
-\begin{lemma}[Universal swap separation]\label{lem:sep16}
+\begin{lemma}[Swap separation]\label{lem:sep16}
 Let $\Scal'=\Scal\setminus\{\tau_a\}\cup\{\tau_b\}$ with $\tau_a,\tau_b$
 faces of a common tetrahedron. Then
 $\bm\Sigma_z(\Scal)-\bm\Sigma_z(\Scal')
@@ -416,20 +419,45 @@ independent of $n$, of $|\Scal|$, and of the hosting tetrahedron (any two
 faces share exactly one edge, so $\bm u_a^{\!\top}\bm u_b=G_{ab}=\pm1$).
 \end{lemma}
 
-\begin{proposition}[Chernoff exponent of the minimal confuser]\label{prop:cg}
+\begin{lemma}[Subset separation --- the unrestricted worst case]\label{lem:sep9}
+Let $\Scal'=\Scal\cup\{\tau_4\}$ where $\tau_4$ is the fourth face of a
+tetrahedron whose other three faces lie in $\Scal$. Then
+$\mathrm{im}\,\B_{2,\Scal}=\mathrm{im}\,\B_{2,\Scal'}$ (the face signatures
+are linearly dependent) while
+$\bm\Sigma_z(\Scal')-\bm\Sigma_z(\Scal)=\sigma_c^2\bm u_4\bm u_4^{\!\top}$
+with separation $\|\bm u_4\bm u_4^{\!\top}\|_F^2=\|\bm u_4\|^4=9$.
+Exhaustively over ALL $2^{10}$ supports of $K_5$
+(\texttt{test\_exhaustive\_k5\_confuser\_separations}: $45{,}000+$
+equal-image distinct pairs), $9$ is the \emph{unrestricted minimum}
+separation, while restricted to pairs of \emph{equal cardinality} the
+minimum is $16$, attained exactly by the swaps of
+Lemma~\ref{lem:sep16}. (An earlier revision of this project wrongly claimed
+$16$ as the unrestricted minimum; the equal-cardinality scoping is
+essential.)
+\end{lemma}
+
+\begin{proposition}[Chernoff exponents; rank deficiency is free at the
+exponent level]\label{prop:cg}
 Let $C_G$ be the Chernoff information between
 $\mathcal N(\bm 0,\bm\Sigma_z(\Scal))$ and
-$\mathcal N(\bm 0,\bm\Sigma_z(\Scal'))$ for a tetrahedral swap. As
-$\rho_2\to0$,
+$\mathcal N(\bm 0,\bm\Sigma_z(\Scal'))$. As $\rho_2\to0$,
 \[
-C_G=\tfrac{1}{16}\,\rho_2^2\,
-\|\bm u_a\bm u_a^{\!\top}-\bm u_b\bm u_b^{\!\top}\|_F^2\,(1+o(1))
-=\rho_2^2\,(1+o(1)),
+C_G=\tfrac{1}{16}\,\rho_2^2\,\|\Delta\bm M\|_F^2\,(1+o(1))
+=\begin{cases}
+\rho_2^2\,(1+o(1)) & \text{swap (Lemma~\ref{lem:sep16})},\\[2pt]
+\tfrac9{16}\rho_2^2\,(1+o(1)) & \text{subset (Lemma~\ref{lem:sep9})},
+\end{cases}
 \]
-and the optimal error of the binary test from $N$ snapshots satisfies
-$P_{\rm err}\le e^{-N C_G}$, with matching exponent
-($\liminf_N -\tfrac1N\log P_{\rm err}=C_G$). Hence
-$N^\star(\delta)\sim\log(1/\delta)/\rho_2^2$.
+the optimal error satisfies $P_{\rm err}\le e^{-N C_G}$ with matching
+exponent, and $N^\star(\delta)\sim\log(1/\delta)/C_G$. Moreover the
+subset exponent \emph{equals} the isolated-triangle detection exponent:
+$C(\rho)=\rho^2/16$ at $\rho=3\rho_2$ is $\tfrac9{16}\rho_2^2$
+(verified to $2\times10^{-5}$ relative at $\rho_2=10^{-5}$,
+\texttt{test\_subset\_confuser\_exponent\_equals\_isolated\_triangle\_exponent}).
+Hence the hardest equal-image decision costs, at the exponent level, exactly
+one isolated-triangle detection: geometric rank deficiency imposes no
+exponent penalty, and only the Fano log-multiplicity of the confuser family
+reflects the geometry.
 \end{proposition}
 \begin{proof}[Proof sketch]
 Write $\bm E=\bm\Sigma_0^{-1/2}(\bm\Sigma_1-\bm\Sigma_0)\bm\Sigma_0^{-1/2}$.
@@ -466,13 +494,16 @@ Monte-Carlo: (i) Lemma~\ref{lem:spark-supp} on $K_4$--$K_9$, strips, disjoint
 unions, and random clique complexes; (ii) injectivity of
 $\Scal\mapsto\bm\Sigma_z(\Scal)$ \emph{exhaustively} over all $2^4$ supports
 of $K_4$; (iii) the deterministic replication of first-order confusers
-(residual $<10^{-9}$); (iv) separation exactly $16$ for every tetrahedral
-swap, and (exhaustively on $K_5$, all support sizes $k\le5$) minimality of
-$16$ over \emph{all} equal-image pairs; (v)
-$C_G/\rho_2^2\in[0.95,1.005]$ for $\rho_2\le10^{-2}$ and the Monte-Carlo
-error of the optimal test within the $e^{-NC_G}$ envelope with empirical
-exponent decreasing onto $C_G$; (vi) exact greedy covariance-atom recovery on
-rank-deficient $K_5$ (the regime where first-order arguments forbid it).
+(residual $<10^{-9}$); (iv) exhaustively over ALL $2^{10}$ supports of $K_5$
+($45{,}000+$ equal-image distinct pairs): unrestricted minimum separation
+$=9$ (subset confusers, Lemma~\ref{lem:sep9}) and equal-cardinality minimum
+$=16$ (swaps, Lemma~\ref{lem:sep16}); (v) swap
+$C_G/\rho_2^2\in[0.95,1.005]$ for $\rho_2\le10^{-2}$, subset
+$C_G=\tfrac9{16}\rho_2^2$ matching the isolated-triangle exponent to
+$2\times10^{-3}$ relative, and the Monte-Carlo error of the optimal test
+within the $e^{-NC_G}$ envelope with empirical exponent decreasing onto
+$C_G$; (vi) exact greedy covariance-atom recovery on rank-deficient $K_5$
+(the regime where first-order arguments forbid it).
 
 \section{The cyclone study: construction details}\label{sec:cyclone}
 
@@ -496,16 +527,22 @@ circulation, i.e.\ area-integrated relative vorticity; a sign convention
 (sorted-vertex traversal vs.\ geometric orientation) is tracked explicitly in
 the code and is irrelevant to the energy detector.
 
-\paragraph{Detection.} Per 4-day window (16 snapshots), the temporally
-centered decorrelated scores $\hat{\bm y}=\bm G^{-1}\bm c$ are computed with
-NO oracle parameters: centering removes any window-constant background
-exactly, and thresholds/scales are plug-in (\S\ref{sec:plugin} machinery).
-Windows are the device that maps the i.i.d.-snapshot theory onto moving
-weather: a cyclone translates $\sim$$3$--$6^\circ$/day, so over 4 days it
-crosses a few $2.1^\circ$ triangles --- the "support" is quasi-static at the
-window scale, and the per-window scores are pooled across the season for
-evaluation. This is an idealization and is labeled as such (README honesty
-note 9).
+\paragraph{Detection.} Per 4-day window (16 snapshots), the headline
+statistic is the temporally centered curl-\emph{energy} score of the main
+paper's Prop.~1, area$^2$-normalized to a common mean-vorticity scale; it is
+parameter-free (no thresholds are set --- evaluation is by ROC ranking), and
+nothing is planted. The Thm.~2 decorrelated score is computed alongside and
+reported in the released JSON; its $\bm G^{-1}$ noise amplification hurts
+pure detection ranking on this near-regular full-rank mesh (internal AUC
+$0.773$ vs.\ $0.914$). Honest statement about motion: cyclones translate
+$3$--$6^\circ$/day, i.e.\ $\sim$$6$--$11$ triangle-widths over a 4-day
+window --- the latent support is \emph{not} static. Temporal centering
+removes the window-mean flow, so what the statistic detects is the
+\emph{time-varying} circulation that a translating vortex deposits in every
+triangle it crosses (a perfectly static vortex would be removed by the
+centering); the i.i.d.-snapshot theory is thus a working model here, mapped
+through window-pooled ROC evaluation rather than through per-window support
+recovery. README honesty note 9 states the same.
 
 \paragraph{Validation.} Internal: relative vorticity
 $\zeta=\partial_x v-\partial_y u$ by centered differences on the FULL

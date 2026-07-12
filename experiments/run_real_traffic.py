@@ -151,7 +151,7 @@ def recovery_panel(seed: int = SEED) -> dict:
     return {
         "network": "Anaheim", "n_candidates": p, "n_active": N_ACTIVE,
         "rho": RHO, "sigma_noise": sn, "sigma_grad": 1.0, "sigma_harm": 0.5,
-        "background": "real UE flow, unit RMS", "detector": "whitened, centered (df=N-1)",
+        "background": "real UE flow, unit RMS", "detector": "decorrelated (GLS), centered (df=N-1)",
         "N_grid": N_GRID, "empirical": emp,
         "theory_product_exact": theory, "union_bound": union,
         "n_trials": N_TRIALS, "seed": seed,
@@ -200,7 +200,7 @@ def recovery_panel_ema(seed: int = SEED) -> dict:
         "n_edge_sharing_pairs": n_sharing_pairs,
         "Gp_diag_range": [float(Gp_diag.min()), float(Gp_diag.max())],
         "rho": RHO, "sigma_noise": sn, "sigma_grad": 1.0, "sigma_harm": 0.5,
-        "detector": "whitened (heterogeneous v0_tau), uncentered (df=N)",
+        "detector": "decorrelated (GLS, heterogeneous v0_tau), uncentered (df=N)",
         "N_grid": N_GRID, "empirical": emp,
         "theory_product_approx": theory, "union_bound": union,
         "n_trials": N_TRIALS, "seed": seed,
@@ -225,7 +225,7 @@ def _plot(geo: list[dict], rec: dict, rec_ema: dict):
     a0.grid(alpha=0.3, axis="y")
 
     N = rec["N_grid"]
-    a1.plot(N, rec["empirical"], "^-", label="whitened (centered): empirical")
+    a1.plot(N, rec["empirical"], "^-", label="decorrelated (centered): empirical")
     a1.plot(N, rec["theory_product_exact"], "k--",
             label="exact product law (df=$N{-}1$)")
     a1.plot(N, rec["union_bound"], "k:", label="union bound")
@@ -239,7 +239,7 @@ def _plot(geo: list[dict], rec: dict, rec_ema: dict):
 
     Ne = rec_ema["N_grid"]
     a2.plot(Ne, rec_ema["empirical"], "^-", color="tab:purple",
-            label="whitened: empirical")
+            label="decorrelated: empirical")
     a2.plot(Ne, rec_ema["theory_product_approx"], "k--",
             label="product law (indep. approx.)")
     a2.plot(Ne, rec_ema["union_bound"], "k:", label="union bound (rigorous)")

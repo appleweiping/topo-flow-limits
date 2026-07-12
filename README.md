@@ -21,9 +21,12 @@ by the test suite before it is allowed into the manuscript.
 > graph the observable curl subspace carries only a `3/n` degrees-of-freedom
 > ratio), yet under *random* signals **every support is identifiable at any rank
 > deficiency**, because the lifted signatures `{b_τ b_τᵀ}` are always linearly
-> independent. Unfavorable geometry costs **snapshots, not possibility**: the
-> minimal confusers (tetrahedral face swaps) have universal curl-domain
-> separation 16, giving error exponent `ρ₂²` and budget `N* ~ log(1/δ)/ρ₂²`.
+> independent. Unfavorable geometry costs **snapshots, not possibility** —
+> and remarkably few: the worst-case equal-image confuser (adding a
+> tetrahedron's 4th face; exhaustively verified on K5) has error exponent
+> `(9/16)ρ₂²`, **exactly the isolated-triangle detection exponent** — rank
+> deficiency is free at the exponent level, and only a log-multiplicity
+> factor reflects the geometry.
 > On the achievability side, the project recovers **genuine, unplanted
 > higher-order structure from real data**: tropical-cyclone circulation from
 > ERA5 wind-field edge flows, validated against both full-resolution vorticity
@@ -266,17 +269,27 @@ The correct statement is a dichotomy:
   all $2^4$ supports of $K_4$; the second-order greedy/lasso estimators
   `greedy_support` / `sparse_curl_covariance_support` are the achievers, and
   recover exact supports on rank-deficient $K_5$ — `test_second_order_recovery_succeeds_in_rank_deficient_regime`).
-- **The price (sample complexity).** Telling a minimal confuser pair apart —
-  a tetrahedral face swap — costs $N^\star \sim \log(1/\delta)/C_G$ snapshots,
-  where $C_G$ is the Gaussian Chernoff information between the two curl-domain
-  covariances. The swap separation is **universal**:
-  $\|u_a u_a^\top - u_b u_b^\top\|_F^2 = 9+9-2 = 16$ exactly (faces share one
-  edge), independent of $n$, of $|S|$, and of the hosting tetrahedron —
-  exhaustively minimal over *all* equal-image pairs on $K_5$. The Bhattacharyya
-  expansion then gives $C_G = (\rho_2^2/16)\cdot 16\,(1+o(1)) = \rho_2^2$ with
-  $\rho_2=\sigma_c^2/\sigma_n^2$ (validated to ratio 0.998 at $\rho_2=5\times10^{-4}$),
-  and a Fano argument over the $4\binom n4$ tetrahedral hypotheses adds a
-  $\log n$ factor. **Geometry costs snapshots, not possibility.**
+- **The price (sample complexity).** Telling a confuser pair apart costs
+  $N^\star \sim \log(1/\delta)/C_G$ snapshots, $C_G$ = the Gaussian Chernoff
+  information between the two curl-domain covariances. The tetrahedron hosts
+  two kinds of equal-image confusers, with exact separations (both verified
+  **exhaustively over all $2^{10}$ supports of $K_5$**, 45 000+ equal-image
+  pairs — `test_exhaustive_k5_confuser_separations`):
+  the face **swap** with $\|u_a u_a^\top - u_b u_b^\top\|_F^2 = 9+9-2 = 16$
+  (the minimum among supports of **equal cardinality**; independent of $n$,
+  $|S|$, and the hosting tetrahedron), and the **subset** confuser $S$ vs
+  $S\cup\{\text{4th face}\}$ with $\|u_4 u_4^\top\|_F^2 = 9$ — the
+  **unrestricted minimum** (an earlier revision wrongly claimed 16 here; see
+  honesty note 7). The Bhattacharyya expansion
+  $C_G = (\rho_2^2/16)\|\Delta M\|_F^2\,(1+o(1))$ gives exponents $\rho_2^2$
+  (swap; validated to ratio 0.998) and $(9/16)\rho_2^2$ (subset) — and
+  $(9/16)\rho_2^2$ **equals the isolated-triangle detection exponent**
+  $C(\rho)=\rho^2/16$ at $\rho=3\rho_2$ (validated to $2\times10^{-3}$
+  relative — `test_subset_confuser_exponent_equals_isolated_triangle_exponent`).
+  So the hardest equal-image decision costs, at the exponent level, exactly
+  one isolated-triangle detection: **rank deficiency is free at the exponent
+  level**; only the Fano log-multiplicity over the $4\binom n4$ tetrahedral
+  hypotheses ($\asymp\log n$) reflects the geometry.
 
 Implementation: `curl_domain_signatures`, `second_order_covariance`,
 `matrix_gaussian_chernoff`, `candidate_tetrahedra`,
@@ -300,8 +313,14 @@ quantitative: **AUC 0.914**, Spearman 0.77) and the IBTrACS best-track
 cyclone archive (external, agency-verified, independent of the reanalysis:
 **AUC 0.920**, precision@k 0.48). The mesh is simply connected, so $B_2$ has
 full column rank by Euler's formula — the favorable-geometry regime of R5's
-dichotomy, with no confusers. Degrading the snapshot budget traces the
-predicted $1/\sqrt N$ detectability scaling on real data.
+dichotomy, with no confusers. Detection degrades as the snapshot budget
+shrinks (uniformly centered statistic, $N \ge 3$; the theory floor
+$\rho^\star(N)$ is shown for reference — we make no quantitative
+$1/\sqrt N$-tracking claim on real weather). Against a classical baseline
+(pointwise vorticity from the same 2.1° mesh-node winds), the edge-flow
+statistic wins on the independent external reference (0.920 vs 0.898) and
+is slightly below on the internal one (0.914 vs 0.948), which shares its
+functional with the baseline.
 
 **Real-geometry checks (Figure 4):** on three standard TNTP traffic networks
 the street geometry contains few 3-cliques and $B_2$ has **full column rank**
@@ -361,7 +380,12 @@ ground truths: internal (full-resolution finite-difference vorticity —
 strictly finer than anything the mesh detector sees): **AUC 0.914**; external
 (IBTrACS, independent of the reanalysis): **AUC 0.920**, precision@k 0.48,
 Spearman(score, |ζ|) = 0.77. **(C)** Detection quality vs snapshot budget $N$
-within windows, degrading along the predicted $1/\sqrt N$ scaling. Statistic
+within windows (uniformly centered, $N\ge3$; theory floor for reference —
+no quantitative $1/\sqrt N$-tracking claim). Internal-threshold sensitivity:
+AUC 0.876→0.959 across thresholds $10^{-5}$–$5\times10^{-5}$ s⁻¹ (in the
+JSON). Baseline: coarse pointwise vorticity at the same information budget —
+external AUC 0.898 (ours 0.920), internal 0.948 (ours 0.914; it shares the
+GT's functional). Statistic
 choice stated honestly: the GLS-decorrelated score (R4) targets
 exact-support recovery under leakage; on this nearly-regular full-rank mesh
 its $G^{-1}$ noise amplification hurts pure detection ranking (AUC 0.77 int /
@@ -741,25 +765,34 @@ Stated plainly, because reviewers (and users) deserve to know:
    laws are exact *marginals*; the joint recovery probability is guaranteed only
    via the union bound. The product form is an independence approximation (exact
    for edge-disjoint candidates) that happens to be tight in our benchmarks.
-7. **A corrected theorem (scientific honesty).** An earlier revision of this
-   project stated the rank obstruction in the false general form — "supports
-   with equal curl image induce identical flow distributions, indistinguishable
-   at any SNR and any $N$". That is true for *deterministic* signals but false
-   for the random-signal model: the covariance is strictly finer than the
-   column image, the lifted atoms are linearly independent (spark lemma), and
-   the project's own second-order estimators recover supports beyond
-   $\mathrm{rank}(B_2)$. The corrected statement is the first-/second-order
-   dichotomy of R5, found by adversarial multi-agent review of our own draft
-   and now exhaustively tested (`tests/test_second_order.py`). We keep this
-   note because silent correction would defeat the purpose of a limits paper.
+7. **Corrected claims (scientific honesty).** Two errors were caught by
+   adversarial multi-agent review of our own drafts and are corrected rather
+   than silently fixed. (a) An earlier revision stated the rank obstruction
+   in the false general form — "supports with equal curl image induce
+   identical flow distributions, indistinguishable at any SNR and any $N$".
+   True for *deterministic* signals; false for the random model (the
+   covariance is strictly finer than the column image; spark lemma). The
+   corrected statement is R5's dichotomy. (b) A subsequent revision claimed
+   the tetrahedral *swap* separation 16 was "exhaustively minimal over all
+   equal-image pairs on $K_5$" — the scan behind that claim only compared
+   supports of equal cardinality. The unrestricted minimum is **9** (the
+   subset confuser), now verified by a genuinely exhaustive test over all
+   $2^{10}$ supports (`test_exhaustive_k5_confuser_separations`) — and the
+   corrected constant makes the theorem *stronger* (the $(9/16)\rho_2^2$
+   worst case equals the isolated-triangle exponent). A limits paper dies if
+   a constant is wrong; we prefer the scar tissue visible.
 8. **Naming.** The `whitened_*` estimator functions decorrelate the *mean* of
    the curl statistic (GLS/BLUE inversion); the residual noise covariance
    $\sigma_n^2 G^{-1}$ is **not** white. The paper says "geometry-aware
    decorrelation"; function names keep the historical prefix for API stability.
 9. **Cyclone study scope.** The cyclone experiment recovers *unplanted* real
    structure, but the observation model there is an idealization too: 6-hourly
-   snapshots within a window are treated as repeated looks at a quasi-static
-   support (cyclones move slowly relative to the 4-day window / 2.1° mesh), and
+   the latent support is **not** static — cyclones translate 3–6°/day, i.e.
+   ~6–11 triangle-widths per 4-day window. Temporal centering removes the
+   window-mean flow, so the statistic detects the *time-varying* circulation
+   a translating vortex deposits in every triangle it crosses (a perfectly
+   static vortex would be removed by the centering); evaluation is by
+   window-pooled ROC ranking, not per-window support recovery, and
    the detector's Gaussian null is a working model for weather-scale
    fluctuations, calibrated by plug-in estimation rather than assumed known.
 
@@ -767,9 +800,12 @@ Stated plainly, because reviewers (and users) deserve to know:
 
 ## 12. Supplement: Fano converses, partial sampling, plug-in estimation
 
-Three extensions live in [`paper/supplement.pdf`](paper/supplement.pdf)
-(LaTeX source `paper/supplement.tex`; the main paper cites it in the
-conclusion). Each has code, tests, a figure, and JSON metrics.
+Five sections live in [`paper/supplement.pdf`](paper/supplement.pdf) (LaTeX
+source `paper/supplement.tex`; the main paper cites it): the three extensions
+below, plus **§S4** — full proofs of the lifted-spark lemma and the first-/
+second-order dichotomy with their exhaustive numerical verification — and
+**§S5** — construction details of the cyclone recovery study. Each extension
+has code, tests, a figure, and JSON metrics.
 
 ### S1 — Fano converses for *joint* support recovery
 
@@ -918,14 +954,21 @@ curl detectors (supplement Rem. S2.3), and temporal dependence
      $\{b_\tau b_\tau^\top\}$ **永远线性无关** ⇒ 协方差映射单射 ⇒
      **任意秩亏下每个支持集都可辨识**（二阶贪心/lasso 估计器就是实现者，
      在秩亏的 $K_5$ 上精确恢复）；
-   - **代价（样本复杂度）**：区分最小混淆对（四面体面交换）需
-     $N^\star\sim\log(1/\delta)/C_G$，其中交换分离度**普适地**等于
-     $9+9-2=16$（与 $n$、支持集大小、宿主四面体全都无关；在 $K_5$ 上
-     穷举验证为所有等像对的最小值），于是 $C_G=\rho_2^2(1+o(1))$，
-     $\rho_2=\sigma_c^2/\sigma_n^2$；对 $4\binom n4$ 个四面体假设做 Fano
-     再加一个 $\log n$ 因子。**几何的代价是快照数，不是不可能。**
+   - **代价（样本复杂度）**：区分一个混淆对需
+     $N^\star\sim\log(1/\delta)/C_G$。四面体承载两类等像混淆对（均已在
+     $K_5$ 上对全部 $2^{10}$ 个支持集、45000+ 等像对**穷举验证**）：
+     **面交换**分离度恰为 $9+9-2=16$（**等基数**支持集中的最小值；与
+     $n$、$|S|$、宿主四面体无关），**子集混淆对**（$S$ vs $S\cup\{$第四
+     面$\}$）分离度恰为 $9$ ——**无限制最小值**（早期版本误称 16 为无限制
+     最小值，见诚实注记 7）。于是交换的 $C_G=\rho_2^2(1+o(1))$，子集的
+     $C_G=\tfrac{9}{16}\rho_2^2(1+o(1))$ ——而后者**恰好等于孤立三角形的
+     检测指数** $C(\rho)=\rho^2/16|_{\rho=3\rho_2}$：指数层面上，最难的
+     等像判决只花一次孤立三角形检测的代价——**秩亏在指数层面是免费的**，
+     几何只通过 Fano 的 $\log$ 多重性因子（$4\binom n4$ 个假设，
+     $\asymp\log n$）出现。
 
-**补充材料（`paper/supplement.pdf`，仓库内 6 页）**：
+**补充材料（`paper/supplement.pdf`，仓库内 8 页；除下述三项外还含 S4
+二分定理全部证明与穷举验证、S5 台风实验方法细节）**：
 ① *联合恢复的 Fano converse*——恢复整个大小为 $k$ 的支持集要付出 $\log\binom pk$
 因子（ $\rho^2 N \gtrsim 4\log(p/k)$ ），并给出对**任意信号分布**成立的
 signal-agnostic 变体（稠密支持、高信噪比时反而更紧，取两者逐点最大值）与
@@ -948,7 +991,10 @@ $q^{3k}$ 因子极其残酷（Anaheim 上 $q=0.9$ 即摧毁恢复），且瓶颈
 台风最佳路径档案（外部、机构核验、与再分析完全独立；覆盖 Bavi、Maysak、
 Haishen 等 13 个风暴：**AUC 0.920**，precision@k 0.48）。网格单连通 ⇒
 $B_2$ 满列秩（Euler 公式）⇒ 二分定理的有利几何侧，无混淆对。降采样快照
-预算后，检测质量沿理论的 $1/\sqrt N$ 标度退化。诚实注记：GLS 去相关
+预算后检测质量随之下降（统一使用中心化统计量、$N\ge3$；理论下限仅作参考，
+不宣称定量跟踪 $1/\sqrt N$）。对照经典基线（同信息预算的网格点涡度）：
+外部独立参考上我们更优（0.920 vs 0.898），内部同场参考上略低
+（0.914 vs 0.948——该参考与基线共享泛函）。诚实注记：GLS 去相关
 统计量（R4，面向精确支持集恢复）在这种近规则满秩网格上因 $G^{-1}$
 噪声放大而检测排序更差（AUC 0.77/0.81，已在 JSON 中报告）。
 ② *汇率（一致性校验，诚实重标）*：边流按构造是单一价格向量的梯度

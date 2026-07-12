@@ -14,11 +14,11 @@
 
 \emergencystretch=1.5em
 % tighten float spacing (keeps the 4-page content budget with 4 floats)
-\setlength{\textfloatsep}{9pt plus 2pt minus 3pt}
-\setlength{\floatsep}{7pt plus 2pt minus 2pt}
-\setlength{\abovecaptionskip}{5pt}
-\setlength{\dbltextfloatsep}{9pt plus 2pt minus 3pt}
-\setlength{\dblfloatsep}{7pt plus 2pt minus 2pt}
+\setlength{\textfloatsep}{6pt plus 2pt minus 2pt}
+\setlength{\floatsep}{5pt plus 2pt minus 2pt}
+\setlength{\abovecaptionskip}{3pt}
+\setlength{\dbltextfloatsep}{6pt plus 2pt minus 2pt}
+\setlength{\dblfloatsep}{5pt plus 2pt minus 2pt}
 
 \DeclareMathOperator{\curl}{curl}
 \DeclareMathOperator{\rank}{rank}
@@ -52,13 +52,15 @@ deterministic signals --- on $K_n$ the curl subspace carries a $3/n$
 degrees-of-freedom ratio --- yet under random signals \emph{every} support is
 identifiable at \emph{any} rank deficiency, because the lifted signatures
 $\{\bm b_\tau\bm b_\tau^{\!\top}\}$ are always linearly independent.
-Unfavorable geometry costs sample complexity, not possibility: minimal
-confusers (tetrahedral face swaps) have universal curl-domain separation
-$16$, giving exponent $\rho_2^2(1+o(1))$, $\rho_2=\sigma_c^2/\sigma_n^2$. All
-constants are Monte-Carlo validated, and the theory recovers genuine,
-unplanted structure from real data --- tropical-cyclone circulation from ERA5
-wind-field edge flows, validated against full-resolution vorticity and the
-independent IBTrACS archive. Code and data are released.
+Unfavorable geometry costs sample complexity, not possibility --- and
+remarkably little: the worst-case equal-image confuser (adding a
+tetrahedron's fourth face) has exponent $\tfrac9{16}\rho_2^2(1+o(1))$,
+$\rho_2=\sigma_c^2/\sigma_n^2$, \emph{exactly} the isolated-triangle
+detection exponent --- rank deficiency is free at the exponent level. All
+constants are exhaustively and Monte-Carlo validated, and the framework
+recovers genuine, unplanted structure from real data: tropical-cyclone
+circulation from ERA5 edge flows, validated against source-grid vorticity
+and the independent IBTrACS archive. Code and data are released.
 \end{abstract}
 
 \begin{keywords}
@@ -96,7 +98,7 @@ in the lineage of support-recovery and sparse-covariance detection limits
 \cite{wainwright2009information,amini2009high,berthet2013optimal,cai2010optimal}
 --- our contribution is the reduction that makes them bite, plus one dichotomy
 theorem (Thm.~\ref{thm:rank}) we believe is genuinely new:
-\begin{enumerate}
+\begin{enumerate}\itemsep2pt\parskip0pt\topsep2pt
 \item A \emph{curl-annihilation} reduction (Lemma~\ref{lem:curl}; the
 detection-theoretic use of HodgeRank's observation): the latent structure is
 observable only through the curl, giving a standard two-variance test
@@ -114,14 +116,14 @@ factor's (Thm.~\ref{thm:whiten}), plus a union-bound guarantee
 (Thm.~\ref{thm:rank}) correcting the folklore rank obstruction: equal-image
 supports are indistinguishable under deterministic signals (on $K_n$: a $3/n$
 DoF ratio), yet under random signals \emph{every} support is identifiable at
-\emph{any} rank deficiency (lifted-spark Lemma~\ref{lem:spark}), at a price
-with universal constants (swap separation $16$; exponent $\rho_2^2(1+o(1))$).
+\emph{any} rank deficiency (lifted-spark Lemma~\ref{lem:spark}) --- and the
+worst-case price \emph{equals the isolated-triangle exponent}
+$\tfrac9{16}\rho_2^2$: rank deficiency is free at the exponent level.
 \end{enumerate}
-Every result is Monte-Carlo validated. On real data we recover \emph{genuine,
-unplanted} structure --- cyclone circulation from ERA5 edge flows, validated
-against full-resolution vorticity and the independent IBTrACS archive ---
-with FX as a machine-precision consistency check and road networks grounding
-the recovery laws on real geometry.
+Every result is Monte-Carlo validated. On real data we recover
+\emph{genuine, unplanted} structure --- ERA5 cyclone circulation, validated
+against source-grid vorticity and the independent IBTrACS archive --- with
+FX as a consistency check and road networks grounding the recovery laws.
 
 \section{Background and signal model}
 Fix a graph $(\mathcal V,\mathcal E)$ with node--edge incidence
@@ -193,27 +195,24 @@ $v_1=9\sigma_c^2+3\sigma_n^2=v_0(1+\rho)$ if $\tau\in\Scal$, where
 is the \emph{curl signal-to-noise ratio}.
 
 \begin{proposition}[Two-variance detection]\label{prop:single}
-Detecting an isolated $\tau$ from $N$ snapshots is a two-variance Gaussian test:
-the energy $E=\sum_{t=1}^N c_{\tau,t}^2$ is sufficient, $E/v_i\sim\chi^2_N$ under
-$H_i$, the minimum Bayes error is attained by thresholding $E$ and admits a
-closed form via $\chi^2_N$ tails, and it decays as $\exp(-N\,C(v_0,v_1))$, where
-$C(v_0,v_1)=\max_{s\in[0,1]} g(s)$ is the Gaussian Chernoff information
-\cite{poor1994introduction,cover2006elements}, with $w_i=1/v_i$ and
-\begin{equation}
-g(s)=\tfrac12\big[\log(s w_0+(1-s)w_1)-s\log w_0-(1-s)\log w_1\big].
-\end{equation}
+Detecting an isolated $\tau$ from $N$ snapshots is a standard two-variance
+Gaussian test \cite{poor1994introduction,cover2006elements}: the energy
+$E=\sum_{t=1}^N c_{\tau,t}^2$ is sufficient, $E/v_i\sim\chi^2_N$ under
+$H_i$, the minimum Bayes error is attained by thresholding $E$, admits a
+closed form via $\chi^2_N$ tails, and decays as $\exp(-N\,C(v_0,v_1))$ with
+$C$ the Gaussian Chernoff information
+$\max_{s}\tfrac12[\log(s/v_0+(1-s)/v_1)+s\log v_0+(1-s)\log v_1]$.
 \end{proposition}
 
 \begin{theorem}[Curl-invisibility threshold; joint-recovery converse]\label{thm:invis}
-(a) With $\rho$ as in \eqref{eq:rho}, $C(\rho)=\rho^2/16+o(\rho^2)$ as
-$\rho\to0$. Hence for target error $\delta$ and budget $N$, attaining the
-target error \emph{exponent} requires
+(a) With $\rho$ as in \eqref{eq:rho}, $C(\rho)=\rho^2/16+o(\rho^2)$; hence
+attaining a target error \emph{exponent} $\delta$ at budget $N$ requires
 $\rho\ge\rho^\star(N)=\Theta\big(\sqrt{\log(1/\delta)/N}\big)$ for \emph{any}
 estimator. (b) Recovering a uniformly random size-$k$ support among $p$
 edge-disjoint candidates with error $\le\epsilon$ requires
-$N \ge \big((1-\epsilon)\log\binom pk-\log 2\big)/\big(k\,\mathrm{KL}_1\big)$
-with $\mathrm{KL}_1=(\rho-\log(1+\rho))/2\le\rho^2/4$: joint recovery pays a
-$\log\binom pk$ factor over the single-triangle budget.
+$N \ge \big((1-\epsilon)\log\binom pk-\log 2\big)/(k\,\mathrm{KL}_1)$,
+$\mathrm{KL}_1=(\rho-\log(1+\rho))/2$: joint recovery pays a
+$\log\binom pk$ factor.
 \end{theorem}
 \begin{proof}[Proof sketch]
 (a) Chernoff information is the optimal Bayes error exponent for i.i.d.\
@@ -244,12 +243,12 @@ recovery boundary (Fig.~\ref{fig:phase}).
 \subsection{Confusable triangles: geometry-aware decorrelation}
 Edge-sharing candidates are \emph{confusable}: an active triangle leaks curl
 energy onto neighbours through the off-diagonal entries of $\bm G$, so naive
-curl-energy thresholding fails (Fig.~\ref{fig:conf}, left) and \emph{worsens}
-as $\rho$ grows. The repair is the textbook GLS/BLUE inversion of the curl map
-\cite{kay1993fundamentals} (for invertible $\bm G$, OLS, GLS, BLUE and ML all
-coincide at $\bm G^{-1}\bm c$); what matters here is the \emph{exact
-finite-sample marginal detection law} it induces, with a geometry factor that
-is precisely the classical variance-inflation factor.
+energy thresholding fails (Fig.~\ref{fig:conf}, left) and \emph{worsens} as
+$\rho$ grows. The repair is the textbook GLS/BLUE inversion of the curl map
+\cite{kay1993fundamentals} (for invertible $\bm G$, OLS/GLS/BLUE/ML all
+coincide at $\bm G^{-1}\bm c$); what matters is the \emph{exact marginal
+detection law} it induces, whose geometry factor is the classical
+variance-inflation factor.
 
 \begin{theorem}[Decorrelated marginal laws]\label{thm:whiten}
 Assume $\B_2$ has full column rank, so $\bm G$ is invertible. Let
@@ -281,40 +280,41 @@ $(\bm G^{-1})_{\tau\tau}$ is the price of geometry: $1/3$ when isolated
 What survives arbitrary correlations is a union bound over exact marginals:
 
 \begin{corollary}[Rigorous recovery guarantee]\label{cor:union}
-Threshold each $\sum_t\hat y_{\tau,t}^2$ at its marginal-optimal (or Bonferroni)
-level and let $P_{\mathrm{err},\tau}$ be the resulting marginal error
-probabilities from Theorem~\ref{thm:whiten}. Then
-$\Pr[\hat\Scal=\Scal]\ \ge\ 1-\sum_{\tau\in\Tcal}P_{\mathrm{err},\tau}$,
-regardless of the correlation structure of $\bm e_t$.
+Threshold each $\sum_t\hat y_{\tau,t}^2$ at its marginal-optimal (or
+Bonferroni) level; with $P_{\mathrm{err},\tau}$ the marginal errors of
+Theorem~\ref{thm:whiten},
+$\Pr[\hat\Scal=\Scal]\ge1-\sum_{\tau}P_{\mathrm{err},\tau}$, regardless of
+the correlation of $\bm e_t$.
 \end{corollary}
 
 \begin{remark}[Independence approximation]\label{rem:indep}
-The product $\prod_\tau(1-P_{\mathrm{err},\tau})$ is exact when the scores are
-independent (diagonal $\bm G$; Prop.~\ref{prop:disjoint}) and an approximation
-otherwise; on our diagonally-dominant benchmarks it tracks Monte-Carlo within
-$0.03$ across the transition, while the union bound stays a valid, more
-conservative floor (Fig.~\ref{fig:conf}, right).
+The product $\prod_\tau(1-P_{\mathrm{err},\tau})$ is exact for diagonal
+$\bm G$ (Prop.~\ref{prop:disjoint}) and an approximation otherwise; on our
+diagonally-dominant benchmarks it tracks Monte-Carlo within $0.03$, the
+union bound remaining a valid, more conservative floor
+(Fig.~\ref{fig:conf}, right).
 \end{remark}
 
 \subsection{The rank obstruction is a dichotomy, not impossibility}
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.98\textwidth]{real_cyclone.png}
-\caption{Unplanted recovery of real higher-order structure. (A)~Decorrelated
-curl scores on the mesh for one 4-day window; red circles: independent
-IBTrACS cyclone fixes. (B)~ROC of the (fully plug-in) detector against both
-ground truths across all windows. (C)~Detection quality vs.\ snapshot budget
-$N$, with the theory floor $\rho^\star(N)$ overlaid.}
+\caption{Unplanted recovery of real higher-order structure. (A)~Temporally
+centered curl-energy scores (vorticity scale) on the mesh for one 4-day
+window; red circles: independent IBTrACS cyclone fixes. (B)~ROC across all
+windows against the same-field vorticity reference and the independent
+IBTrACS labels, with the classical coarse-vorticity baseline. (C)~Detection
+quality vs.\ snapshot budget $N$ (theory floor $\rho^\star(N)$ for
+reference).}
 \label{fig:cyclone}
 \end{figure*}
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.98\textwidth]{real_traffic.png}
 \caption{Real road-network geometry. (A)~Full-column-rank $\B_2$: DoF ratio
-$1$ (green) vs.\ $K_9$'s $3/n$ (red). (B)~Anaheim ($\bm G=3\bm I$): planted
-recovery follows the exact edge-disjoint product law (df $N{-}1$ after
-centering out the real background). (C)~EMA (non-diagonal $\bm G$): the
-geometry-aware detector's heterogeneous marginal laws at work on real
+$1$ vs.\ $K_9$'s $3/n$. (B)~Anaheim ($\bm G=3\bm I$): planted recovery
+follows the exact edge-disjoint product law (df $N{-}1$).
+(C)~EMA (non-diagonal $\bm G$): heterogeneous marginal laws on real
 geometry --- empirical vs.\ independence approximation and union bound.}
 \label{fig:traffic}
 \end{figure*}
@@ -349,18 +349,22 @@ $K_n$, $\dim\mathrm{im}\,\B_2=\binom{n-1}{2}$, a $3/n$ DoF ratio.
 $\Scal\mapsto\mathrm{Cov}(\bm f)$ is injective (Lemma~\ref{lem:spark}), so
 \emph{every} support is identifiable from i.i.d.\ snapshots --- at any rank
 deficiency, including all of $K_n$.
-\emph{(iii) The price.} For a minimal confuser pair (a tetrahedral face swap
-$\Scal'=\Scal\setminus\{\tau_a\}\cup\{\tau_b\}$), the optimal test between the
-two curl-coordinate covariances has Chernoff exponent
-$C_G=\rho_2^2\,(1+o(1))$ as $\rho_2\to0$, since the curl-domain separation is
-\emph{universal}:
-$\|\bm u_a\bm u_a^{\!\top}-\bm u_b\bm u_b^{\!\top}\|_F^2
-= 9+9-2(\bm u_a^{\!\top}\bm u_b)^2 = 16$
-(faces share exactly one edge), and the Bhattacharyya expansion gives
-$C_G=(\rho_2^2/16)\cdot16\,(1+o(1))$. Hence distinguishing the pair costs
-$N^\star\sim\log(1/\delta)/\rho_2^2$ snapshots, and a Fano argument over the
-$4\binom n4$ leave-one-face-out hypotheses adds a $\log n$ factor for full
-support recovery on $K_n$.
+\emph{(iii) The price.} The equal-image confusers of a hosted tetrahedron
+come in two kinds, with exact curl-domain separations: the face \emph{swap}
+$\Scal'=\Scal\setminus\{\tau_a\}\cup\{\tau_b\}$ has
+$\|\bm u_a\bm u_a^{\!\top}-\bm u_b\bm u_b^{\!\top}\|_F^2=9+9-2=16$ (minimal
+among supports of \emph{equal cardinality}; exhaustive on $K_5$), while the
+\emph{subset} confuser $\Scal'=\Scal\cup\{\tau_4\}$ (add the fourth face) has
+$\|\bm u_4\bm u_4^{\!\top}\|_F^2=9$ --- the unrestricted worst case
+(exhaustive on $K_5$). The Bhattacharyya expansion
+$C_G=\tfrac1{16}\|\Delta M\|_F^2\rho_2^2(1+o(1))$ gives exponents
+$\rho_2^2$ and $\tfrac9{16}\rho_2^2$ respectively --- and
+$\tfrac9{16}\rho_2^2$ \emph{equals} the isolated-triangle exponent
+$C(\rho)=\rho^2/16$ at $\rho=3\rho_2$: at the exponent level, the hardest
+equal-image decision costs no more than detecting one isolated triangle, so
+rank deficiency is free and only the Fano log-multiplicity over the
+$4\binom n4$ leave-one-face-out hypotheses ($\asymp\log n$ on $K_n$) reflects
+the geometry.
 \end{theorem}
 \begin{proof}[Proof sketch]
 (i) Equal images make the deterministic mean families coincide. (ii) In curl
@@ -370,17 +374,20 @@ $\mathrm{im}\,\B_2$) the law is $\mathcal N(\bm 0,\ \sigma_n^2\bm I_r
 $\bm u_\tau=\bm Q^{\!\top}\bm b_\tau$; injectivity transfers from
 Lemma~\ref{lem:spark} since $\bm b_\tau\in\mathrm{im}\,\B_2$. (iii) Direct
 computation plus the second-order (Bhattacharyya) expansion of the Chernoff
-information; constants Monte-Carlo-validated in the released tests
-($C_G/\rho_2^2\to1$ to $0.998$; separation $16$ exact, exhaustively minimal
-over all equal-image pairs on $K_5$). Full proofs: supplement \S S4.
+information; every constant is verified in the released tests: swap
+$C_G/\rho_2^2\to1$ (to $0.998$), subset $C_G\to\tfrac9{16}\rho_2^2$ matching
+the single-triangle exponent to $10^{-4}$ relative, and the separations $16$
+(equal-cardinality minimum) and $9$ (unrestricted minimum) are exhaustive
+over all $2^{10}$ supports of $K_5$
+(\texttt{test\_exhaustive\_k5\_confuser\_separations}). Full proofs:
+supplement \S S4.
 \end{proof}
 
 Theorem~\ref{thm:rank} reconciles theory with practice: second-order
 estimators --- fitting the empirical curl covariance with the atoms
-$\{\bm g_\tau\bm g_\tau^{\!\top}\}$, greedily or by non-negative lasso --- are
-the achievers of regime (ii), verified on rank-deficient $K_5$. The $3/n$
-ratio survives as \emph{first-order} observability; unfavorable geometry is a
-quantifiable snapshot premium, not a wall.
+$\{\bm g_\tau\bm g_\tau^{\!\top}\}$ --- achieve regime (ii), verified on
+rank-deficient $K_5$; the $3/n$ ratio survives as \emph{first-order}
+observability.
 
 \begin{remark}[Open]\label{rem:sparse}
 Sharp \emph{first-order} sparse-support thresholds over $\ker\B_2$
@@ -418,67 +425,65 @@ should be (right). A greedy residual-fitting baseline (standing in for
 \subsection{Second-order identifiability where subspaces fail (Thm.~\ref{thm:rank})}
 On $K_5$ ($p=10$, $\rank\B_2=6$: where a subspace argument forbids recovery),
 the greedy covariance-atom estimator recovers a planted $4$-triangle support
-exactly ($N=1200$, gradient nuisance present); exhaustively, all equal-image
-support pairs of $K_4$ have distinct covariances and every tetrahedral swap
-has separation exactly $16$. The Monte-Carlo error of the optimal
-confuser-pair test respects the $e^{-NC_G}$ envelope with empirical exponent
-converging onto $C_G$, and $C_G/\rho_2^2\in[0.95,1.0]$ for $\rho_2\le0.01$
-(released tests).
+exactly ($N=1200$, gradient nuisance present). The Monte-Carlo error of the
+optimal confuser-pair test respects the $e^{-NC_G}$ envelope with empirical
+exponent converging onto $C_G$; all separations and both exponent constants
+are verified as in Thm.~\ref{thm:rank}(iii).
 
 \subsection{Real, unplanted recovery: cyclones from wind-field edge flows}
 The achievability side is exercised on \emph{genuine} latent structure
 (Fig.~\ref{fig:cyclone}): tropical-cyclone circulation in ERA5 winds
-\cite{hersbach2020era5}, Western North Pacific, Aug--Sep 2020. Ten-meter winds
-($0.7^\circ$ grid) become edge flows on a triangulated mesh (line integrals);
-by Stokes' theorem a triangle's curl is its circulation --- area-integrated
-vorticity --- so high-curl triangles are real atmospheric vortices. The mesh
-is simply connected, so $\B_2$ has full column rank by Euler's formula: no
-confusers, the favorable regime of Theorem~\ref{thm:rank}. Per 4-day window
-(16 six-hourly snapshots) the temporally centered curl-\emph{energy} statistic
-of Prop.~\ref{prop:single}, area-normalized to the vorticity scale, scores
-each triangle; \emph{nothing is planted, no oracle parameters} (the
-decorrelated variant is reported in the repository: its $\bm G^{-1}$ noise
-amplification hurts pure detection ranking on this near-regular mesh).
-Validation is against two independent references: full-resolution
-finite-difference vorticity (never seen by the mesh detector) and the IBTrACS
-best-track archive \cite{knapp2010ibtracs}, agency-verified positions
-independent of the reanalysis (panel B). Degrading the snapshot budget traces
-the predicted $1/\sqrt N$ scaling (panel C).
+\cite{hersbach2020era5}, Western North Pacific, Aug--Sep 2020. Ten-meter
+winds ($0.7^\circ$ grid) become edge flows on a triangulated mesh; by
+Stokes' theorem a triangle's curl is its circulation, so high-curl triangles
+are real atmospheric vortices. The mesh is simply connected, so $\B_2$ has
+full column rank by Euler's formula: no confusers, the favorable regime of
+Theorem~\ref{thm:rank}. Per 4-day window (16 six-hourly snapshots) the
+temporally centered curl-\emph{energy} statistic of
+Prop.~\ref{prop:single}, area-normalized to the vorticity scale, scores each
+triangle; \emph{nothing is planted, no oracle parameters} (the decorrelated
+variant, reported in the repository, ranks worse here: $\bm G^{-1}$
+amplifies noise). Storms translate several triangle-widths per window:
+centering removes the window-mean flow, so the statistic detects the
+\emph{time-varying} circulation a moving vortex deposits. Validation
+(panel B): a \emph{same-field consistency reference} (finite-difference
+vorticity on the $3\times$-finer source grid --- a different functional of
+the same winds) and the genuinely independent IBTrACS archive
+\cite{knapp2010ibtracs}. Against a pointwise-vorticity baseline at the same
+information budget, the edge-flow statistic is better on the independent
+external reference ($0.920$ vs.\ $0.898$), slightly worse on the internal
+one ($0.914$ vs.\ $0.948$), which shares the baseline's functional --- the
+contribution is the limits framework, not a new cyclone detector. Detection
+degrades as the budget shrinks (panel C; theory floor for reference).
 
 \subsection{Geometry on real infrastructure; FX as a consistency check}
 Fig.~\ref{fig:traffic} grounds the recovery laws on real road geometry (TNTP
 \cite{transportationnetworks}). (A)~All three networks have full-column-rank
 $\B_2$ (DoF ratio $1$ vs.\ $3/n$ on $K_9$); the real equilibrium flows carry
 genuine rotational energy ($2.4\%$/$4.6\%$ curl). (B)~Anaheim is
-edge-disjoint, so $\bm G=3\bm I$ and planted recovery \emph{collapses to the
-product law} (Prop.~\ref{prop:disjoint}); the real constant background is
-removed exactly by centering (df $N{-}1$) and the nuisances are annihilated,
-so --- stated plainly --- the surviving statistical problem is synthetic; the
-honest real recovery evidence is Fig.~\ref{fig:cyclone}. (C)~EMA exercises
-Theorem~\ref{thm:whiten} on real geometry: $10$ edge-sharing pairs make
-$\bm G$ non-diagonal; empirical recovery tracks the independence
-approximation and respects the union bound. \emph{FX consistency check (no
-figure):} edge flows from $257$ days of ECB rates on $K_9$ are by
+edge-disjoint ($\bm G=3\bm I$), so planted recovery \emph{collapses to the
+product law} (Prop.~\ref{prop:disjoint}): the constant real background is
+centered out exactly (df $N{-}1$), the nuisances annihilated --- stated
+plainly, the surviving statistical problem is synthetic; the honest real
+recovery evidence is Fig.~\ref{fig:cyclone}. (C)~EMA exercises
+Theorem~\ref{thm:whiten} on real geometry ($10$ edge-sharing pairs,
+non-diagonal $\bm G$): empirical recovery tracks the independence
+approximation and respects the union bound. \emph{FX consistency check (no figure):} ECB-rate edge flows on $K_9$ are by
 construction a single-potential gradient $\bm f=\B_1^{\!\top}\bm p$, so
-Lemma~\ref{lem:curl} predicts \emph{identically zero} curl; measured
-curl/gradient $=1.8\times10^{-31}$, floating-point residue. A consistency
-check on real market data (HodgeRank's arbitrage-free reading
-\cite{jiang2011statistical}), not a market discovery; $K_9$'s $28/84$ rank is
-panel~(A)'s red bar.
+Lemma~\ref{lem:curl} predicts identically zero curl; measured curl/gradient
+$=1.8\times10^{-31}$ --- floating-point residue, a consistency check
+(HodgeRank's arbitrage-free reading \cite{jiang2011statistical}), not a
+market discovery. $K_9$'s $28/84$ rank is panel~(A)'s red bar.
 
 \section{Conclusion}
-We characterized when higher-order structure is identifiable from edge flows:
-a curl-invisibility threshold with a $\log\binom pk$ joint converse; exact
-marginal laws after GLS-type decorrelation with a union-bound guarantee; and
-a first- vs.\ second-order dichotomy --- rank deficiency binds only for
-deterministic signals; random signals make every support identifiable at a
-quantified snapshot premium. This delimits when algorithmic TSP inference
+We characterized when higher-order structure is identifiable from edge
+flows: a curl-invisibility threshold with a $\log\binom pk$ joint converse;
+exact marginal laws after GLS-type decorrelation; and a first- vs.\
+second-order dichotomy whose worst-case price equals one isolated-triangle
+detection --- delimiting when algorithmic TSP inference
 \cite{gurugubelli2024simplicial,buciulea2025learning,hoppe2023representing}
-succeeds, with achievability shown on genuine, unplanted structure (ERA5
-cyclone circulation, two independent references). The repository adds a
-signal-agnostic Fano variant, sub-Gaussian achievability, an exact $q^{3k}$
-edge-sampling law \cite{chen2015discrete}, and plug-in estimation.
-Remark~\ref{rem:sparse}'s thresholds remain open.
+succeeds, with achievability shown on unplanted ERA5 cyclone circulation.
+The supplement adds edge-sampling laws \cite{chen2015discrete}.
 
 % ICASSP allows a 5th page containing ONLY references.
 \newpage

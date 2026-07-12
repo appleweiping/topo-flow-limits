@@ -507,10 +507,20 @@ def equal_image_single_swap_pairs(
 ) -> list[tuple[int, int]]:
     """All UNORDERED candidate pairs ``(a, b)`` lying in a common tetrahedron:
     swapping ``a`` for ``b`` preserves the column image of any support that
-    contains the other two faces. These are the minimal equal-image confusers,
-    with curl-domain separation
+    contains the other two faces. Swaps are the minimal equal-image confusers
+    AMONG SUPPORTS OF EQUAL CARDINALITY (exhaustively verified on K5), with
+    curl-domain separation
     ``|| u_a u_a^T - u_b u_b^T ||_F^2 = 9 + 9 - 2 (u_a . u_b)^2 = 16`` exactly
     (tetrahedron faces share exactly one edge, so ``u_a . u_b = ±1``).
+
+    The UNRESTRICTED worst case is the SUBSET confuser ``S`` vs
+    ``S ∪ {fourth face}`` (equal image because the four face signatures are
+    linearly dependent), whose separation is ``||u_4||^4 = 9`` — giving
+    Chernoff exponent ``(9/16) rho_2^2 (1+o(1))``, which EQUALS the
+    isolated-triangle detection exponent ``C(rho)=rho^2/16`` at
+    ``rho = 3 rho_2``: at the exponent level, deciding the hardest
+    equal-image question costs no more than detecting one isolated triangle.
+    See ``tests/test_second_order.py::test_exhaustive_k5_confuser_separations``.
     """
     from itertools import combinations
 
@@ -547,18 +557,34 @@ def second_order_snr(sigma_curl: float, sigma_noise: float) -> float:
 
 
 def tetra_confuser_chernoff_small_snr(sigma_curl: float, sigma_noise: float) -> float:
-    """Leading-order Chernoff information of the MINIMAL (tetrahedral swap)
-    confuser pair: ``C_G = rho_2^2 (1 + o(1))`` as ``rho_2 -> 0``.
+    """Leading-order Chernoff information of the tetrahedral SWAP confuser
+    pair: ``C_G = rho_2^2 (1 + o(1))`` as ``rho_2 -> 0``.
 
     Derivation: with ``E = Sigma_0^{-1/2} (Sigma_1 - Sigma_0) Sigma_0^{-1/2}
     ~ rho_2 * Delta M``, the Bhattacharyya expansion gives ``C = (1/16)
-    tr(E^2) (1+o(1)) = (rho_2^2 / 16) ||Delta M||_F^2 (1+o(1))``, and the swap
-    separation is ``||Delta M||_F^2 = ||u_a||^4 + ||u_b||^4 - 2 (u_a.u_b)^2 =
-    9 + 9 - 2 = 16`` (faces of a tetrahedron share exactly one edge). The
-    ``16``s cancel: the constant is UNIVERSAL — independent of n, of the
-    support size, and of which tetrahedron hosts the swap.
+    tr(E^2) (1+o(1)) = (rho_2^2 / 16) ||Delta M||_F^2 (1+o(1))``; the swap
+    separation is ``||Delta M||_F^2 = 9 + 9 - 2 = 16`` (faces share exactly
+    one edge), so the ``16``s cancel. The swap is the minimal confuser among
+    EQUAL-CARDINALITY supports. See
+    :func:`subset_confuser_chernoff_small_snr` for the unrestricted worst
+    case.
     """
     return second_order_snr(sigma_curl, sigma_noise) ** 2
+
+
+def subset_confuser_chernoff_small_snr(sigma_curl: float, sigma_noise: float) -> float:
+    """Leading-order Chernoff information of the SUBSET confuser
+    (``S`` vs ``S ∪ {fourth face of a hosted tetrahedron}``): with separation
+    ``||u_4 u_4^T||_F^2 = ||u_4||^4 = 9``,
+    ``C_G = (9/16) rho_2^2 (1+o(1))`` — the UNRESTRICTED worst case over
+    equal-image pairs (exhaustively verified on K5), and EXACTLY the
+    isolated-triangle detection exponent ``C(rho) = rho^2/16`` at
+    ``rho = 3 rho_2``. Consequence: geometry-induced rank deficiency is FREE
+    at the exponent level — the hardest equal-image decision costs the same
+    exponent as detecting one isolated triangle; only the log-multiplicity
+    (Fano) factor reflects the geometry.
+    """
+    return 9.0 / 16.0 * second_order_snr(sigma_curl, sigma_noise) ** 2
 
 
 def second_order_min_snapshots(
@@ -588,47 +614,53 @@ def confuser_family_fano_min_snapshots(
     sigma_curl: float,
     sigma_noise: float,
     err: float = 0.5,
-    max_tetra_scan: int = 8,
+    max_hypotheses: int = 400,
 ) -> float:
     """Fano converse over the tetrahedral-confuser family.
 
     Prior: pick one tetrahedron uniformly among the ``n_tetra`` hosted by the
     candidate set and one of its 4 faces to leave inactive (the other 3
-    active) — ``M = 4 n_tetra`` hypotheses. Any estimator identifying the
-    support must distinguish them, and every pair of hypotheses is separated
-    by Gaussian KL at most ``KL_max`` per snapshot, so Fano gives
-    ``N >= ((1-err) log M - log 2) / KL_max``. KLs are computed at the ACTUAL
-    leave-one-out supports (exact curl-coordinate covariances); tetrahedra
-    beyond ``max_tetra_scan`` are skipped in the KL scan (they are isomorphic
-    on a symmetric complex, and skipping can only underestimate ``KL_max``,
-    which would only make the reported bound conservative in the safe
-    direction after the final max).
+    active) — ``M = 4 n_tetra`` hypotheses. Fano with the pairwise-KL bound
+    ``I(S; z^N) <= N max_{i != j} KL(P_i || P_j)`` gives
+    ``N >= ((1-err) log M - log 2) / KL_max``.
+
+    VALIDITY NOTE: ``KL_max`` must be the maximum over ALL ordered hypothesis
+    pairs — cross-tetrahedron pairs have larger covariance separation than
+    within-tetrahedron ones, so restricting the scan would UNDERSTATE
+    ``KL_max`` and hence OVERSTATE the lower bound (invalid as a converse).
+    This function therefore scans every ordered pair; if ``M`` exceeds
+    ``max_hypotheses`` it raises rather than silently truncating.
     """
     quads = candidate_tetrahedra(triangles)
     if not quads:
         return 0.0
     M = 4 * len(quads)
+    if M > max_hypotheses:
+        raise ValueError(
+            f"M={M} hypotheses exceed max_hypotheses={max_hypotheses}; "
+            "a partial KL scan would not yield a valid converse")
     U = curl_domain_signatures(B2)
     p = B2.shape[1]
 
-    def kl(S0: np.ndarray, S1: np.ndarray) -> float:
-        W1 = np.linalg.inv(S1)
-        r = S0.shape[0]
-        return float(0.5 * (np.trace(W1 @ S0) - r
-                            + np.linalg.slogdet(S1)[1] - np.linalg.slogdet(S0)[1]))
-
-    from itertools import combinations
-
-    kl_max = 0.0
-    for quad in quads[:max_tetra_scan]:
-        # 4 leave-one-out hypotheses of this tetrahedron
-        covs = []
+    covs = []
+    for quad in quads:
         for leave in range(4):
             s = np.zeros(p, bool)
             s[[quad[i] for i in range(4) if i != leave]] = True
             covs.append(second_order_covariance(U, s, sigma_curl, sigma_noise))
-        for i, j in combinations(range(4), 2):
-            kl_max = max(kl_max, kl(covs[i], covs[j]), kl(covs[j], covs[i]))
+
+    # precompute inverses/logdets once; max KL over all ordered pairs
+    invs = [np.linalg.inv(S) for S in covs]
+    lds = [np.linalg.slogdet(S)[1] for S in covs]
+    r = covs[0].shape[0]
+    kl_max = 0.0
+    for i in range(len(covs)):
+        for j in range(len(covs)):
+            if i == j:
+                continue
+            kl = 0.5 * (float(np.trace(invs[j] @ covs[i])) - r + lds[j] - lds[i])
+            if kl > kl_max:
+                kl_max = kl
     if kl_max <= 0:
         return np.inf
     numer = (1.0 - err) * np.log(M) - np.log(2.0)

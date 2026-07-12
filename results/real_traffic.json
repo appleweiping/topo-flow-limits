@@ -56,7 +56,7 @@
     "sigma_grad": 1.0,
     "sigma_harm": 0.5,
     "background": "real UE flow, unit RMS",
-    "detector": "whitened, centered (df=N-1)",
+    "detector": "decorrelated (GLS), centered (df=N-1)",
     "N_grid": [
       6,
       10,
@@ -113,7 +113,7 @@
     "sigma_noise": 1.0,
     "sigma_grad": 1.0,
     "sigma_harm": 0.5,
-    "detector": "whitened (heterogeneous v0_tau), uncentered (df=N)",
+    "detector": "decorrelated (GLS, heterogeneous v0_tau), uncentered (df=N)",
     "N_grid": [
       6,
       10,
