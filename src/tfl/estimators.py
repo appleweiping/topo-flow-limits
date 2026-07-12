@@ -22,7 +22,8 @@ non-negative lasso. Because the lifted atoms are ALWAYS linearly independent
 (limits.lifted_atoms_linearly_independent — a pair of edges lies in at most one
 triangle), these second-order estimators identify supports even when ``B2`` is
 rank-deficient, i.e. beyond what any first-order/subspace argument allows: they
-are the achievers of the second-order regime of the identifiability dichotomy.
+are the achievers of the diagonal-excitation class (a) of the excitation
+trichotomy.
 
 Naming note: ``whitened_*`` below decorrelates the MEAN of the curl statistic
 (GLS/BLUE inversion ``yhat = G^+ c``); the residual noise covariance

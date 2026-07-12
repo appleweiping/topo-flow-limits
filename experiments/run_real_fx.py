@@ -14,7 +14,7 @@ independent per-pair cross-rate quotes, whose triangular inconsistencies
 (B) Geometry-side first-order obstruction (this part is a real measurement of
     the geometry): on the complete currency graph K_n the candidate triangle
     coefficients C(n,3) exceed the curl-subspace dimension
-    rank(B2) = C(n-1,2); the DoF ratio is exactly 3/n. Per the dichotomy
+    rank(B2) = C(n-1,2); the DoF ratio is exactly 3/n. Per the trichotomy
     theorem this blocks FIRST-ORDER identification (deterministic signals);
     second-order identification remains possible in principle, at a
     sample-complexity price.

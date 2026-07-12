@@ -14,7 +14,7 @@
     "n_windows": 15
   },
   "task": "curl-based vortex localization (NOT filled-triangle topology recovery: the mesh has no equal-image confusers and real weather has no latent boolean support)",
-  "statistic": "temporally centered curl energy, area^2-normalized (vorticity scale); decorrelated (Thm.2) variant reported for comparison",
+  "statistic": "temporally centered curl energy, area^2-normalized (vorticity scale); decorrelated (GLS, main Prop.1) variant reported for comparison",
   "internal_validation": {
     "auc": 0.9144878957030386,
     "auc_ci95_window_bootstrap": [

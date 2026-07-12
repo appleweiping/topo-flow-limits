@@ -24,20 +24,20 @@ BASELINE  a classical non-simplicial comparator at the same information
 
 Pipeline per 4-day window (16 six-hourly snapshots):
   wind field -> mesh edge flows F -> temporally centered curl-ENERGY scores
-  (the paper's primary statistic, Prop. 1), area^2-normalized so scores rank
+  (the paper's primary energy statistic, cf. main Prop. 2), area^2-normalized so scores rank
   triangles on a common mean-VORTICITY scale across latitudes
   -> compare to both references. No oracle parameters anywhere.
 
-Statistic choice, stated honestly: the GLS/BLUE-decorrelated score (Thm. 2)
+Statistic choice, stated honestly: the GLS/BLUE-decorrelated score (main Prop. 1)
 targets exact-support recovery under edge-sharing leakage at a known SNR; on
 this nearly-regular full-rank mesh its G^{-1} noise amplification hurts pure
 DETECTION ranking (AUC 0.77 vs 0.91 internal). Both scores are computed and
 reported in the JSON; the energy score is the headline panel.
 
-A third panel degrades the snapshot budget N inside each window and shows the
-empirical detection quality alongside the theoretical invisibility floor
-rho*(N) (arbitrary units — a shape reference for the N-scaling, not a fitted
-prediction; evaluation is threshold-free ROC ranking throughout).
+A third panel degrades the snapshot budget N inside each window (mean +/- sd
+over 12 subsample draws; uniformly centered statistic, N >= 3). No theory
+floor is overlaid (its units are incommensurate with AUC); evaluation is
+threshold-free ROC ranking throughout.
 
 Outputs: results/real_cyclone.json + results/figures/real_cyclone.png
 Run:     python experiments/run_real_cyclone.py            (~2-4 min CPU)
@@ -254,7 +254,7 @@ def main() -> None:
     from scipy.stats import spearmanr
     rho_s, _ = spearmanr(scores_flat, int_gt_flat)
     print(f"Spearman(score, |vorticity|) = {rho_s:.3f}")
-    # honesty comparison: the decorrelated (Thm.2) score on the same task
+    # honesty comparison: the decorrelated (GLS, main Prop.1) score on the same task
     _, _, auc_i_wh = roc_curve(scores_wh_flat, int_labels)
     _, _, auc_e_wh = roc_curve(scores_wh_flat, ext_gt_flat)
     rho_s_wh, _ = spearmanr(scores_wh_flat, int_gt_flat)
@@ -262,6 +262,7 @@ def main() -> None:
           f"spearman={rho_s_wh:.3f}")
     # classical baseline at the same information budget (full metric set)
     fpr_b, tpr_b, auc_i_base = roc_curve(scores_base_flat, int_labels)
+    fpr_be, tpr_be, _auc_e_base_curve = roc_curve(scores_base_flat, ext_gt_flat)
     _, _, auc_e_base = roc_curve(scores_base_flat, ext_gt_flat)
     ap_e_base = pr_auc(scores_base_flat, ext_gt_flat)
     top_b = np.argsort(-scores_base_flat)[:k]
@@ -331,11 +332,13 @@ def main() -> None:
 
     ax = fig.add_subplot(1, 3, 2)
     ax.plot(fpr_i, tpr_i,
-            label=f"internal (vorticity), AUC={auc_i:.3f}")
+            label=f"ours vs internal labels, AUC={auc_i:.3f}")
     ax.plot(fpr_e, tpr_e,
-            label=f"external (IBTrACS), AUC={auc_e:.3f}, PR={ap_e:.3f}")
-    ax.plot(fpr_b, tpr_b, ":", color="gray",
-            label=f"baseline (coarse vort.), AUC={auc_i_base:.3f}")
+            label=f"ours vs external (IBTrACS), AUC={auc_e:.3f}, PR={ap_e:.3f}")
+    ax.plot(fpr_be, tpr_be, ":", color="gray",
+            label=f"baseline vs external, AUC={auc_e_base:.3f}, PR={ap_e_base:.3f}")
+    ax.plot(fpr_b, tpr_b, ":", color="lightgray",
+            label=f"baseline vs internal, AUC={auc_i_base:.3f}")
     ax.plot([0, 1], [0, 1], "k:", lw=0.8)
     ax.set_xlabel("false-positive rate")
     ax.set_ylabel("true-positive rate")
@@ -367,7 +370,7 @@ def main() -> None:
                 "topology recovery: the mesh has no equal-image confusers "
                 "and real weather has no latent boolean support)",
         "statistic": "temporally centered curl energy, area^2-normalized "
-                     "(vorticity scale); decorrelated (Thm.2) variant reported "
+                     "(vorticity scale); decorrelated (GLS, main Prop.1) variant reported "
                      "for comparison",
         "internal_validation": {"auc": auc_i,
                                 "auc_ci95_window_bootstrap": list(boot["auc_internal"]),

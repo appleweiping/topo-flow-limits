@@ -45,11 +45,13 @@ covariance $\Gam_\Scal$ of the triangle signals. Our main theorem is a
 trichotomy: for positive-diagonal $\Gam_\Scal$ (known or unknown), the
 weighted support is identifiable at \emph{any} rank deficiency of $\B_2$,
 because the lifted signatures $\{\bm b_\tau\bm b_\tau^{\!\top}\}$ are always
-linearly independent; for unknown arbitrary PSD $\Gam_\Scal$, only the curl
-subspace $\im\B_{2,\Scal}$ is identifiable; and at the projector excitation
+linearly independent; for unknown arbitrary PSD $\Gam_\Scal$, the achievable covariance
+family determines exactly the curl subspace $\im\B_{2,\Scal}$ and nothing
+finer; and at the projector excitation
 $\Gam_\Scal=\sigma_c^2(\B_{2,\Scal}^{\!\top}\B_{2,\Scal})^{+}$ the covariance
 collapses to $\sigma_n^2\bm I+\sigma_c^2\bm P_{\im}$ exactly, so equal-image
-supports are indistinguishable at every SNR and sample size. In the diagonal
+supports are indistinguishable at every SNR and sample size (noise level
+known throughout). In the diagonal
 class we give a lifted-covariance non-negative least-squares estimator that
 is consistent with a fully explicit $O(1/N)$ failure bound, validated on
 $K_4$--$K_8$ against subspace and greedy baselines, including an excitation
@@ -57,7 +59,7 @@ interpolation under which equal-image distinguishability provably vanishes.
 On real data, the same curl statistic \emph{localizes} genuine unplanted
 rotational structure --- tropical cyclones in ERA5 winds --- against a
 same-field vorticity reference and the independent IBTrACS archive. Code,
-data, and a 36-test suite certifying every constant are released.
+data, and a 46-test suite certifying every constant are released.
 \end{abstract}
 
 \begin{keywords}
@@ -195,9 +197,12 @@ injective: the weighted support is identifiable at \emph{any} rank deficiency
 of $\B_2$, including all $\binom n3$ triangles of $K_n$.
 \emph{(b) Arbitrary PSD.} If $\Gam_\Scal$ is unknown and unrestricted PSD,
 then $\{\bm M(\Scal,\Gam):\Gam\succeq0\}
-=\{\bm M\succeq0:\im\bm M\subseteq\im\bm U_\Scal\}$, which depends on $\Scal$
-only through $\im\B_{2,\Scal}$: exactly the curl subspace is identifiable,
-and nothing finer.
+=\{\bm M\succeq0:\im\bm M\subseteq\im\bm U_\Scal\}$: the achievable
+covariance \emph{family} determines, and is determined by,
+$\im\B_{2,\Scal}$ --- so supports are distinguishable as composite
+hypotheses at most up to equal curl image, and nothing finer than the image
+is identifiable (pointwise, the image itself is identified when
+$\Gam_\Scal\succ0$; singular excitations can conceal part of it).
 \emph{(c) Projector excitation.} For
 $\Gam_\Scal=\sigma_c^2(\B_{2,\Scal}^{\!\top}\B_{2,\Scal})^{+}$,
 $\bm M=\sigma_c^2\bm P_{\im\bm U_\Scal}$ \emph{exactly}; supports with equal
@@ -349,32 +354,40 @@ $(N,\rho_2)$ grid with $N\in\{25,\dots,400\}$ and
 $\rho_2\in\{0.25,\dots,2\}$, $200$ Monte-Carlo trials per cell, and $95\%$
 Wilson intervals (\texttt{run\_second\_order.py}; every cell, including the
 derived bound~\eqref{eq:bound} evaluated at that cell, is in the released
-JSON). Protocol notes: the threshold is the theorem's rule $w_{\min}/2$
-(planted weights are known by design; a largest-gap rule behaves similarly
-and is reported in the repository); the full edge-domain pipeline is used,
-so the gradient nuisance is present and annihilated by the projection; both
-baselines receive \emph{oracle} side information --- the subspace method the
-true $k$ and the true $\dim\im\B_{2,\Scal}$, the greedy fitter the true
-$\sigma_n$.
+JSON). Protocol notes: the headline threshold is the theorem's rule $w_{\min}/2$
+(planted weights known by design); an oracle-free \emph{largest-gap} rule is
+run alongside and logged per cell in the released JSON; the full edge-domain
+pipeline is used, so the gradient nuisance is present and annihilated by the
+projection; both baselines receive \emph{oracle} side information --- the
+subspace method the true $k$ and the true $\dim\im\B_{2,\Scal}$, the greedy
+fitter the true $\sigma_n$.
 
-(A)~NNLS attains exact recovery on every $K_n$ --- including maximal rank
-deficiency, e.g.\ $\rank\B_2/p=21/56$ on $K_8$ --- reaching probability~$1$
-by $N{=}400$ at $\rho_2{=}1$, and dominates both baselines; greedy stalls
-badly where atoms overlap (e.g.\ $0.42$ on $K_5$ at $N{=}400$). The
-subspace baseline's \emph{population} scores tie on dependent candidates
-(Remark~\ref{rem:scope}(iii)); its residual finite-$N$ success rides on
-sample eigen-anisotropy, a side channel that the projector excitation
-removes entirely. (B)~Recovery improves monotonically in $\rho_2$ uniformly
-across rank deficiency --- the empirical face of
-Theorem~\ref{thm:tri}(a). The bound~\eqref{eq:bound} upper-bounds every
-cell, conservatively by roughly an order of magnitude in $N$, as a Markov
-argument should. (C)~Under
+(A)~NNLS is the only estimator attaining exact recovery in \emph{every}
+regime --- including maximal rank deficiency, e.g.\
+$\rank\B_2/p=21/56$ on $K_8$ --- reaching probability~$1$ at the plotted
+mid-$k$ cells by $N{=}400$, $\rho_2{=}1$ ($0.99$ at the densest $K_8$ cell,
+$k{=}28$). The oracle-$k$ subspace baseline can lead at small $N$ but
+collapses on dependent candidates ($0.00$ at $K_8$, $k{=}28$): its
+\emph{population} scores tie there (Remark~\ref{rem:scope}(iii)), and its
+finite-$N$ tie-breaking rides on sample eigen-anisotropy, a side channel the
+projector excitation removes entirely. Greedy stalls at sparse supports
+($0.42$ on $K_5$ at $k{=}2$, $N{=}400$). (B)~Recovery improves
+monotonically in $\rho_2$ uniformly across rank deficiency --- the empirical
+face of Theorem~\ref{thm:tri}(a). The bound~\eqref{eq:bound} upper-bounds
+every cell; being a Markov bound it is conservative by one to three orders
+of magnitude (the empirical failure decays exponentially, the bound as
+$1/N$), and it is certified non-vacuously at cells where it drops to
+${\sim}0.75$. (C)~Under
 $\Gam_\alpha=\rho_2[(1-\alpha)\bm I+\alpha(\B_{2,\Scal}^{\!\top}\B_{2,\Scal})^{+}]$
-on the $K_5$ tetrad, the analytic equal-image covariance gap and the
-empirical NNLS recovery collapse \emph{together} --- from $1.00$ at
-$\alpha=0$ to $0.07\approx$ chance at $\alpha=1$ --- landing exactly on
-Theorem~\ref{thm:tri}(c): identifiability is a property of the excitation,
-not the geometry alone.
+on the $K_5$ tetrad, with the same $w_{\min}/2$ rule (the diagonal model is
+deliberately misspecified for $\alpha>0$ --- that is the point), the
+analytic equal-image gap shrinks continuously and the empirical NNLS
+recovery of the specific $\Scal$ collapses \emph{before} the gap reaches
+zero --- thresholded estimation dies earlier than distinguishability ---
+with the threshold-free endpoint at $\alpha=1$ exactly on
+Theorem~\ref{thm:tri}(c): identical covariances, no method can identify
+$\Scal$. Identifiability is a property of the excitation, not the geometry
+alone.
 
 \section{Real data: curl-based vortex localization}
 \begin{figure*}[!t]
@@ -472,7 +485,7 @@ Substantial portions of the manuscript text, the source code, and the
 figures were generated with the assistance of an AI system (Claude,
 Anthropic), operating under the author's direction across iterative
 adversarial-review cycles. All mathematical statements were additionally
-verified by the released test suite (36 tests, including exhaustive and
+verified by the released test suite (46 tests, including exhaustive and
 Monte-Carlo certificates for every quoted constant), and the full revision
 history is preserved unaltered in the public repository. The author takes
 full responsibility for the content.

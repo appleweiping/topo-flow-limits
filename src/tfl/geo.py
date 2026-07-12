@@ -24,7 +24,9 @@ A triangulated simply-connected planar mesh has #triangles = |E| - |V| + 1
 (Euler), which equals dim ker(B1) = rank(B2): B2 has FULL COLUMN RANK, the
 curl degrees-of-freedom ratio is exactly 1, and no equal-image confusers
 exist. Real recovery on such a mesh is the achievability side of the
-first-/second-order identifiability dichotomy (limits.py).
+excitation trichotomy — class-(a) favorable geometry with no equal-image
+confusers (limits.py). The vortex-localization experiment exercises exactly
+this regime.
 """
 from __future__ import annotations
 

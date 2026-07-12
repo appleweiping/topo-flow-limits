@@ -183,10 +183,6 @@ def test_nnls_consistency_and_recovery_bound_components():
 
     # (1) exact covariance-error formula
     N = 40
-    errs = [np.linalg.norm((L @ rng.standard_normal((r, N))) @
-                           (L @ rng.standard_normal((r, N))).T / N - Sig, "fro") ** 2
-            for _ in range(600)]
-    # NOTE: the two factors above must be the SAME sample; rebuild properly:
     errs = []
     for _ in range(1500):
         Z = L @ rng.standard_normal((r, N))
@@ -233,6 +229,35 @@ def test_nnls_recovery_bound_upper_bounds_empirical_failure():
                 fails += not np.array_equal(sup, w > 0)
             bound = nnls_recovery_bound(Sig, smin, rho2, N)
             assert fails / T <= bound + 0.03, (rho2, N, fails / T, bound)
+
+
+def test_nnls_recovery_bound_nonvacuous_cells():
+    """Cells where the bound is strictly below 1, so the assertion CAN fail:
+    on K4 at (w=0.35, N=800) and (w=0.2, N=1600) the bound is ~0.73/~0.75
+    while the empirical failure rate is far below it (the bound is Markov —
+    valid but conservative by one to three orders of magnitude: the
+    empirical failure decays exponentially, the bound as 1/N)."""
+    rng = np.random.default_rng(10)
+    cx = complete_complex(4)
+    _, B2 = build_incidences(cx)
+    U = curl_domain_signatures(B2)
+    r, p = U.shape
+    A = lifted_atom_matrix(U)
+    smin = np.linalg.svd(A, compute_uv=False)[-1]
+
+    for w_val, N in ((0.35, 800), (0.2, 1600)):
+        act = np.zeros(p, bool); act[[0, 2]] = True
+        Sig = excitation_covariance(U, act, w_val * np.eye(2), sigma_noise=1.0)
+        bound = nnls_recovery_bound(Sig, smin, w_val, N)
+        assert bound < 0.8          # genuinely non-vacuous
+        L = np.linalg.cholesky(Sig)
+        fails = 0
+        T = 200
+        for _ in range(T):
+            Z = L @ rng.standard_normal((r, N))
+            sup, _ = nnls_lifted_support(Z, U, 1.0, threshold=w_val / 2)
+            fails += not np.array_equal(sup, act)
+        assert fails / T <= bound, (w_val, N, fails / T, bound)
 
 
 def test_subspace_baseline_population_tie_and_projector_collapse():

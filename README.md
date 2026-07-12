@@ -261,9 +261,12 @@ verified in `tests/test_excitation.py`):
 | `Γ_S = σ_c²(B₂,Sᵀ B₂,S)⁺` (**projector**) | equal-image supports **indistinguishable** at every SNR/N | `B_S G_S⁺ B_Sᵀ = P_im` exactly ⇒ identical covariances |
 
 The α-interpolation `Γ_α = (1−α)I + α(B_SᵀB_S)⁺` connects (a) to (c)
-continuously: the equal-image covariance gap AND the NNLS recovery
-probability collapse together as α→1 (`run_second_order.py`, panel C:
-recovery 1.00 → 0.07 ≈ chance).
+continuously: the equal-image covariance gap shrinks to zero as α→1, and
+thresholded NNLS recovery of the specific `S` (declared `ρ₂/2` rule — the
+diagonal model is deliberately misspecified for α>0) collapses **before**
+the gap does (`run_second_order.py`, panel C: 1.00 → 0.82 → 0.00 by
+α=0.75); only the α=1 endpoint is threshold-free — identical covariances,
+no method can identify `S`.
 
 **Achievability (class (a)): the lifted-covariance NNLS estimator**
 (`nnls_lifted_support`): `ŵ = argmin_{w≥0} ‖Σ̂_z − σ_n²I − Σ w_τ u_τu_τᵀ‖_F²`,
@@ -285,7 +288,9 @@ e.g. all $\binom n3$ triangles of $K_n$)? The folklore answer — "supports are
 identifiable only modulo $\ker B_2$, at any SNR and any $N$" — turns out to be
 **true at first order and false at second order**, and an earlier revision of
 this very project stated it in the false general form ([honesty note 7](#11-limitations-and-honesty-notes)).
-The correct statement is a dichotomy:
+The correct statement is excitation-dependent --- the deterministic-vs-random
+contrast below, subsumed by the paper's Theorem 1 (excitation trichotomy) as
+the boundary-of-(b) and class-(a) cases:
 
 - **First order (impossibility).** Under *unknown deterministic* triangle
   signals, supports with $\mathrm{im}~B_{2,S} = \mathrm{im}~B_{2,S'}$ induce
@@ -331,15 +336,20 @@ The correct statement is a dichotomy:
 Implementation: `curl_domain_signatures`, `second_order_covariance`,
 `matrix_gaussian_chernoff`, `candidate_tetrahedra`,
 `equal_image_single_swap_pairs`, `confuser_pair_chernoff`,
-`second_order_min_snapshots`, `confuser_family_fano_min_snapshots` in
+`second_order_min_snapshots`, `confuser_family_fano_min_snapshots`,
+plus the trichotomy/NNLS section (`excitation_covariance`,
+`projector_excitation_gamma`, `interpolated_excitation_gamma`,
+`lifted_atom_matrix`, `nnls_recovery_bound`, `share_edge_adjacency`) in
 `src/tfl/limits.py`; all constants Monte-Carlo-validated in
 `tests/test_second_order.py`. Sharp *first-order* sparse-support thresholds
-over $\ker B_2$ remain open (paper Remark 2).
+over $\ker B_2$ remain open (paper §6, open problems).
 
-### R6 — Real, unplanted recovery (cyclones), plus real-geometry checks
+### R6 — Curl-based vortex localization on real data (cyclones), plus real-geometry checks
 
-**The flagship real-data result (Figure 3):** genuine, unplanted higher-order
-structure recovered from nature. ERA5 10m winds over the Western North Pacific
+**The flagship real-data result (Figure 3): curl-based vortex localization** ---
+a genuine, unplanted higher-order signal localized in nature (a
+localization/ranking task, deliberately *not* claimed as filled-triangle
+topology recovery). ERA5 10m winds over the Western North Pacific
 (Aug–Sep 2020, 13 IBTrACS storms incl. Bavi, Maysak, Haishen) become edge
 flows on a triangulated mesh; by Stokes' theorem a triangle's curl is its
 circulation (area-integrated vorticity), so high-curl triangles are real
@@ -349,18 +359,20 @@ parameters, nothing planted — is validated against **two references**: a
 vorticity, a different functional of the same winds (internal, quantitative:
 **AUC 0.914**, Spearman 0.77) — and the **genuinely independent** IBTrACS
 best-track cyclone archive (external, agency-verified:
-**AUC 0.920**, precision@k 0.48). The mesh is simply connected, so $B_2$ has
-full column rank by Euler's formula — the favorable-geometry regime of R5's
-dichotomy, with no confusers. Detection degrades as the snapshot budget
-shrinks (uniformly centered statistic, $N \ge 3$; the theory floor
-$\rho^\star(N)$ is shown for reference — we make no quantitative
-$1/\sqrt N$-tracking claim on real weather). Against a classical baseline
+**AUC 0.920**, PR-AUC 0.494 at 1.8 % prevalence, precision@k 0.48, with
+storm/window cluster-bootstrap 95 % CIs in the figure and JSON). The mesh is simply connected, so $B_2$ has
+full column rank by Euler's formula — the class-(a) favorable-geometry
+regime of the excitation trichotomy, with no confusers. Detection degrades as the snapshot budget
+shrinks (uniformly centered statistic, $N \ge 3$); the budget panel carries no
+theory-floor overlay --- an arbitrary-units $\rho^\star(N)$ curve was removed
+in the 2026-07 revision, and we make no quantitative $1/\sqrt N$-tracking
+claim on real weather. Against a classical baseline
 (pointwise vorticity from the same 2.1° mesh-node winds), the edge-flow
 statistic wins on the independent external reference (0.920 vs 0.898) and
 is slightly below on the internal one (0.914 vs 0.948), which shares its
 functional with the baseline.
 
-**Real-geometry checks (Figure 4):** on three standard TNTP traffic networks
+**Real-geometry checks (repo figure `real_traffic.png`):** on three standard TNTP traffic networks
 the street geometry contains few 3-cliques and $B_2$ has **full column rank**
 in all three — curl DoF ratio exactly **1**; real user-equilibrium flows carry
 genuine curl energy (2.4% on Sioux Falls, 4.6% on Anaheim), unlike FX's
@@ -543,13 +555,16 @@ topo-flow-limits/
 │                             / fano_rho_floor (supplement S1 joint-recovery
 │                             converses); median_sigma_envelope (supplement S3);
 │                             per_triangle_threshold (bayes | fwer/Bonferroni);
-│                             FIRST-/SECOND-ORDER DICHOTOMY section (main thm):
+│                             EXCITATION TRICHOTOMY section (main thm):
 │                             curl_domain_signatures, second_order_covariance,
 │                             lifted_atoms_linearly_independent (spark lemma),
 │                             matrix_gaussian_chernoff, candidate_tetrahedra,
 │                             equal_image_single_swap_pairs,
 │                             confuser_pair_chernoff, second_order_min_snapshots,
-│                             confuser_family_fano_min_snapshots
+│                             confuser_family_fano_min_snapshots;
+│                             excitation_covariance, projector_excitation_gamma,
+│                             interpolated_excitation_gamma, lifted_atom_matrix,
+│                             nnls_recovery_bound, share_edge_adjacency
 │
 ├── experiments/
 │   ├── _util.py              results paths; Agg (headless) matplotlib; JSON/figure
@@ -558,9 +573,12 @@ topo-flow-limits/
 │   │                         (K4-K8, random supports, Wilson CIs) + alpha
 │   │                         sweep + second_order.json (~15-25 min)
 │   ├── run_phase_transition.py   paper Fig 2 + phase_transition.json
-│   ├── run_confusability.py      Figure 2 + confusability.json
-│   ├── run_real_cyclone.py       Figure 3 (flagship real recovery) + real_cyclone.json
-│   ├── run_real_traffic.py       Figure 4 + real_traffic.json (A geometry,
+│   ├── run_confusability.py      repo figure + confusability.json (confuser
+│   │                             exponents; quoted as text in the paper)
+│   ├── run_real_cyclone.py       PAPER FIG 3: curl-based vortex localization
+│   │                             + real_cyclone.json
+│   ├── run_real_traffic.py       repo figure + real_traffic.json (out of the
+│   │                             4-page paper; A geometry,
 │   │                             B Anaheim G=3I, C EMA non-diagonal G)
 │   ├── run_real_fx.py            repo figure + real_fx.json (consistency check;
 │   │                             covered in the paper as text + the K9 bar)
@@ -569,18 +587,20 @@ topo-flow-limits/
 │   ├── run_plugin.py             supplement S3 figure + plugin.json
 │   └── run_all.py                one-click: all of the above from fixed seeds
 │
-├── tests/                    45 tests — the theorems' guardrails (see §8)
+├── tests/                    46 tests — the theorems' guardrails (see §8)
 │   ├── test_hodge.py
 │   ├── test_theory_vs_sim.py
-│   ├── test_excitation.py    the trichotomy + NNLS guardrails (9 tests:
+│   ├── test_excitation.py    the trichotomy + NNLS guardrails (10 tests:
 │   │                         diagonal/PSD/projector regimes, Kn ambiguity,
 │   │                         separation identity + Johnson bound, NNLS
-│   │                         consistency + failure-bound validity, subspace
+│   │                         consistency + failure-bound validity (incl.
+│   │                         non-vacuous cells), subspace
 │   │                         tie/collapse, alpha-interpolation)
 │   ├── test_geo.py           the wind-to-edge-flow bridge (Euler full rank;
 │   │                         synthetic Rankine vortex localizes with correct
 │   │                         sign; matches finite-difference vorticity ranking)
-│   └── test_second_order.py  the dichotomy theorem's guardrails (spark lemma,
+│   └── test_second_order.py  second-order guardrails, trichotomy class (a)
+│                             (spark lemma,
 │                             exhaustive K4 injectivity, deterministic confuser
 │                             replication, C_G constants vs MC, rank-deficient
 │                             recovery, Fano consistency)
@@ -600,18 +620,19 @@ topo-flow-limits/
 │   └── fetch_ibtracs.py      refetch from NOAA NCEI (v04r01)
 │
 ├── results/                  regenerated by run_all.py
-│   ├── figures/              8 PNGs: 4 main-paper (phase_transition, confusability,
-│   │                         real_cyclone, real_traffic) + 3 supplement (fano_bounds,
-│   │                         partial_sampling, plugin) + 1 repo-only (real_fx)
+│   ├── figures/              9 PNGs: 3 main-paper (second_order, phase_transition,
+│   │                         real_cyclone) + 3 supplement (fano_bounds,
+│   │                         partial_sampling, plugin) + 3 repo-only
+│   │                         (confusability, real_traffic, real_fx)
 │   └── *.json                all numbers quoted in the paper + supplement
 │
 └── paper/
     ├── main.tex              the manuscript (official ICASSP spconf format)
     ├── spconf.sty, IEEEbib.bst   official ICASSP paper-kit style files
-    ├── refs.bib              bibliography (27 entries, 25 cited in the draft)
-    ├── main.pdf              compiled draft (4 pages content + refs-only page 5,
-    │                         zero overfull boxes)
-    ├── supplement.tex/.pdf   repository supplement (§12): Fano converses, dichotomy proofs (S4), cyclone methods (S5),
+    ├── refs.bib              bibliography (28 entries, 22 cited in the draft)
+    ├── main.pdf              compiled draft (4 pages technical content +
+    │                         page 5 references & compliance statements)
+    ├── supplement.tex/.pdf   repository supplement (§12): Fano converses, trichotomy/separation/NNLS proofs (S4), vortex-localization methods (S5),
     │                         partial edge sampling, plug-in estimation
     └── figures/              figure copies used by the manuscript + supplement
 ```
@@ -631,10 +652,10 @@ cd topo-flow-limits
 uv venv --python 3.11 .venv
 uv pip install --python .venv\Scripts\python.exe numpy scipy networkx cvxpy matplotlib pandas pytest
 
-# 1) validate all theory against Monte-Carlo (45 tests; ~3-5 min)
+# 1) validate all theory against Monte-Carlo (46 tests; ~3-5 min)
 .\.venv\Scripts\python.exe -m pytest -q
 
-# 2) regenerate every figure and metric (~15-20 min, 8 experiments)
+# 2) regenerate every figure and metric (~30-45 min, 8 experiments)
 .\.venv\Scripts\python.exe experiments\run_all.py
 ```
 
@@ -743,7 +764,7 @@ must beat a Monte-Carlo cross-examination before it is cited in the manuscript.
   `amount`/`start_date`/`end_date` bookkeeping keys. The shipped file starts with a
   UTF-8 BOM (it was cached via PowerShell), which is why the loaders read it with
   the `utf-8-sig` codec — plain `json.load(open(...))` would choke on the BOM.
-**ERA5 winds + IBTrACS cyclones (Figure 3 — the unplanted-recovery study):**
+**ERA5 winds + IBTrACS cyclones (Figure 3 — the vortex-localization study):**
 
 - **Winds**: ERA5 reanalysis (Hersbach et al. 2020), 10m u/v components, from
   the public [ARCO-ERA5](https://github.com/google-research/arco-era5) archive
@@ -768,7 +789,7 @@ must beat a Monte-Carlo cross-examination before it is cited in the manuscript.
   winds: internal, quantitative) and the genuinely independent IBTrACS
   positions (external, semantic).
 
-**Road networks (Figure 4):**
+**Road networks (repo figure `real_traffic.png`; outside the 4-page paper):**
 
 - Source: the [Transportation Networks for Research](https://github.com/bstabler/TransportationNetworks)
   repository — the community-standard test networks for traffic assignment.
@@ -792,7 +813,7 @@ Why FX is the *right* real dataset for a limits paper: covered-interest/triangul
 **arbitrage-freeness means the true flow is a pure gradient** (rates derive from one
 price vector), so theory predicts machine-zero curl — and that is precisely what we
 measure ($10^{-31}$, i.e. floating-point residue). FX *instantiates the
-converse*; the road networks (Figure 4) supply the achievability side —
+converse*; the road networks (repo figure) supply the achievability side —
 full-rank geometry, genuine curl energy in the real flows, and recovery at the
 predicted budget.
 
@@ -806,8 +827,9 @@ predicted budget.
 | Gurugubelli & Chepuri, EUSIPCO 2024 (sparse clique sampling, MAP); greedy topology learning (arXiv 2502.20159); sparse cell complexes (arXiv 2309.01632) | **Algorithms** that estimate the filled set from flows | No identifiability conditions, no sample-complexity or SNR thresholds, no converse |
 | Marinucci et al. 2025 (topological adaptive LMS) | Online estimation over simplicial complexes, edge-sampling design | Complex structure assumed known; lists structure-discovery as future work |
 | Hypergraph/simplicial SBM detectability (e.g. arXiv 2312.00708, 2108.06547) | Phase transitions for community detection when the **structure itself is observed** | Different observation model: our structure is *latent* and observed only through flow curls |
-| High-dimensional support-recovery / sparse-covariance detection limits (Wainwright 2009; Amini & Wainwright 2009; Berthet & Rigollet 2013; Cai-Zhang-Zhou 2010) | The generic information-theoretic machinery (Fano log-factors, variance-detection scalings) we **specialize** — cited as such in the paper | No simplicial/curl geometry: nothing about $B_2$, Gram leakage, $\ker B_2$ confusers, or the lifted-atom spark that drives our dichotomy |
-| **This project** | **Fundamental limits** for the latent-structure-from-flows problem: converse scalings (R2), matching estimator (R4), the first-/second-order identifiability dichotomy with universal constants (R5 — main theorem), and genuine unplanted real-data recovery (R6) | — |
+| High-dimensional support-recovery / sparse-covariance detection limits (Wainwright 2009; Amini & Wainwright 2009; Berthet & Rigollet 2013; Cai-Zhang-Zhou 2010) | The generic information-theoretic machinery (Fano log-factors, variance-detection scalings) we **specialize** — cited as such in the paper | No simplicial/curl geometry: nothing about $B_2$, Gram leakage, $\ker B_2$ confusers, or the lifted-atom spark that drives our trichotomy's class-(a) identifiability |
+| Liu, Tenorio, Marques & Isufi 2025 (matched topological subspace detectors, arXiv:2504.05892) | **Detection** of signals lying in a *known* Hodge/topological subspace | The subspace is an input, not an estimand; population statistics see only $\mathrm{im}\,B_{2,S}$ — our trichotomy's class (b) delimits exactly what such image-level methods can resolve |
+| **This project** | **Fundamental limits** for the latent-structure-from-flows problem: converse scalings (R2), the excitation trichotomy with global analytic separation constants (R5 — main theorem), a consistent NNLS estimator with an explicit $O(1/N)$ failure bound (R4/R5), and curl-based vortex localization on real data (R6) | — |
 
 In short: prior TSP work asks *how* to infer the complex; this project proves *when*
 it can and cannot be done, and hands back a threshold + estimator that the
@@ -835,7 +857,9 @@ Stated plainly, because reviewers (and users) deserve to know:
    recover. The road-network study demonstrates achievability with **planted**
    triangle supports: real traffic carries no labelled triangle ground truth, so
    what is real there is the network geometry (full-rank $B_2$) and the
-   equilibrium-flow background the detector must be invariant to. Fully-real
+   equilibrium-flow background the detector must be invariant to. Since the
+   2026-07 revision both studies live in the repository/supplement only; the
+   4-page paper's sole real-data study is the cyclone vortex localization. Fully-real
    ground-truth recovery is validated on controlled planted complexes
    (Figures 1–2).
 4. **`sparse_curl_covariance_support`** (the lifted cvxpy estimator) is provided as
@@ -855,7 +879,8 @@ Stated plainly, because reviewers (and users) deserve to know:
    identical flow distributions, indistinguishable at any SNR and any $N$".
    True for *deterministic* signals; false for the random model (the
    covariance is strictly finer than the column image; spark lemma). The
-   corrected statement is R5's dichotomy. (b) A subsequent revision claimed
+   corrected statement was R5's first/second-order dichotomy --- since
+   generalized to the excitation trichotomy (note 10 below). (b) A subsequent revision claimed
    the tetrahedral *swap* separation 16 was "exhaustively minimal over all
    equal-image pairs on $K_5$" — the scan behind that claim only compared
    supports of equal cardinality. The unrestricted minimum is **9** (the
@@ -868,6 +893,17 @@ Stated plainly, because reviewers (and users) deserve to know:
    the curl statistic (GLS/BLUE inversion); the residual noise covariance
    $\sigma_n^2 G^{-1}$ is **not** white. The paper says "geometry-aware
    decorrelation"; function names keep the historical prefix for API stability.
+9. **Cyclone study scope.** The cyclone experiment recovers *unplanted* real
+   structure, but the observation model there is an idealization too: 6-hourly
+   the latent support is **not** static — cyclones translate 3–6°/day, i.e.
+   ~6–11 triangle-widths per 4-day window. Temporal centering removes the
+   window-mean flow, so the statistic detects the *time-varying* circulation
+   a translating vortex deposits in every triangle it crosses (a perfectly
+   static vortex would be removed by the centering); evaluation is by
+   window-pooled ROC ranking, not per-window support recovery, and
+   the detector's Gaussian null is a working model for weather-scale
+   fluctuations; evaluation is threshold-free ROC ranking, so no null
+   calibration is required.
 10. **The 2026-07 method-level revision.** An earlier revision claimed that
    "random signals" per se make every support identifiable at any rank
    deficiency. That is true only for *structured* excitations: the claim was
@@ -880,17 +916,6 @@ Stated plainly, because reviewers (and users) deserve to know:
    (prior work is the isotropic special case), retitled the paper
    accordingly, renamed the cyclone study to vortex localization, and
    removed an arbitrary-units theory-floor overlay from its budget panel.
-9. **Cyclone study scope.** The cyclone experiment recovers *unplanted* real
-   structure, but the observation model there is an idealization too: 6-hourly
-   the latent support is **not** static — cyclones translate 3–6°/day, i.e.
-   ~6–11 triangle-widths per 4-day window. Temporal centering removes the
-   window-mean flow, so the statistic detects the *time-varying* circulation
-   a translating vortex deposits in every triangle it crosses (a perfectly
-   static vortex would be removed by the centering); evaluation is by
-   window-pooled ROC ranking, not per-window support recovery, and
-   the detector's Gaussian null is a working model for weather-scale
-   fluctuations; evaluation is threshold-free ROC ranking, so no null
-   calibration is required.
 
 ---
 
@@ -906,8 +931,8 @@ extension has code, tests, a figure, and JSON metrics.
 
 ### S1 — Fano converses for *joint* support recovery
 
-The paper's Theorem 1(a) bounds a *single* triangle's detectability (its
-part (b) already states the joint Fano bound proved here). Recovering
+The paper's Prop. 2 bounds a *single* triangle's detectability (and already
+states the joint Fano bound proved here). Recovering
 the whole support of size $k$ among $\binom{p}{k}$ candidates is harder:
 
 - **Gaussian Fano converse** (`fano_min_snapshots`): with edge-disjoint
@@ -1006,10 +1031,17 @@ pdflatex supplement && pdflatex supplement
       truth. **Done: tropical-cyclone circulation from ERA5 edge flows,
       validated against full-resolution vorticity + IBTrACS
       (`run_real_cyclone.py`).**
+- [x] **2026-07 method-level revision** (adversarially triggered): the dichotomy
+      generalized to the **excitation trichotomy** (diagonal / free-PSD /
+      projector), a lifted-covariance **NNLS estimator** with consistency +
+      explicit $O(1/N)$ failure bound on a K4–K8 random-support grid, the
+      cyclone study repositioned as **vortex localization** (PR-AUC, baselines,
+      cluster-bootstrap CIs), and the page-5 compliance statements.
+      **Done: main Thm. 1–3 / `tests/test_excitation.py` / `run_second_order.py`.**
 
 Remaining open problems (deliberately left for a journal version): sharp
 sparse-support thresholds over $\ker B_2$ (compressed-sensing conditions —
-paper Remark 2), the information-theoretic limit of partial observation beyond
+paper §6 open problems), the information-theoretic limit of partial observation beyond
 curl detectors (supplement Rem. S2.3), and temporal dependence
 ($N_{\mathrm{eff}}$ — §11 item 5 above).
 
@@ -1055,8 +1087,11 @@ curl detectors (supplement Rem. S2.3), and temporal dependence
    - **(c) 投影激励 $\Gamma_S=\sigma_c^2(B_{2,S}^\top B_{2,S})^+$**：协方差
      恰为 $\sigma_n^2 I+\sigma_c^2 P_{\mathrm{im}}$，等像支持集在任何
      SNR、任何 $N$ 下**完全不可分**。$\alpha$-插值实验
-     （$\Gamma_\alpha=(1-\alpha)I+\alpha(B_S^\top B_S)^+$）中解析间隙与
-     NNLS 恢复率同步塌缩（1.00→0.07）。
+     （$\Gamma_\alpha=(1-\alpha)I+\alpha(B_S^\top B_S)^+$）中解析间隙连续
+     缩小，而带阈值（声明的 $\rho_2/2$ 规则）的 NNLS 恢复在间隙归零
+     **之前**就已塌到 0（1.00→0.82→0.00，$\alpha=0.75$ 处已为 0）——
+     阈值化估计先于可区分性死亡，仅 $\alpha=1$ 端点是无阈值的完全
+     不可分。
    一阶/确定性信号是 (b) 的退化边界：等像支持集诱导相同分布族；$K_n$ 上
      自由度比恰为 $3/n$；
    - **(a) 类内的代价（样本复杂度）**：区分一个混淆对需
@@ -1087,7 +1122,7 @@ $q^{3k}$ 因子极其残酷（Anaheim 上 $q=0.9$ 即摧毁恢复），且瓶颈
 已知参数检测器几乎无差（ $N\ge 30$ 时零差距）。
 
 **真实数据**：
-① **旗舰结果——真实、未种植的高阶结构恢复（台风）**：ERA5 再分析 10m 风场
+① **旗舰结果——基于旋度的真实涡旋定位（台风，未种植）**：ERA5 再分析 10m 风场
 （西北太平洋，2020 年 8–9 月，0.7°/6 小时）投影为三角剖分网格上的边流；
 由 Stokes 定理，三角形的旋度就是环流（面积分涡度），所以"高旋度三角形"
 就是真实的大气涡旋。检测器用时间中心化的旋度能量统计量（面积²归一到
@@ -1095,10 +1130,12 @@ $q^{3k}$ 因子极其残酷（Anaheim 上 $q=0.9$ 即摧毁恢复），且瓶颈
 （一个同场一致性参考 + 一个真正独立的 IBTrACS 档案）：
 全分辨率有限差分涡度（内部定量：**AUC 0.914**，Spearman 0.77）与 IBTrACS
 台风最佳路径档案（外部、机构核验、与再分析完全独立；覆盖 Bavi、Maysak、
-Haishen 等 13 个风暴：**AUC 0.920**，precision@k 0.48）。网格单连通 ⇒
-$B_2$ 满列秩（Euler 公式）⇒ 二分定理的有利几何侧，无混淆对。降采样快照
-预算后检测质量随之下降（统一使用中心化统计量、$N\ge3$；理论下限仅作参考，
-不宣称定量跟踪 $1/\sqrt N$）。对照经典基线（同信息预算的网格点涡度）：
+Haishen 等 13 个风暴：**AUC 0.920**，PR-AUC 0.494（阳性率 1.8%），
+precision@k 0.48，附风暴/窗口聚类 bootstrap 95% CI）。网格单连通 ⇒
+$B_2$ 满列秩（Euler 公式）⇒ 激励三分定理 (a) 类的有利几何侧，无混淆对。降采样快照
+预算后检测质量随之下降（统一使用中心化统计量、$N\ge3$；面板不再叠加
+任意单位的理论下限曲线——2026-07 修订中已删除，不宣称定量跟踪
+$1/\sqrt N$）。对照经典基线（同信息预算的网格点涡度）：
 外部独立参考上我们更优（0.920 vs 0.898），内部同场参考上略低
 （0.914 vs 0.948——该参考与基线共享泛函）。诚实注记：GLS 去相关
 统计量（R4，面向精确支持集恢复）在这种近规则满秩网格上因 $G^{-1}$
@@ -1113,10 +1150,10 @@ $28/84=1/3$ 落在 $3/n$ 曲线上（这一半是真实的几何测量）。
 （$G$ 非对角、10 对共边三角形——真正让几何感知边际律干活的面板）。
 种植实验的真实成分是几何；真正未种植的恢复证据见 ①。
 
-**复现**：`pytest -q`（45 个测试，约 3–4 分钟，每条定理都对照蒙特卡洛验证）；
-`python experiments/run_all.py`（约 15–20 分钟重生成全部 8 张图）；
-论文在 `paper/main.pdf`（ICASSP 官方 spconf 格式，4 页正文 + 第 5 页仅参考文献），
-补充材料在 `paper/supplement.pdf`（9 页）。全程只需 CPU。
+**复现**：`pytest -q`（46 个测试，约 3–5 分钟，每条定理都对照蒙特卡洛验证）；
+`python experiments/run_all.py`（约 30–45 分钟重生成全部 9 张图）；
+论文在 `paper/main.pdf`（ICASSP 官方 spconf 格式，4 页正文 + 第 5 页参考
+文献与合规声明），补充材料在 `paper/supplement.pdf`（11 页）。全程只需 CPU。
 
 ---
 
@@ -1127,9 +1164,9 @@ follow upon publication):
 
 ```bibtex
 @misc{topoflowlimits2026,
-  title  = {When Are Triangles Invisible? Fundamental Limits of Higher-Order
-            Structure Identifiability from Edge Flows},
-  author = {appleweiping},
+  title  = {Excitation-Dependent Identifiability of Latent Higher-Order
+            Structure from Edge Flows},
+  author = {Yan, Weiping},
   year   = {2026},
   howpublished = {\url{https://github.com/appleweiping/topo-flow-limits}}
 }

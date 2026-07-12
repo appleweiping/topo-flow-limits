@@ -45,6 +45,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _util import FastFlowSampler, save_json, savefig  # noqa: E402
 
 import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.ticker as mticker  # noqa: E402
 
 from tfl.estimators import (  # noqa: E402
     greedy_support,
@@ -110,14 +111,23 @@ def run_main_grid(rng: np.random.Generator) -> dict:
                                     sigma_harm=0.0, sigma_noise=SIGMA_N)
                 for N in N_GRID:
                     hits = {"nnls": 0, "subspace": 0, "greedy": 0}
+                    hits["nnls_gap"] = hits.get("nnls_gap", 0)
                     for _ in range(N_TRIALS):
                         active = np.zeros(p, bool)
                         active[rng.choice(p, k, replace=False)] = True
                         F = sampler.sample(active, params, N, rng)
                         Z = Q.T @ F
-                        sup, _ = nnls_lifted_support(
+                        sup, w_hat = nnls_lifted_support(
                             Z, U, SIGMA_N, threshold=rho2 * SIGMA_N**2 / 2)
                         hits["nnls"] += np.array_equal(sup, active)
+                        # oracle-free variant: threshold at the midpoint of the
+                        # LARGEST GAP in the sorted coefficients (no w_min)
+                        ws = np.sort(w_hat)
+                        gaps = np.diff(ws)
+                        gi = int(np.argmax(gaps)) if len(gaps) else 0
+                        thr_gap = (ws[gi] + ws[gi + 1]) / 2 if len(gaps) else 0.0
+                        hits["nnls_gap"] += np.array_equal(w_hat > thr_gap,
+                                                           active)
                         m = int(np.linalg.matrix_rank(B2[:, active]))
                         sup_s = subspace_matched_support(Z, U, k=k,
                                                          subspace_dim=m)
@@ -133,10 +143,13 @@ def run_main_grid(rng: np.random.Generator) -> dict:
                         lo, hi = wilson_ci(h, N_TRIALS)
                         cell[name] = {"p_exact": h / N_TRIALS,
                                       "ci95": [lo, hi]}
-                    # the derived bound at this cell (fixed nominal support of
-                    # size k: bound uses a representative Sigma; supports are
-                    # random per trial but Sigma's invariants depend only on k
-                    # for K_n by symmetry)
+                    # the derived bound at this cell, evaluated at a FIXED
+                    # representative support (the lexicographically first k
+                    # triangles). NOTE: only tr(Sigma) is support-invariant on
+                    # K_n; ||Sigma||_F^2 varies with the support's internal
+                    # share-an-edge count (effect ~1%), so this is a
+                    # representative value, and the bound remains a valid
+                    # per-support upper bound.
                     active0 = np.zeros(p, bool)
                     active0[:k] = True
                     Sig = excitation_covariance(
@@ -184,8 +197,14 @@ def run_alpha_sweep(rng: np.random.Generator) -> dict:
         for _ in range(ALPHA_TRIALS):
             F = sampler.sample(s3, params, ALPHA_N, rng, gamma_sqrt=gam_sqrt)
             Z = Q.T @ F
+            # SAME threshold rule as the main grid (w_min/2 at the alpha=0
+            # weights). For alpha > 0 the diagonal NNLS model is deliberately
+            # misspecified — that is the point of the experiment — so the
+            # recovery of the specific S3 can collapse BEFORE the analytic
+            # gap reaches zero; only the alpha=1 endpoint (identical
+            # covariances) is threshold-free.
             sup, _ = nnls_lifted_support(Z, U, SIGMA_N,
-                                         threshold=rho2 * SIGMA_N**2 / 4)
+                                         threshold=rho2 * SIGMA_N**2 / 2)
             hits += np.array_equal(sup, s3)
         recovery.append(hits / ALPHA_TRIALS)
         ci.append(list(wilson_ci(hits, ALPHA_TRIALS)))
@@ -232,10 +251,12 @@ def _plot(grid: dict, alpha: dict) -> None:
                 ax.fill_between(Ns, lo, hi, alpha=0.12,
                                 color=line.get_color())
     ax.set_xscale("log")
+    ax.set_xticks(avail_N)
+    ax.xaxis.set_major_formatter(mticker.ScalarFormatter())
+    ax.xaxis.set_minor_formatter(mticker.NullFormatter())
     ax.set_xlabel("snapshots N")
     ax.set_ylabel("P(exact recovery)")
-    ax.set_title(f"(A) NNLS vs baselines, rho2={rho_fix}, mid-k\n"
-                 "(solid+CI: NNLS; dashed: subspace; dotted: greedy)")
+    ax.set_title(f"(A) NNLS vs baselines ($\\rho_2$={rho_fix}, mid-$k$)")
     ax.legend(fontsize=7, ncol=2, loc="lower right")
     ax.grid(alpha=0.3)
 
@@ -252,10 +273,12 @@ def _plot(grid: dict, alpha: dict) -> None:
         line, = ax.plot(xs, y, "-o", ms=3, label=f"K{n} (rank {g['rank_B2']}/{g['p']})")
         ax.fill_between(xs, lo, hi, alpha=0.12, color=line.get_color())
     ax.set_xscale("log")
+    ax.set_xticks(avail_r)
+    ax.xaxis.set_major_formatter(mticker.ScalarFormatter())
+    ax.xaxis.set_minor_formatter(mticker.NullFormatter())
     ax.set_xlabel(r"excitation strength $\rho_2$")
     ax.set_ylabel("P(exact recovery)")
-    ax.set_title(f"(B) NNLS across rank deficiency, N={N_fix}\n"
-                 "(identifiable at every DoF ratio, as the theory says)")
+    ax.set_title(f"(B) NNLS across rank deficiency (N={N_fix})")
     ax.legend(fontsize=7, loc="lower right")
     ax.grid(alpha=0.3)
 

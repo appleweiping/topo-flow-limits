@@ -1,8 +1,9 @@
 """One-click reproduction of every figure and number in the paper + supplement.
 
 Runs all experiments from fixed seeds and writes to ``results/`` (+ figures).
-CPU-only; completes in roughly 15-20 minutes on a laptop. The real-cyclone
-experiment [7/7] needs the cached ERA5/IBTrACS files (ship with the repo via
+CPU-only; completes in roughly 30-45 minutes on a laptop (run_second_order
+dominates). The vortex-localization experiment [8/8] needs the cached
+ERA5/IBTrACS files (ship with the repo via
 ``data/fetch_era5.py`` / ``data/fetch_ibtracs.py``); it is skipped with a
 notice if they are absent.
 """
