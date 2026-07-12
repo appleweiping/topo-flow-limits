@@ -1,6 +1,8 @@
 """Estimators for the latent filled-triangle support ``S``.
 
-Mechanism (the crux of the whole approach)
+Mechanism (the reduction everything rests on; the identity itself is
+elementary — the detection-theoretic USE of HodgeRank's curl-as-inconsistency
+observation)
 -------------------------------------------
 Take the curl of the observed flow, ``c_t = B2.T f_t``. Because ``B2.T B1.T = 0``
 and the harmonic space is both curl- and divergence-free, the **gradient and
@@ -16,7 +18,17 @@ if the triangles share exactly one edge, ``0`` otherwise), the curl covariance i
 
 Recovering ``S`` from ``Sigma_c`` is a sparse PSD dictionary-selection problem in
 the atoms ``{g_tau g_tau.T}`` (``g_tau`` = column ``tau`` of ``G``) — a lifted
-non-negative lasso, which is where the achievability guarantee comes from.
+non-negative lasso. Because the lifted atoms are ALWAYS linearly independent
+(limits.lifted_atoms_linearly_independent — a pair of edges lies in at most one
+triangle), these second-order estimators identify supports even when ``B2`` is
+rank-deficient, i.e. beyond what any first-order/subspace argument allows: they
+are the achievers of the second-order regime of the identifiability dichotomy.
+
+Naming note: ``whitened_*`` below decorrelates the MEAN of the curl statistic
+(GLS/BLUE inversion ``yhat = G^+ c``); the residual noise covariance
+``sigma_n^2 G^+`` is generally NOT white. The paper calls this "geometry-aware
+decorrelation"; the function names keep the historical ``whitened_`` prefix
+for API stability.
 
 This module provides:
   * ``curl_statistics`` / ``curl_energy_scores`` — the sufficient statistics;

@@ -12,18 +12,22 @@ by the test suite before it is allowed into the manuscript.
 > network are "filled"* (carry higher-order interactions). Existing papers give
 > **algorithms** that estimate this from edge-flow data. This project answers the
 > question those papers skip: **when is that estimation possible at all?** The
-> answer: the hidden triangles are visible *only* through the **curl** of the flows,
-> and they become provably invisible in two independent ways — (1) when the curl
-> signal-to-noise ratio drops below a sharp threshold `ρ*(N) ~ 1/√N`
-> (**curl-invisibility phase transition**), and (2) when the graph's geometry makes
-> triangle signatures linearly dependent (**rank obstruction**: without sparsity
-> priors, supports are identifiable only modulo `ker B2`, and on a complete graph
-> the observable curl subspace carries only a `3/n` degrees-of-freedom ratio —
-> at *any* SNR). Real data instantiate **both sides of the limit**: on
-> foreign-exchange flows both obstructions bind exactly as predicted (nothing is
-> recoverable), while on real road-network geometry (full-rank `B2`, DoF ratio 1)
-> planted structure is recovered at precisely the theory-predicted snapshot
-> budget.
+> hidden triangles are visible *only* through the **curl** of the flows, which
+> yields (1) a **curl-invisibility sample-complexity threshold** `ρ*(N) ~ 1/√N`
+> below which no estimator attains the target error exponent, and (2) — the main
+> theorem — a **first- vs second-order identifiability dichotomy** that corrects
+> the folklore "rank obstruction": supports spanning the same curl subspace are
+> genuinely indistinguishable under *deterministic* signals (on the complete
+> graph the observable curl subspace carries only a `3/n` degrees-of-freedom
+> ratio), yet under *random* signals **every support is identifiable at any rank
+> deficiency**, because the lifted signatures `{b_τ b_τᵀ}` are always linearly
+> independent. Unfavorable geometry costs **snapshots, not possibility**: the
+> minimal confusers (tetrahedral face swaps) have universal curl-domain
+> separation 16, giving error exponent `ρ₂²` and budget `N* ~ log(1/δ)/ρ₂²`.
+> On the achievability side, the project recovers **genuine, unplanted
+> higher-order structure from real data**: tropical-cyclone circulation from
+> ERA5 wind-field edge flows, validated against both full-resolution vorticity
+> and the independent IBTrACS cyclone archive.
 
 ---
 
@@ -33,7 +37,7 @@ by the test suite before it is allowed into the manuscript.
 2. [Mathematical setting (5-minute Hodge primer)](#2-mathematical-setting-5-minute-hodge-primer)
 3. [The observation model](#3-the-observation-model)
 4. [Main results](#4-main-results)
-5. [The four figures, explained](#5-the-four-figures-explained)
+5. [The figures, explained](#5-the-figures-explained)
 6. [Repository layout — every file explained](#6-repository-layout--every-file-explained)
 7. [Installation and full reproduction](#7-installation-and-full-reproduction)
 8. [What each test proves](#8-what-each-test-proves)
@@ -169,7 +173,7 @@ minimum Bayes error has an exact closed form at every finite $N$ (implemented in
 `two_variance_bayes_error`) and decays like $e^{-N C(v_0,v_1)}$ where
 $C$ is the **Gaussian Chernoff information** (`gaussian_chernoff_information`).
 
-### R2 — The curl-invisibility phase transition
+### R2 — The curl-invisibility sample-complexity threshold
 
 As $\rho \to 0$, $C(\rho) = \rho^2/16 + o(\rho^2)$ (validated to 5% accuracy at
 $\rho \le 0.02$). Hence for a target error $\delta$ and budget $N$, detection
@@ -199,7 +203,7 @@ with $\chi^2_N$ tail expressions (`exact_recovery_probability`). Its 50% contour
 the phase boundary in Figure 1, and the **empirical contour matches it to a median
 ratio of 1.01** across the whole grid.
 
-### R4 — Geometry-aware whitening beats naive detection under confusability
+### R4 — Geometry-aware decorrelation (GLS/BLUE) beats naive detection under confusability
 
 Edge-sharing triangles have correlated curl signatures: the triangle Gram matrix
 $G = B_2^{\top} B_2$ has $G_{\sigma\tau} = \pm 1$ when $\sigma,\tau$ share an edge.
@@ -236,47 +240,89 @@ visibly conservative in the transition region, as a bound should be. On the
 edge-sharing strip at $\rho{=}8,\ N{=}200$: naive Hamming error **2.60**
 (never recovers), greedy baseline 0.28, **whitened 0.00**.
 
-### R5 — The rank obstruction: geometry-side degrees of freedom
+### R5 — The rank obstruction is a dichotomy, not an impossibility (main theorem)
 
-Whitening cannot beat linear dependence. Two triangle sets with
-$\mathrm{im}~B_{2,S} = \mathrm{im}~B_{2,S'}$ are indistinguishable **at any SNR
-and any $N$** — so *without sparsity or other priors*, supports are identifiable
-only **modulo $\ker B_2$**. On the complete graph $K_n$ the curl subspace has
-dimension $\mathrm{rank}(B_2) = \binom{n-1}{2}$ against $\binom{n}{3}$ candidate
-triangle coefficients — a **degrees-of-freedom ratio of exactly $3/n$** (proved via
-$\mathrm{im}~B_2 = \ker B_1$ for the simply-connected 2-skeleton; verified
-numerically for $K_5,\dots,K_{12}$ in `test_curl_dimension_ratio_on_complete_graph`).
-Note the careful phrasing: this is a *DoF/rank* obstruction for arbitrary supports.
-Under a sparsity prior, specific small supports can remain identifiable even when
-candidates outnumber curl dimensions, subject to compressed-sensing-style
-(spark/coherence) conditions on the participating $B_2$ columns — characterizing
-those sparse thresholds is an open problem (see the paper's Remark 2).
+What happens when curl signatures are linearly dependent (singular Gram $G$ —
+e.g. all $\binom n3$ triangles of $K_n$)? The folklore answer — "supports are
+identifiable only modulo $\ker B_2$, at any SNR and any $N$" — turns out to be
+**true at first order and false at second order**, and an earlier revision of
+this very project stated it in the false general form ([honesty note 7](#11-limitations-and-honesty-notes)).
+The correct statement is a dichotomy:
 
-### R6 — Both sides of the limit on real data
+- **First order (impossibility).** Under *unknown deterministic* triangle
+  signals, supports with $\mathrm{im}~B_{2,S} = \mathrm{im}~B_{2,S'}$ induce
+  identical families of flow distributions — indistinguishable at any SNR/$N$.
+  Such confusers exist whenever the candidate set contains all four faces of a
+  **tetrahedron** ($b_{012}-b_{013}+b_{023}-b_{123}=0$). On $K_n$:
+  $\mathrm{rank}(B_2)=\binom{n-1}{2}$ against $\binom n3$ candidates — the
+  **$3/n$ DoF ratio** (verified for $K_5,\dots,K_{12}$).
+- **Second order (identifiability).** Under the random-signal model the flow
+  covariance carries $\sigma_c^2\sum_{\tau\in S} b_\tau b_\tau^\top$ — strictly
+  finer than the column space. The **lifted spark lemma** (`lifted_atoms_linearly_independent`):
+  a pair of distinct edges lies in at most one common triangle, so the atoms
+  $\{b_\tau b_\tau^\top\}$ are *always* linearly independent — the covariance
+  map $S \mapsto \Sigma(S)$ is **injective**, and every support is identifiable
+  from i.i.d. snapshots **at any rank deficiency** (exhaustively verified over
+  all $2^4$ supports of $K_4$; the second-order greedy/lasso estimators
+  `greedy_support` / `sparse_curl_covariance_support` are the achievers, and
+  recover exact supports on rank-deficient $K_5$ — `test_second_order_recovery_succeeds_in_rank_deficient_regime`).
+- **The price (sample complexity).** Telling a minimal confuser pair apart —
+  a tetrahedral face swap — costs $N^\star \sim \log(1/\delta)/C_G$ snapshots,
+  where $C_G$ is the Gaussian Chernoff information between the two curl-domain
+  covariances. The swap separation is **universal**:
+  $\|u_a u_a^\top - u_b u_b^\top\|_F^2 = 9+9-2 = 16$ exactly (faces share one
+  edge), independent of $n$, of $|S|$, and of the hosting tetrahedron —
+  exhaustively minimal over *all* equal-image pairs on $K_5$. The Bhattacharyya
+  expansion then gives $C_G = (\rho_2^2/16)\cdot 16\,(1+o(1)) = \rho_2^2$ with
+  $\rho_2=\sigma_c^2/\sigma_n^2$ (validated to ratio 0.998 at $\rho_2=5\times10^{-4}$),
+  and a Fano argument over the $4\binom n4$ tetrahedral hypotheses adds a
+  $\log n$ factor. **Geometry costs snapshots, not possibility.**
 
-The FX study (Figure 3) shows the **converse** binding in the wild; the
-road-network study (Figure 4) shows **achievability**: on three standard TNTP
-traffic networks (Sioux Falls, Eastern-Massachusetts, Anaheim) the street
-geometry contains few 3-cliques and $B_2$ has **full column rank** in all three —
-curl DoF ratio exactly **1**, every candidate triangle identifiable. Unlike FX,
-real user-equilibrium traffic flows carry genuine curl energy (2.4% on Sioux
-Falls, 4.6% on Anaheim). On Anaheim (54 candidates, pairwise edge-disjoint, so
-$G = 3I$ and the product law is *exact*), planting 18 active triangles over the
-*real* equilibrium flow and detecting with temporally **centered** whitened
-scores (centering removes any constant background exactly, costing one degree of
-freedom — theory uses $N-1$) reproduces the predicted recovery transition
-point-for-point.
+Implementation: `curl_domain_signatures`, `second_order_covariance`,
+`matrix_gaussian_chernoff`, `candidate_tetrahedra`,
+`equal_image_single_swap_pairs`, `confuser_pair_chernoff`,
+`second_order_min_snapshots`, `confuser_family_fano_min_snapshots` in
+`src/tfl/limits.py`; all constants Monte-Carlo-validated in
+`tests/test_second_order.py`. Sharp *first-order* sparse-support thresholds
+over $\ker B_2$ remain open (paper Remark 2).
+
+### R6 — Real, unplanted recovery (cyclones), plus real-geometry checks
+
+**The flagship real-data result (Figure 3):** genuine, unplanted higher-order
+structure recovered from nature. ERA5 10m winds over the Western North Pacific
+(Aug–Sep 2020, 13 IBTrACS storms incl. Bavi, Maysak, Haishen) become edge
+flows on a triangulated mesh; by Stokes' theorem a triangle's curl is its
+circulation (area-integrated vorticity), so high-curl triangles are real
+atmospheric vortices. The centered curl-energy detector — no oracle
+parameters, nothing planted — is validated against **two independent ground
+truths**: the full-resolution finite-difference vorticity (internal,
+quantitative: **AUC 0.914**, Spearman 0.77) and the IBTrACS best-track
+cyclone archive (external, agency-verified, independent of the reanalysis:
+**AUC 0.920**, precision@k 0.48). The mesh is simply connected, so $B_2$ has
+full column rank by Euler's formula — the favorable-geometry regime of R5's
+dichotomy, with no confusers. Degrading the snapshot budget traces the
+predicted $1/\sqrt N$ detectability scaling on real data.
+
+**Real-geometry checks (Figure 4):** on three standard TNTP traffic networks
+the street geometry contains few 3-cliques and $B_2$ has **full column rank**
+in all three — curl DoF ratio exactly **1**; real user-equilibrium flows carry
+genuine curl energy (2.4% on Sioux Falls, 4.6% on Anaheim), unlike FX's
+machine zero. Planted-recovery panels: Anaheim ($G=3I$ — an exact-product-law
+check, honestly labeled as synthetic-in-substance since centering removes the
+real background exactly) and EMA (non-diagonal $G$ — the panel that exercises
+the geometry-aware marginal laws of R4 on real geometry).
 
 ---
 
-## 5. The four figures, explained
+## 5. The figures, explained
 
-All are regenerated by `experiments/run_all.py` (~10–15 min for all 7 figures,
-CPU; the four main-paper figures alone take ~5 min) into
-`results/figures/`; the copies in `paper/figures/` used by the manuscript are a
-manual copy of these outputs (kept in sync whenever figures change).
+All are regenerated by `experiments/run_all.py` (~15–20 min for all 8 figures,
+CPU) into `results/figures/`; the copies in `paper/figures/` used by the
+manuscript are a manual copy of these outputs (kept in sync whenever figures
+change). The paper uses Figures 1–4 below; the FX figure lives in the repo and
+appears in the paper as text plus the $K_9$ bar of Figure 4(A).
 
-### Figure 1 — `phase_transition.png` (headline result)
+### Figure 1 — `phase_transition.png` (recovery threshold)
 
 Heatmap of the empirical probability of *exact* filled-triangle recovery on an
 edge-disjoint planted complex (8 candidates, 4 active, gradient+harmonic nuisance
@@ -302,39 +348,63 @@ union bound (dotted) lower-bounds it, conservatively in the transition region.
 Produced by `experiments/run_confusability.py`, metrics in
 `results/confusability.json`.
 
-### Figure 3 — `real_fx.png` (both obstructions illustrated in the wild)
+### Figure 3 — `real_cyclone.png` (flagship: real, UNPLANTED recovery)
 
-Real data — **an illustration of the obstructions, not a recovery benchmark**
-(real FX has no ground-truth triangle support to recover): 257 trading days
-(Dec 29, 2023 – Dec 31, 2024) of ECB daily reference rates, 9 currencies
-(USD, AUD, CAD, CHF, EUR, GBP, JPY, NOK, SEK) → complete graph
-$K_9$, 36 edges, 84 candidate triangles. Edge flow on day $t$ = log-price difference (a real,
-heavy-tailed, temporally-correlated **gradient**).
-**(A)** Hodge energy split: curl/gradient ≈ $1.8\times10^{-31}$ — an arbitrage-free
-market is a *pure gradient*, i.e. genuinely curl-invisible: no estimator, however
-clever, can find higher-order structure because there is none in the observable
-component. **(B)** Curl degrees-of-freedom ratio $\mathrm{rank}(B_2)/\binom{n}{3}$
-for $K_5,\dots,K_{12}$: the numeric rank sits exactly on the $3/n$ curve; $K_9$
-gives $28/84 = 1/3$. Produced by `experiments/run_real_fx.py`, metrics in
-`results/real_fx.json`.
+Tropical-cyclone circulation recovered from ERA5 wind-field edge flows —
+nothing planted, no oracle parameters (temporally centered curl-energy scores
+on the vorticity scale; area²-normalization puts triangles across 0–45°N on a
+common mean-vorticity scale). **(A)** Scores on the triangulated
+Western-North-Pacific mesh (836 nodes / 2389 edges / 1554 triangles, full
+column rank by Euler) for one 4-day window, with independent IBTrACS cyclone
+fixes circled in red. **(B)** ROC across all 15 season windows against BOTH
+ground truths: internal (full-resolution finite-difference vorticity —
+strictly finer than anything the mesh detector sees): **AUC 0.914**; external
+(IBTrACS, independent of the reanalysis): **AUC 0.920**, precision@k 0.48,
+Spearman(score, |ζ|) = 0.77. **(C)** Detection quality vs snapshot budget $N$
+within windows, degrading along the predicted $1/\sqrt N$ scaling. Statistic
+choice stated honestly: the GLS-decorrelated score (R4) targets
+exact-support recovery under leakage; on this nearly-regular full-rank mesh
+its $G^{-1}$ noise amplification hurts pure detection ranking (AUC 0.77 int /
+0.81 ext — reported in the JSON). Produced by
+`experiments/run_real_cyclone.py`, metrics in `results/real_cyclone.json`.
 
-### Figure 4 — `real_traffic.png` (achievability on real road geometry)
+### Figure 4 — `real_traffic.png` (recovery laws on real road geometry)
 
-The companion to Figure 3, on the other side of the limit.
 **(A)** Curl DoF ratio for three real TNTP road networks — Sioux Falls
 (24 nodes / 38 edges / 2 triangles), Eastern-Massachusetts (74/129/33), Anaheim
 (416/634/54) — all have **full-column-rank $B_2$**, i.e. ratio 1 (green), against
 $K_9$'s $28/84$ (red). Sioux Falls and Anaheim triangles are pairwise
 edge-disjoint ($G=3I$); EMA has 10 edge-sharing pairs yet stays full rank.
-**(B)** Planted-support recovery on Anaheim: snapshots are the **real**
-user-equilibrium flow (unit-RMS, constant background) plus Gaussian
-gradient/harmonic nuisance, planted curl signals on 18 of 54 triangles at
-$\rho = 3$, and white noise. The centered whitened detector (df $N-1$) matches
-the **exact** product law across the whole transition — the union bound (dotted)
-is slightly conservative, as it should be. Honest label: the *support* is
-planted (real traffic has no triangle ground truth); the *geometry* and the
-*background flow* are real. Produced by `experiments/run_real_traffic.py`,
-metrics in `results/real_traffic.json`.
+**(B)** Planted recovery on Anaheim. Honest framing (this changed after
+adversarial self-review): because $G=3I$, this panel is a check of the
+edge-disjoint product law (R3) on real-derived geometry — the real
+constant-background equilibrium flow is removed *exactly* by centering
+(df $N-1$) and the gradient/harmonic nuisances are annihilated by the curl
+map, so the surviving statistical problem is synthetic. The genuine real-data
+recovery evidence is Figure 3.
+**(C)** Planted recovery on EMA — the panel that actually exercises R4's
+geometry-aware machinery on real geometry: 10 edge-sharing pairs make $G$
+non-diagonal and the per-triangle laws heterogeneous
+($(G^{-1})_{\tau\tau} \in [0.333, 0.436]$); empirical recovery tracks the
+independence approximation and respects the rigorous union bound.
+Produced by `experiments/run_real_traffic.py`, metrics in
+`results/real_traffic.json`.
+
+### Repo figure — `real_fx.png` (FX: machine-precision consistency check)
+
+257 trading days (Dec 29, 2023 – Dec 31, 2024) of ECB daily reference rates,
+9 currencies → $K_9$, 36 edges, 84 candidate triangles. **Honest framing
+(changed after adversarial self-review):** the FX edge flow is *constructed*
+as $f = B_1^\top p$ from a single daily log-price vector, so
+$B_2^\top f = (B_1 B_2)^\top p = 0$ **identically, by construction** — the
+measured curl/gradient ratio of $1.8\times10^{-31}$ is floating-point residue
+confirming the curl-annihilation arithmetic on real market data, *not* an
+empirical discovery that markets are arbitrage-free (a genuine test of that
+would need independent per-pair cross-rate quotes, whose triangular
+inconsistencies would carry real curl). **(B)** Curl DoF ratio
+$\mathrm{rank}(B_2)/\binom{n}{3}$ for $K_5,\dots,K_{12}$: numeric rank exactly
+on the $3/n$ curve; $K_9$ gives $28/84 = 1/3$. Produced by
+`experiments/run_real_fx.py`, metrics in `results/real_fx.json`.
 
 ---
 
@@ -360,6 +430,12 @@ topo-flow-limits/
 │   │                         harmonic_basis (eigendecomposition of L1)
 │   ├── tntp.py               loader for TNTP road networks (net + equilibrium
 │   │                         flow files) -> TrafficNetwork (Complex + real flow)
+│   ├── geo.py                gridded wind fields -> mesh edge flows:
+│   │                         triangular_mesh (regional right-triangulated mesh,
+│   │                         full-column-rank B2 by Euler), wind_edge_flows
+│   │                         (trapezoidal line integrals), grid_vorticity
+│   │                         (full-res internal ground truth), IBTrACS loader +
+│   │                         cyclone_triangle_labels (external ground truth)
 │   ├── estimators.py         curl_statistics (sufficient statistics);
 │   │                         energy_detector_bayes_support (naive, Chernoff-optimal
 │   │                         threshold); whitened_curl_scores +
@@ -384,29 +460,51 @@ topo-flow-limits/
 │                             fano_min_snapshots / signal_agnostic_fano_min_snapshots
 │                             / fano_rho_floor (supplement S1 joint-recovery
 │                             converses); median_sigma_envelope (supplement S3);
-│                             per_triangle_threshold (bayes | fwer/Bonferroni)
+│                             per_triangle_threshold (bayes | fwer/Bonferroni);
+│                             FIRST-/SECOND-ORDER DICHOTOMY section (main thm):
+│                             curl_domain_signatures, second_order_covariance,
+│                             lifted_atoms_linearly_independent (spark lemma),
+│                             matrix_gaussian_chernoff, candidate_tetrahedra,
+│                             equal_image_single_swap_pairs,
+│                             confuser_pair_chernoff, second_order_min_snapshots,
+│                             confuser_family_fano_min_snapshots
 │
 ├── experiments/
 │   ├── _util.py              results paths; Agg (headless) matplotlib; JSON/figure
 │   │                         savers; FastFlowSampler (pre-factorized fast sampling)
 │   ├── run_phase_transition.py   Figure 1 + phase_transition.json
 │   ├── run_confusability.py      Figure 2 + confusability.json
-│   ├── run_real_fx.py            Figure 3 + real_fx.json
-│   ├── run_real_traffic.py       Figure 4 + real_traffic.json
+│   ├── run_real_cyclone.py       Figure 3 (flagship real recovery) + real_cyclone.json
+│   ├── run_real_traffic.py       Figure 4 + real_traffic.json (A geometry,
+│   │                             B Anaheim G=3I, C EMA non-diagonal G)
+│   ├── run_real_fx.py            repo figure + real_fx.json (consistency check;
+│   │                             covered in the paper as text + the K9 bar)
 │   ├── run_fano.py               supplement S1 figure + fano.json
 │   ├── run_partial_sampling.py   supplement S2 figure + partial_sampling.json
 │   ├── run_plugin.py             supplement S3 figure + plugin.json
 │   └── run_all.py                one-click: all of the above from fixed seeds
 │
-├── tests/                    21 tests — the theorems' guardrails (see §8)
+├── tests/                    34 tests — the theorems' guardrails (see §8)
 │   ├── test_hodge.py
-│   └── test_theory_vs_sim.py
+│   ├── test_theory_vs_sim.py
+│   └── test_second_order.py  the dichotomy theorem's guardrails (spark lemma,
+│                             exhaustive K4 injectivity, deterministic confuser
+│                             replication, C_G constants vs MC, rank-deficient
+│                             recovery, Fano consistency)
 │
 ├── data/
 │   ├── fx_rates.json         cached real ECB rates (257 days) — offline repro
 │   ├── fetch_fx.py           refetch/extend the FX dataset (no API key needed)
 │   ├── traffic/*.tntp        vendored TNTP road networks + equilibrium flows
-│   └── fetch_traffic.py      refetch the TNTP files
+│   ├── fetch_traffic.py      refetch the TNTP files
+│   ├── era5_wnp_2020.npz     cached ERA5 10m winds, W. North Pacific Aug-Sep
+│   │                         2020, 0.7 deg / 6-hourly (from ARCO-ERA5 on GCS)
+│   ├── fetch_era5.py         refetch via xarray/zarr (sequential)
+│   ├── fetch_era5_fast.py    refetch via concurrent chunk reads (fast on
+│   │                         high-latency links); identical output
+│   ├── probe_era5.py         inspect the ARCO-ERA5 store layout first
+│   ├── ibtracs_wp_2020.csv   cached IBTrACS WP best tracks, Aug-Sep 2020
+│   └── fetch_ibtracs.py      refetch from NOAA NCEI (v04r01)
 │
 ├── results/                  regenerated by run_all.py
 │   ├── figures/              7 PNGs: 4 main-paper (phase_transition, confusability,
@@ -420,7 +518,7 @@ topo-flow-limits/
     ├── refs.bib              bibliography (20 entries, 18 cited in the draft)
     ├── main.pdf              compiled draft (4 pages content + refs-only page 5,
     │                         zero overfull boxes)
-    ├── supplement.tex/.pdf   repository supplement (§12): Fano converses,
+    ├── supplement.tex/.pdf   repository supplement (§12): Fano converses, dichotomy proofs (S4), cyclone methods (S5),
     │                         partial edge sampling, plug-in estimation
     └── figures/              figure copies used by the manuscript + supplement
 ```
@@ -440,7 +538,7 @@ cd topo-flow-limits
 uv venv --python 3.11 .venv
 uv pip install --python .venv\Scripts\python.exe numpy scipy networkx cvxpy matplotlib pandas pytest
 
-# 1) validate all theory against Monte-Carlo (21 tests; ~2-4 min)
+# 1) validate all theory against Monte-Carlo (34 tests; ~3-5 min)
 .\.venv\Scripts\python.exe -m pytest -q
 
 # 2) regenerate every figure and metric (~10-15 min, 6 experiments)
@@ -470,17 +568,23 @@ pdflatex main && bibtex main && pdflatex main && pdflatex main
 ```bash
 python data/fetch_fx.py        # ECB FX rates
 python data/fetch_traffic.py   # TNTP road networks + equilibrium flows
+
+# the ERA5/IBTrACS refetch additionally needs:
+#   uv pip install gcsfs numcodecs requests   (xarray+zarr only for fetch_era5.py)
+python data/fetch_era5_fast.py # ERA5 winds (concurrent chunk reads from GCS)
+python data/fetch_ibtracs.py   # IBTrACS WP best tracks (NOAA NCEI)
 ```
 
 Expected `run_all.py` output (seeds are fixed; numbers reproduce exactly):
 
 ```
-[1/6] phase transition ...  p=8 active=4; exact-theory rho* at N=90 -> 0.513
-[2/6] confusability ...     Hamming@N=200: naive=2.60 whitened=0.00 greedy=0.28
-[3/6] real FX ...           curl/grad=1.8e-31 ; K9: 28 curl dims vs 84 triangle coefficients
-[4/6] real traffic ...      Anaheim DoF 54/54=1.0 ; recovery@N=95: emp=1.00 theory=1.00
-[5/6] Fano curves ...       floors at N=2000: chernoff=0.167 fano(p=1e4)=0.089
-[6/6] sampling + plug-in .. P(exact) emp=0.53 theory=0.56 at q=0.99 ; plugin max gap=0.057
+[1/7] phase transition ...  p=8 active=4; exact-theory rho* at N=90 -> 0.513
+[2/7] confusability ...     Hamming@N=200: naive=2.60 whitened=0.00 greedy=0.28
+[3/7] real FX ...           curl/grad=1.8e-31 ; K9: 28 curl dims vs 84 triangle coefficients
+[4/7] real traffic ...      Anaheim DoF 54/54=1.0 ; recovery@N=95: emp=1.00 theory=1.00
+[5/7] Fano curves ...       floors at N=2000: chernoff=0.167 fano(p=1e4)=0.089
+[6/7] sampling + plug-in .. P(exact) emp=0.53 theory=0.56 at q=0.99 ; plugin max gap=0.057
+[7/7] real cyclones ...     INTERNAL AUC = 0.914 ; EXTERNAL (IBTrACS) AUC = 0.920, P@k = 0.483
 ```
 
 ---
@@ -507,6 +611,15 @@ Expected `run_all.py` output (seeds are fixed; numbers reproduce exactly):
 | `test_partial_sampling_closed_form_matches_simulation` | S2: the $q^{3k}$ closed form vs Monte-Carlo (±0.07) |
 | `test_median_sigma_envelope_and_plugin_consistency` | S3: median estimate inside the DKW / $\chi^2$ envelope (≥93% at 95% nominal); adaptive ≈ known detector (±0.08) |
 | `test_invisibility_floor_decreases_with_budget` | R2: $\rho^\star(4N)/\rho^\star(N) \approx 1/2$ in the small $\rho$ regime |
+| `test_lifted_atoms_independent_on_standard_complexes` | R5 spark lemma: atoms $\{b_\tau b_\tau^\top\}$ linearly independent on $K_4,K_6,K_9$, strips, disjoint unions, random clique complexes |
+| `test_second_order_covariance_map_is_injective_on_k4_exhaustively` | R5: all $2^4$ supports of $K_4$ have pairwise-distinct covariances despite rank$(B_2)=3<p$ |
+| `test_tetrahedral_confusers_have_equal_image_and_separation_16` | R5: swap pairs have equal image and separation exactly 16 (all $\binom{6}{4}$ tetrahedra of $K_6$) |
+| `test_first_order_indistinguishability_deterministic_signals` | R5(i): any deterministic signal under $S$ is replicated exactly under $S'$ (residual $<10^{-9}$) |
+| `test_chernoff_small_snr_constant_is_rho2_squared` | R5(iii): $C_G/\rho_2^2 \to 1$ (±5% at $\rho_2=0.03$) |
+| `test_binary_confuser_test_error_matches_chernoff_exponent` | R5(iii): MC error of the optimal test $\le e^{-NC_G}$; empirical exponent decreases onto $C_G$ |
+| `test_second_order_recovery_succeeds_in_rank_deficient_regime` | R5(ii): greedy covariance-atom recovery exact on rank-deficient $K_5$ with gradient nuisance |
+| `test_sample_complexity_and_fano_are_consistent` | R5(iii): $N^\star = \log(1/\delta)/C_G$; Fano positive/finite/monotone; vacuous without tetrahedra |
+| `test_rho2_definition_links_first_and_second_order_snr` | $\rho_2 = \sigma_c^2/\sigma_n^2$ bookkeeping ($\rho = 3\rho_2$) |
 
 Philosophy: **a limits paper dies if a constant is wrong**, so every closed form
 must beat a Monte-Carlo cross-examination before it is cited in the manuscript.
@@ -524,6 +637,30 @@ must beat a Monte-Carlo cross-examination before it is cited in the manuscript.
   `amount`/`start_date`/`end_date` bookkeeping keys. The shipped file starts with a
   UTF-8 BOM (it was cached via PowerShell), which is why the loaders read it with
   the `utf-8-sig` codec — plain `json.load(open(...))` would choke on the BOM.
+**ERA5 winds + IBTrACS cyclones (Figure 3 — the unplanted-recovery study):**
+
+- **Winds**: ERA5 reanalysis (Hersbach et al. 2020), 10m u/v components, from
+  the public [ARCO-ERA5](https://github.com/google-research/arco-era5) archive
+  on Google Cloud Storage (`gs://gcp-public-data-arco-era5`, anonymous access):
+  store `ar/1959-2022-6h-512x256_equiangular_conservative.zarr` (6-hourly,
+  0.703° equiangular grid). Cached slice: Western North Pacific
+  (0–45°N, 100–180°E), 2020-08-01 – 2020-09-30, 244 snapshots →
+  `data/era5_wnp_2020.npz`. Refetch with `python data/fetch_era5_fast.py`
+  (concurrent chunk reads; the sequential `fetch_era5.py` does the same via
+  plain xarray, and `assemble_era5.py` builds the cache from chunks downloaded
+  by any external HTTP tool on very slow links).
+- **Cyclone ground truth**: IBTrACS v04r01 (Knapp et al. 2010), the
+  agency-merged best-track archive from NOAA NCEI — **fully independent of the
+  reanalysis**. Cached subset: all Western-Pacific fixes in Aug–Sep 2020
+  (726 fixes, 13 storms, incl. Bavi, Maysak, Haishen) →
+  `data/ibtracs_wp_2020.csv`; refetch with `python data/fetch_ibtracs.py`.
+- Why this is the *right* achievability dataset: the latent structure
+  (cyclone circulation) is genuinely present and **nobody planted it**; the
+  mesh curl is physically the circulation (Stokes), so "filled triangles" have
+  unambiguous meaning; and there are TWO independent references to validate
+  against — the full-resolution vorticity of the same field (internal,
+  quantitative) and the IBTrACS positions (external, semantic).
+
 **Road networks (Figure 4):**
 
 - Source: the [Transportation Networks for Research](https://github.com/bstabler/TransportationNetworks)
@@ -562,7 +699,8 @@ predicted budget.
 | Gurugubelli & Chepuri, EUSIPCO 2024 (sparse clique sampling, MAP); greedy topology learning (arXiv 2502.20159); sparse cell complexes (arXiv 2309.01632) | **Algorithms** that estimate the filled set from flows | No identifiability conditions, no sample-complexity or SNR thresholds, no converse |
 | Marinucci et al. 2025 (topological adaptive LMS) | Online estimation over simplicial complexes, edge-sampling design | Complex structure assumed known; lists structure-discovery as future work |
 | Hypergraph/simplicial SBM detectability (e.g. arXiv 2312.00708, 2108.06547) | Phase transitions for community detection when the **structure itself is observed** | Different observation model: our structure is *latent* and observed only through flow curls |
-| **This project** | **Fundamental limits** for the latent-structure-from-flows problem: converse (R2), matching estimator (R4), geometry obstruction (R5), both sides instantiated on real data (R6) | — |
+| High-dimensional support-recovery / sparse-covariance detection limits (Wainwright 2009; Amini & Wainwright 2009; Berthet & Rigollet 2013; Cai-Zhang-Zhou 2010) | The generic information-theoretic machinery (Fano log-factors, variance-detection scalings) we **specialize** — cited as such in the paper | No simplicial/curl geometry: nothing about $B_2$, Gram leakage, $\ker B_2$ confusers, or the lifted-atom spark that drives our dichotomy |
+| **This project** | **Fundamental limits** for the latent-structure-from-flows problem: converse scalings (R2), matching estimator (R4), the first-/second-order identifiability dichotomy with universal constants (R5 — main theorem), and genuine unplanted real-data recovery (R6) | — |
 
 In short: prior TSP work asks *how* to infer the complex; this project proves *when*
 it can and cannot be done, and hands back a threshold + estimator that the
@@ -599,10 +737,31 @@ Stated plainly, because reviewers (and users) deserve to know:
 5. **i.i.d. snapshots.** Temporal dependence (e.g. AR flows) shrinks the effective
    sample size; the theory applies with $N \to N_{\rm eff}$ but we do not
    characterize $N_{\rm eff}$ here.
-6. **Joint vs marginal laws under confusability.** The whitened per-triangle laws
-   are exact *marginals*; the joint recovery probability is guaranteed only via the
-   union bound. The product form is an independence approximation (exact for
-   edge-disjoint candidates) that happens to be tight in our benchmarks.
+6. **Joint vs marginal laws under confusability.** The decorrelated per-triangle
+   laws are exact *marginals*; the joint recovery probability is guaranteed only
+   via the union bound. The product form is an independence approximation (exact
+   for edge-disjoint candidates) that happens to be tight in our benchmarks.
+7. **A corrected theorem (scientific honesty).** An earlier revision of this
+   project stated the rank obstruction in the false general form — "supports
+   with equal curl image induce identical flow distributions, indistinguishable
+   at any SNR and any $N$". That is true for *deterministic* signals but false
+   for the random-signal model: the covariance is strictly finer than the
+   column image, the lifted atoms are linearly independent (spark lemma), and
+   the project's own second-order estimators recover supports beyond
+   $\mathrm{rank}(B_2)$. The corrected statement is the first-/second-order
+   dichotomy of R5, found by adversarial multi-agent review of our own draft
+   and now exhaustively tested (`tests/test_second_order.py`). We keep this
+   note because silent correction would defeat the purpose of a limits paper.
+8. **Naming.** The `whitened_*` estimator functions decorrelate the *mean* of
+   the curl statistic (GLS/BLUE inversion); the residual noise covariance
+   $\sigma_n^2 G^{-1}$ is **not** white. The paper says "geometry-aware
+   decorrelation"; function names keep the historical prefix for API stability.
+9. **Cyclone study scope.** The cyclone experiment recovers *unplanted* real
+   structure, but the observation model there is an idealization too: 6-hourly
+   snapshots within a window are treated as repeated looks at a quasi-static
+   support (cyclones move slowly relative to the 4-day window / 2.1° mesh), and
+   the detector's Gaussian null is a working model for weather-scale
+   fluctuations, calibrated by plug-in estimation rather than assumed known.
 
 ---
 
@@ -695,8 +854,8 @@ pdflatex supplement && pdflatex supplement
 
 - [x] A recoverable real dataset (traffic flows on planar road networks — sparse
       triangles, favorable geometry) as an achievability companion to the FX
-      converse. **Done: Figure 4 / `run_real_traffic.py` (TNTP Sioux Falls, EMA,
-      Anaheim).**
+      converse. **Done: `run_real_traffic.py` (TNTP Sioux Falls, EMA, Anaheim);
+      the EMA panel exercises the non-diagonal-G geometry-aware theory.**
 - [x] Camera-ready port to the official ICASSP `spconf.sty`, 4 pages + references-only
       page 5. **Done.**
 - [x] Fano converses for joint recovery + sub-Gaussian achievability.
@@ -705,6 +864,14 @@ pdflatex supplement && pdflatex supplement
       **Done: supplement §S2 / `run_partial_sampling.py` (exact $q^{3k}$ law).**
 - [x] Plug-in variance estimation + adaptive thresholds.
       **Done: supplement §S3 / `run_plugin.py` (median envelope + refinement).**
+- [x] **Correct the rank obstruction** (found false-as-stated by adversarial
+      self-review) and replace it with the first-/second-order identifiability
+      dichotomy + universal sample-complexity constants.
+      **Done: main theorem / `tests/test_second_order.py` / supplement §S4.**
+- [x] **Genuine unplanted real-data recovery** with independent external ground
+      truth. **Done: tropical-cyclone circulation from ERA5 edge flows,
+      validated against full-resolution vorticity + IBTrACS
+      (`run_real_cyclone.py`).**
 
 Remaining open problems (deliberately left for a journal version): sharp
 sparse-support thresholds over $\ker B_2$ (compressed-sensing conditions —
@@ -728,18 +895,35 @@ curl detectors (supplement Rem. S2.3), and temporal dependence
 1. **两方差检验**：孤立三角形的检测化为方差 $3\sigma_n^2$ vs $9\sigma_c^2+3\sigma_n^2$
    的高斯检验，最优误差指数是 Gaussian Chernoff 信息；边不相交时精确恢复概率有
    **严格的**有限样本乘积公式（此时各三角形统计量真独立）；
-2. **curl-invisibility 相变**：curl 信噪比 $\rho<\rho^\star(N)\sim 1/\sqrt N$ 时
-   **任何估计器都不可能恢复结构**（小 $\rho$ 极限下 $C\sim\rho^2/16$ ）；
-3. **几何感知白化**：共边三角形互相"泄漏"能量，朴素能量检测会失败且 SNR 越高越糟；
-   当 $B_2$ 满列秩时用 $\hat y=G^{-1}c$ 白化，每个三角形获得**严格的边际**两方差律，
-   有效信噪比 $`\rho^{\mathrm{eff}}_\tau=\sigma_c^2/(\sigma_n^2(G^{-1})_{\tau\tau})`$ 。
-   注意：白化后噪声坐标仍相关，联合恢复概率一般**不**分解——严格保证由 union bound
-   给出（过渡区内它明显保守——下界本该如此），乘积式只是独立近似
-   （600 次试验下与蒙特卡洛全程相差 ≤0.03）；
-4. **秩障碍（自由度障碍）**：无稀疏先验时支持集只能 modulo $\ker B_2$ 辨识；
-   完全图 $K_n$ 上旋度子空间只有 $\binom{n-1}{2}$ 维，而候选三角形系数有
-   $\binom n3$ 个——**无论信噪比多高**，自由度比恰好是 $3/n$ 。
-   （稀疏先验下特定小支持集仍可能可辨识，属压缩感知型条件，为开放问题。）
+2. **curl-invisibility 样本复杂度阈值**：curl 信噪比 $\rho<\rho^\star(N)\sim 1/\sqrt N$ 时
+   **任何估计器都达不到目标误差指数**（小 $\rho$ 极限下 $C\sim\rho^2/16$ ；
+   这是指数层面的标度律，我们不宣称临界点意义上的"相变"）；联合恢复整个大小为
+   $k$ 的支持集还要多付 $\log\binom pk$ 因子（Fano converse）；
+3. **几何感知去相关（GLS/BLUE）**：共边三角形互相"泄漏"能量，朴素能量检测会失败且
+   SNR 越高越糟；当 $B_2$ 满列秩时用 $\hat y=G^{-1}c$（教科书 GLS/BLUE 反演——
+   论文如实标注其出处），每个三角形获得**严格的边际**两方差律，有效信噪比
+   $`\rho^{\mathrm{eff}}_\tau=\sigma_c^2/(\sigma_n^2(G^{-1})_{\tau\tau})`$
+   （经典方差膨胀因子）。注意 $G^{-1}$ 去相关的是**均值**，噪声坐标仍相关
+   （所以不叫"白化"），联合恢复概率一般**不**分解——严格保证由 union bound
+   给出，乘积式只是独立近似（与蒙特卡洛全程相差 ≤0.03）；
+4. **主定理——秩障碍其实是"一阶 vs 二阶"可辨识性二分**（修正了一个民间说法，
+   也修正了本项目早期版本的一个错误定理，见诚实注记 7）：
+   - **一阶（不可能性）**：信号为*未知确定性*时，列空间相同的支持集诱导完全相同的
+     分布族——任何 SNR、任何 $N$ 都不可分。这类混淆对存在当且仅当候选集含
+     四面体的四个面（$b_{012}-b_{013}+b_{023}-b_{123}=0$）；完全图 $K_n$ 上
+     自由度比恰为 $3/n$；
+   - **二阶（可辨识性）**：随机信号模型下协方差携带
+     $\sigma_c^2\sum_{\tau\in S}b_\tau b_\tau^\top$ ——比列空间**更精细**。
+     **提升火花引理**：一对不同的边至多属于一个公共三角形，故原子
+     $\{b_\tau b_\tau^\top\}$ **永远线性无关** ⇒ 协方差映射单射 ⇒
+     **任意秩亏下每个支持集都可辨识**（二阶贪心/lasso 估计器就是实现者，
+     在秩亏的 $K_5$ 上精确恢复）；
+   - **代价（样本复杂度）**：区分最小混淆对（四面体面交换）需
+     $N^\star\sim\log(1/\delta)/C_G$，其中交换分离度**普适地**等于
+     $9+9-2=16$（与 $n$、支持集大小、宿主四面体全都无关；在 $K_5$ 上
+     穷举验证为所有等像对的最小值），于是 $C_G=\rho_2^2(1+o(1))$，
+     $\rho_2=\sigma_c^2/\sigma_n^2$；对 $4\binom n4$ 个四面体假设做 Fano
+     再加一个 $\log n$ 因子。**几何的代价是快照数，不是不可能。**
 
 **补充材料（`paper/supplement.pdf`，仓库内 6 页）**：
 ① *联合恢复的 Fano converse*——恢复整个大小为 $k$ 的支持集要付出 $\log\binom pk$
@@ -754,24 +938,33 @@ $q^{3k}$ 因子极其残酷（Anaheim 上 $q=0.9$ 即摧毁恢复），且瓶颈
 包络）、超阈值超额能量估 $\sigma_c$ 、加一次 refinement，全自适应检测器与
 已知参数检测器几乎无差（ $N\ge 30$ 时零差距）。
 
-**真实数据——极限的两侧都有实例**：
-① *汇率（converse 侧）*：257 个交易日（2023-12-29 至 2024-12-31）的欧洲央行汇率
-（9 种货币，完全图 $K_9$ ）。无套利市场的边流是纯梯度 → 旋度能量只有梯度的
-$10^{-31}$ （机器零），且 $K_9$ 的旋度自由度比 $28/84=1/3$ 正好落在 $3/n$ 曲线上——
-两种"不可见"在真实市场同时成立，什么都恢复不了。
-② *路网交通（achievability 侧）*：三个标准 TNTP 交通网络（Sioux Falls、
-Eastern-Massachusetts、Anaheim）的街道几何 $B_2$ **全部满列秩**——自由度比恰为
-**1**，每个候选三角形都可辨识；真实均衡流量还带有 2.4%–4.6% 的真旋度能量
-（对照汇率的机器零）。在 Anaheim 的真实几何 + 真实均衡流量背景上种植 18/54 个
-三角形信号（时间中心化白化检测器精确消去常数背景，理论用 $N-1$ 自由度；
-54 个三角形两两不共边 → $G=3I$ → 乘积律在此严格），经验恢复曲线与理论
-逐点吻合。注意诚实标注：路网实验的*支持集是种植的*（真实交通没有三角形真值），
-真实的是几何与背景流量。
+**真实数据**：
+① **旗舰结果——真实、未种植的高阶结构恢复（台风）**：ERA5 再分析 10m 风场
+（西北太平洋，2020 年 8–9 月，0.7°/6 小时）投影为三角剖分网格上的边流；
+由 Stokes 定理，三角形的旋度就是环流（面积分涡度），所以"高旋度三角形"
+就是真实的大气涡旋。检测器用时间中心化的旋度能量统计量（面积²归一到
+涡度尺度），无 oracle 参数，**什么都没有种植**；用**两个独立的真值**验证：
+全分辨率有限差分涡度（内部定量：**AUC 0.914**，Spearman 0.77）与 IBTrACS
+台风最佳路径档案（外部、机构核验、与再分析完全独立；覆盖 Bavi、Maysak、
+Haishen 等 13 个风暴：**AUC 0.920**，precision@k 0.48）。网格单连通 ⇒
+$B_2$ 满列秩（Euler 公式）⇒ 二分定理的有利几何侧，无混淆对。降采样快照
+预算后，检测质量沿理论的 $1/\sqrt N$ 标度退化。诚实注记：GLS 去相关
+统计量（R4，面向精确支持集恢复）在这种近规则满秩网格上因 $G^{-1}$
+噪声放大而检测排序更差（AUC 0.77/0.81，已在 JSON 中报告）。
+② *汇率（一致性校验，诚实重标）*：边流按构造是单一价格向量的梯度
+$f=B_1^\top p$，故 $B_2^\top f\equiv 0$ **恒等成立**——测得的 $10^{-31}$
+是浮点残差，验证的是旋度湮灭的算术而非市场的实证性质；$K_9$ 的自由度比
+$28/84=1/3$ 落在 $3/n$ 曲线上（这一半是真实的几何测量）。
+③ *路网交通（真实几何上的恢复律校验）*：三个 TNTP 网络 $B_2$ 全部满列秩，
+真实均衡流带 2.4%–4.6% 真旋度能量；Anaheim（$G=3I$，乘积律严格——诚实
+标注：中心化精确移除真实背景后剩下的统计问题是合成的）与 EMA
+（$G$ 非对角、10 对共边三角形——真正让几何感知边际律干活的面板）。
+种植实验的真实成分是几何；真正未种植的恢复证据见 ①。
 
-**复现**：`pytest -q`（21 个测试，约 2 分钟，每条定理都对照蒙特卡洛验证）；
+**复现**：`pytest -q`（34 个测试，约 3 分钟，每条定理都对照蒙特卡洛验证）；
 `python experiments/run_all.py`（约 10–15 分钟重生成全部 7 张图）；
 论文在 `paper/main.pdf`（ICASSP 官方 spconf 格式，4 页正文 + 第 5 页仅参考文献），
-补充材料在 `paper/supplement.pdf`（6 页）。全程只需 CPU。
+补充材料在 `paper/supplement.pdf`（8 页）。全程只需 CPU。
 
 ---
 

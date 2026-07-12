@@ -126,6 +126,21 @@ def project_onto_columns(f: np.ndarray, A: np.ndarray, rcond: float = 1e-10) -> 
     return U_r @ (U_r.T @ f)
 
 
+def curl_subspace_basis(B2: np.ndarray, rcond: float = 1e-10) -> np.ndarray:
+    """Orthonormal basis ``Q`` (columns) of the curl subspace ``im(B2)``.
+
+    ``Q`` has shape ``(n_edges, r)`` with ``r = rank(B2)``. Projecting flows to
+    ``z = Q.T f`` annihilates the gradient and harmonic components exactly and
+    yields the minimal full-rank coordinate in which the second-order
+    identifiability theory (limits.py, "first- vs second-order" section) lives.
+    """
+    if B2.shape[1] == 0:
+        return np.zeros((B2.shape[0], 0))
+    U, s, _ = np.linalg.svd(B2, full_matrices=False)
+    tol = rcond * (s[0] if s.size else 0.0)
+    return U[:, s > tol]
+
+
 def hodge_decomposition(
     f: np.ndarray, B1: np.ndarray, B2: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

@@ -13,6 +13,12 @@
 \newtheorem{remark}{Remark}
 
 \emergencystretch=1.5em
+% tighten float spacing (keeps the 4-page content budget with 4 floats)
+\setlength{\textfloatsep}{9pt plus 2pt minus 3pt}
+\setlength{\floatsep}{7pt plus 2pt minus 2pt}
+\setlength{\abovecaptionskip}{5pt}
+\setlength{\dbltextfloatsep}{9pt plus 2pt minus 3pt}
+\setlength{\dblfloatsep}{7pt plus 2pt minus 2pt}
 
 \DeclareMathOperator{\curl}{curl}
 \DeclareMathOperator{\rank}{rank}
@@ -30,30 +36,29 @@
 \maketitle
 
 \begin{abstract}
-Topological signal processing models higher-order interactions by placing signals
-on the triangles of a simplicial complex, but in many applications the set of
-``filled'' triangles is unknown and must be inferred from edge-flow observations.
-Existing work provides algorithms for this inference; we instead ask when it is
-\emph{possible at all}. We show that the latent higher-order structure is observed
-only through the \emph{curl} of the edge flows, which annihilates the gradient and
-harmonic parts of the signal. This reduces per-triangle detection to a two-variance
-Gaussian test whose optimal error exponent is a Gaussian Chernoff information, and
-yields a sharp \emph{curl-invisibility} phase: when the curl signal-to-noise ratio
-$\rho$ falls below the scale $\rho^\star(N)=\Theta(\sqrt{\log(1/\delta)/N})$, no
-estimator attains the target error exponent from $N$ snapshots. When candidate triangles share edges, a
-geometry-aware whitening of the curl statistic yields exact per-triangle marginal
-detection laws with effective SNR $\rho^{\mathrm{eff}}_\tau=\sigma_c^2/(\sigma_n^2
-(\bm{G}^{-1})_{\tau\tau})$ governed by the triangle Gram matrix $\bm G$, together
-with a rigorous union-bound recovery guarantee. Finally we expose a second,
-SNR-independent obstruction: supports are identifiable only modulo $\ker\B_2$, and
-on the complete graph $K_n$ the observable curl subspace has dimension
-$\binom{n-1}{2}$ --- a $3/n$ degrees-of-freedom ratio relative to the
-$\binom{n}{3}$ candidate triangle coefficients. All theorems are validated against
-Monte-Carlo simulation and illustrated on real data from both sides of the limit:
-arbitrage-free foreign-exchange flows, where the theory predicts (and we measure)
-that both obstructions bind, and road-network traffic flows, whose favorable
-geometry (full-column-rank $\B_2$) admits recovery of planted structure at the
-predicted snapshot budget. Code and data are released for full reproducibility.
+Topological signal processing places signals on the triangles of a simplicial
+complex, but which triangles are ``filled'' is often unknown and must be
+inferred from edge flows. Existing work gives algorithms; we ask when the task
+is \emph{possible at all}. The latent structure is observed only through the
+\emph{curl} of the flows, which annihilates gradient and harmonic nuisances;
+classical detection theory then yields a curl-invisibility threshold
+$\rho^\star(N)=\Theta(\sqrt{\log(1/\delta)/N})$, a $\log\binom pk$ Fano
+converse for joint recovery, and exact per-triangle marginal laws with
+effective SNR $\sigma_c^2/(\sigma_n^2(\bm{G}^{-1})_{\tau\tau})$ after a
+GLS-type decorrelation. Our main result corrects the folklore ``rank
+obstruction'': it is a \emph{first- vs.\ second-order identifiability
+dichotomy}. Equal-curl-subspace supports are indistinguishable under
+deterministic signals --- on $K_n$ the curl subspace carries a $3/n$
+degrees-of-freedom ratio --- yet under random signals \emph{every} support is
+identifiable at \emph{any} rank deficiency, because the lifted signatures
+$\{\bm b_\tau\bm b_\tau^{\!\top}\}$ are always linearly independent.
+Unfavorable geometry costs sample complexity, not possibility: minimal
+confusers (tetrahedral face swaps) have universal curl-domain separation
+$16$, giving exponent $\rho_2^2(1+o(1))$, $\rho_2=\sigma_c^2/\sigma_n^2$. All
+constants are Monte-Carlo validated, and the theory recovers genuine,
+unplanted structure from real data --- tropical-cyclone circulation from ERA5
+wind-field edge flows, validated against full-resolution vorticity and the
+independent IBTrACS archive. Code and data are released.
 \end{abstract}
 
 \begin{keywords}
@@ -73,84 +78,96 @@ dictionaries \cite{battiloro2023topological}, Dirac operators
 unrolled reconstruction \cite{liu2024unrolling}. A recurring primitive is that the
 set of filled triangles is unknown and must be learned from edge-flow signals.
 
-\emph{Prior work.} Learning a graph topology from node signals is by now well
-charted \cite{dong2019learning,mateos2019connecting}. Its higher-order analogue
---- inferring which triangles of a complex are filled --- has so far been treated
-\emph{algorithmically}: sparse-clique-sampling MAP estimation
-\cite{gurugubelli2024simplicial}, greedy simplicial topology learning
-\cite{buciulea2025learning}, and sparse cell-complex augmentation
-\cite{hoppe2023representing} all return an estimate of the filled set, and
-adaptive schemes \cite{marinucci2025topological} list structure discovery as open.
-HodgeRank \cite{jiang2011statistical} established the curl of an edge flow as the
-signature of higher-order inconsistency (e.g.\ arbitrage). What is missing is the
-\emph{converse side} of the problem: none of these works characterizes when the
-task is information-theoretically solvable, at what snapshot budget, and how the
-answer depends on the geometry of the complex. Detectability thresholds for
-simplicial/hypergraph stochastic block models observe the higher-order structure
-\emph{directly}; here the structure is latent and observed only through the flows
-it shapes. This paper supplies the missing fundamental limits, using classical
-detection and information-theoretic tools
-\cite{poor1994introduction,cover2006elements}. Our contributions are:
+\emph{Prior work.} Learning a graph topology from node signals is well charted
+\cite{dong2019learning,mateos2019connecting}. Its higher-order analogue ---
+inferring which triangles are filled --- has been treated
+\emph{algorithmically}: MAP estimation \cite{gurugubelli2024simplicial}, greedy
+topology learning \cite{buciulea2025learning}, sparse cell-complex augmentation
+\cite{hoppe2023representing}; adaptive schemes \cite{marinucci2025topological}
+list structure discovery as open. HodgeRank \cite{jiang2011statistical}
+established the curl as the signature of higher-order inconsistency. Missing is
+the \emph{converse side}: when is the task information-theoretically solvable,
+at what snapshot budget, and how does the answer depend on the geometry?
+(Simplicial/hypergraph SBM detectability observes the structure
+\emph{directly}; here it is latent, seen only through the flows it shapes.)
+We supply that converse side. Our tools are deliberately classical ---
+detection theory and Fano arguments \cite{poor1994introduction,cover2006elements},
+in the lineage of support-recovery and sparse-covariance detection limits
+\cite{wainwright2009information,amini2009high,berthet2013optimal,cai2010optimal}
+--- our contribution is the reduction that makes them bite, plus one dichotomy
+theorem (Thm.~\ref{thm:rank}) we believe is genuinely new:
 \begin{enumerate}
-\item A \emph{curl-annihilation} reduction (Lemma~\ref{lem:curl}): the latent
-structure is observable only through the flow's curl, turning per-triangle
-detection into a two-variance Gaussian test whose optimal error exponent is a
-Gaussian Chernoff information (Prop.~\ref{prop:single}), and making support
-recovery over edge-disjoint candidates obey an \emph{exact} finite-sample product
-law (Prop.~\ref{prop:disjoint}).
-\item A sharp \emph{curl-invisibility} phase transition (Theorem~\ref{thm:invis}):
-no estimator attains the target error exponent once $\rho$ falls below the
-scale $\rho^\star(N)=\Theta(\sqrt{\log(1/\delta)/N})$, with $C(\rho)\sim\rho^2/16$.
-\item A \emph{geometry-aware} whitened detector for edge-sharing (confusable)
-candidates with exact per-triangle marginal laws and effective SNR
-$\rho^{\mathrm{eff}}_\tau$ (Theorem~\ref{thm:whiten}), a rigorous union-bound
-recovery guarantee (Cor.~\ref{cor:union}), and empirical dominance over naive
-curl-energy thresholding.
-\item An SNR-independent \emph{rank obstruction} (Theorem~\ref{thm:rank}):
-supports are identifiable only modulo $\ker\B_2$; on $K_n$ the observable curl
-subspace carries only a $3/n$ degrees-of-freedom ratio.
+\item A \emph{curl-annihilation} reduction (Lemma~\ref{lem:curl}; the
+detection-theoretic use of HodgeRank's observation): the latent structure is
+observable only through the curl, giving a standard two-variance test
+(Prop.~\ref{prop:single}) and an \emph{exact} finite-sample product law over
+edge-disjoint candidates (Prop.~\ref{prop:disjoint}).
+\item Converse thresholds through the reduction (Thm.~\ref{thm:invis}): the
+sample-complexity scaling $\rho^\star(N)=\Theta(\sqrt{\log(1/\delta)/N})$ at
+the exponent level, and a Fano $\log\binom pk$ factor for joint recovery.
+\item \emph{Geometry-aware decorrelation} for edge-sharing candidates --- the
+GLS/BLUE inversion $\hat{\bm y}=\bm G^{-1}\bm c$ \cite{kay1993fundamentals}
+--- with exact marginal laws whose effective SNR is the variance-inflation
+factor's (Thm.~\ref{thm:whiten}), plus a union-bound guarantee
+(Cor.~\ref{cor:union}).
+\item Main theorem: a \emph{first- vs.\ second-order identifiability dichotomy}
+(Thm.~\ref{thm:rank}) correcting the folklore rank obstruction: equal-image
+supports are indistinguishable under deterministic signals (on $K_n$: a $3/n$
+DoF ratio), yet under random signals \emph{every} support is identifiable at
+\emph{any} rank deficiency (lifted-spark Lemma~\ref{lem:spark}), at a price
+with universal constants (swap separation $16$; exponent $\rho_2^2(1+o(1))$).
 \end{enumerate}
-Every result is validated against Monte-Carlo simulation, and the limits are
-illustrated on real data from both sides: foreign-exchange flows (both
-obstructions bind; nothing is recoverable) and road-network traffic flows
-(favorable geometry; planted structure is recovered at the predicted budget).
+Every result is Monte-Carlo validated. On real data we recover \emph{genuine,
+unplanted} structure --- cyclone circulation from ERA5 edge flows, validated
+against full-resolution vorticity and the independent IBTrACS archive ---
+with FX as a machine-precision consistency check and road networks grounding
+the recovery laws on real geometry.
 
 \section{Background and signal model}
-\subsection{Hodge structure and notation}
-Fix a graph $(\mathcal V,\mathcal E)$ oriented so that the node--edge incidence is
-$\B_1\in\R^{|\mathcal V|\times|\mathcal E|}$ and, for a chosen candidate set
-$\Tcal$ of triangles (e.g.\ all $3$-cliques), the edge--triangle incidence is
-$\B_2\in\R^{|\mathcal E|\times|\Tcal|}$. Throughout, $N$ denotes the number of
-observed snapshots and $p=|\Tcal|$ the number of candidate triangles. The
-boundary-of-boundary identity $\B_1\B_2=\bm 0$ holds, and the Hodge $1$-Laplacian
-$\bm L_1=\B_1^{\!\top}\B_1+\B_2\B_2^{\!\top}$ induces the orthogonal decomposition
+Fix a graph $(\mathcal V,\mathcal E)$ with node--edge incidence
+$\B_1\in\R^{|\mathcal V|\times|\mathcal E|}$ and, for a candidate triangle set
+$\Tcal$ (e.g.\ all $3$-cliques), edge--triangle incidence
+$\B_2\in\R^{|\mathcal E|\times|\Tcal|}$; $N$ is the snapshot count,
+$p=|\Tcal|$. The identity $\B_1\B_2=\bm 0$ holds, and the Hodge $1$-Laplacian
+$\bm L_1=\B_1^{\!\top}\B_1+\B_2\B_2^{\!\top}$ induces the orthogonal split
 \begin{equation}
 \R^{|\mathcal E|}=\underbrace{\mathrm{im}\,\B_1^{\!\top}}_{\text{gradient}}\ \oplus\
 \underbrace{\mathrm{im}\,\B_2}_{\text{curl}}\ \oplus\
 \underbrace{\ker \bm L_1}_{\text{harmonic}} .
 \end{equation}
-The \emph{curl} of an edge flow is $\curl \bm f=\B_2^{\!\top}\bm f$; a flow induced
-by a triangle signal $\bm y$ is $\B_2\bm y$. Each column of $\B_2$ has exactly
-three $\pm1$ entries, so the triangle Gram matrix $\bm G=\B_2^{\!\top}\B_2$ has
-$G_{\tau\tau}=3$ and $G_{\sigma\tau}\in\{0,\pm1\}$, with $G_{\sigma\tau}\ne0$ iff
-$\sigma$ and $\tau$ share an edge.
-
-\subsection{Generative model}
-The $1$-skeleton is known; the latent object is the set $\Scal\subseteq\Tcal$ of
-filled triangles. We observe $N$ i.i.d.\ edge-flow snapshots
+The \emph{curl} of a flow is $\curl \bm f=\B_2^{\!\top}\bm f$. Each column of
+$\B_2$ has three $\pm1$ entries, so $\bm G=\B_2^{\!\top}\B_2$ has
+$G_{\tau\tau}=3$, $G_{\sigma\tau}\in\{0,\pm1\}$, nonzero iff $\sigma,\tau$
+share an edge. The $1$-skeleton is known; the latent object is the filled set
+$\Scal\subseteq\Tcal$. We observe $N$ i.i.d.\ snapshots
 \begin{equation}\label{eq:model}
 \bm f_t=\B_1^{\!\top}\bm a_t+\B_{2,\Scal}\,\bm y_t+\bm h_t+\bm n_t,\quad t=1,\dots,N,
 \end{equation}
-with node potentials $\bm a_t\!\sim\!\mathcal N(\bm 0,\sigma_g^2\bm I)$ (gradient
-nuisance), triangle signals $\bm y_t\!\sim\!\mathcal N(\bm 0,\sigma_c^2\bm I)$
-supported on $\Scal$, harmonic nuisance $\bm h_t\in\ker\bm L_1$, and noise
-$\bm n_t\!\sim\!\mathcal N(\bm 0,\sigma_n^2\bm I)$; $\B_{2,\Scal}$ keeps the
-columns of the active triangles. The goal is to recover $\Scal$ from
-$\{\bm f_t\}_{t=1}^N$. This is the generative family used by the algorithmic
-literature (cf.~\cite{gurugubelli2024simplicial}); we characterize when its
-inverse problem is solvable.
+with $\bm a_t\!\sim\!\mathcal N(\bm 0,\sigma_g^2\bm I)$ (gradient nuisance),
+$\bm y_t\!\sim\!\mathcal N(\bm 0,\sigma_c^2\bm I)$ on $\Scal$, harmonic
+$\bm h_t\in\ker\bm L_1$, noise $\bm n_t\!\sim\!\mathcal N(\bm 0,\sigma_n^2\bm I)$;
+the goal is to recover $\Scal$. This is the generative family of the
+algorithmic literature (cf.~\cite{gurugubelli2024simplicial}); we characterize
+when its inverse problem is solvable.
 
 \section{Fundamental limits}
+\begin{figure}[!t]
+\centering
+\includegraphics[width=0.82\linewidth]{phase_transition.png}
+\caption{Curl-invisibility recovery threshold. Colour
+is empirical $P(\text{exact recovery})$; the solid line is the exact
+finite-sample law (Prop.~\ref{prop:disjoint}), the dotted line the
+Bonferroni-corrected Chernoff floor of Thm.~\ref{thm:invis} ($\delta\to\delta/p$).}
+\label{fig:phase}
+\end{figure}
+\begin{figure}[!t]
+\centering
+\includegraphics[width=0.95\linewidth]{confusability.png}
+\caption{Edge-sharing strip. Left: mean Hamming error vs.\ $N$; the naive
+detector never recovers. Right: decorrelated detector vs.\ the exact marginal theory
+--- independence approximation (dashed) and rigorous union bound (dotted).}
+\label{fig:conf}
+\end{figure}
 \subsection{Curl annihilation and the single-triangle test}
 \begin{lemma}[Curl annihilation]\label{lem:curl}
 For any $\bm f$, the statistic $\B_2^{\!\top}\bm f$ depends only on the curl
@@ -165,14 +182,11 @@ $\B_1\B_2=\bm 0$ gives $\B_2^{\!\top}\B_1^{\!\top}=\bm0$. If $\bm L_1\bm h=\bm0$
 then $0=\bm h^{\!\top}\bm L_1\bm h\ge\bm h^{\!\top}\B_2\B_2^{\!\top}\bm h
 =\|\B_2^{\!\top}\bm h\|^2$, so $\B_2^{\!\top}\bm h=\bm0$.
 \end{proof}
-Thus the gradient and harmonic nuisances---however large---are removed exactly by
-the curl map, and only the active triangles and projected noise remain. All
-information about $\Scal$ flows through \eqref{eq:curlstat}.
-
-For an \emph{isolated} candidate $\tau$ (sharing no edge with other candidates)
-the scalar $c_{\tau,t}$ is zero-mean Gaussian with variance $v_0=3\sigma_n^2$ if
-$\tau\notin\Scal$ and $v_1=9\sigma_c^2+3\sigma_n^2=v_0(1+\rho)$ if
-$\tau\in\Scal$, where
+Thus the nuisances---however large---are removed exactly; all information
+about $\Scal$ flows through \eqref{eq:curlstat}. For an \emph{isolated}
+candidate $\tau$ (no shared edges) the scalar $c_{\tau,t}$ is zero-mean
+Gaussian with variance $v_0=3\sigma_n^2$ if $\tau\notin\Scal$ and
+$v_1=9\sigma_c^2+3\sigma_n^2=v_0(1+\rho)$ if $\tau\in\Scal$, where
 \begin{equation}\label{eq:rho}
 \rho\;\triangleq\;3\sigma_c^2/\sigma_n^2
 \end{equation}
@@ -190,47 +204,54 @@ g(s)=\tfrac12\big[\log(s w_0+(1-s)w_1)-s\log w_0-(1-s)\log w_1\big].
 \end{equation}
 \end{proposition}
 
-\begin{theorem}[Curl-invisibility phase]\label{thm:invis}
-With $\rho$ as in \eqref{eq:rho}, $C(\rho)\to0$ as $\rho\to0$ with
-$C(\rho)=\rho^2/16+o(\rho^2)$. Consequently, for target error $\delta$ and budget
-$N$, reliable detection requires
-$\rho=\Omega\big(\sqrt{\log(1/\delta)/N}\big)$: below that scale the optimal
-error exponent falls short of the target for \emph{any} estimator, and the
-achievable region is $\rho\ge\rho^\star(N)=\Theta(\sqrt{\log(1/\delta)/N})$.
+\begin{theorem}[Curl-invisibility threshold; joint-recovery converse]\label{thm:invis}
+(a) With $\rho$ as in \eqref{eq:rho}, $C(\rho)=\rho^2/16+o(\rho^2)$ as
+$\rho\to0$. Hence for target error $\delta$ and budget $N$, attaining the
+target error \emph{exponent} requires
+$\rho\ge\rho^\star(N)=\Theta\big(\sqrt{\log(1/\delta)/N}\big)$ for \emph{any}
+estimator. (b) Recovering a uniformly random size-$k$ support among $p$
+edge-disjoint candidates with error $\le\epsilon$ requires
+$N \ge \big((1-\epsilon)\log\binom pk-\log 2\big)/\big(k\,\mathrm{KL}_1\big)$
+with $\mathrm{KL}_1=(\rho-\log(1+\rho))/2\le\rho^2/4$: joint recovery pays a
+$\log\binom pk$ factor over the single-triangle budget.
 \end{theorem}
 \begin{proof}[Proof sketch]
-The Chernoff information is the optimal Bayes error \emph{exponent} for
-i.i.d.\ observations: every test satisfies
-$P_{\mathrm{err}}\ge e^{-NC(1+o(1))}$, and thresholding the energy attains
-the exponent. Taylor-expanding $C(v_0,v_0(1+\rho))$ at $\rho=0$ gives
-$\rho^2/16$, whence $e^{-NC(\rho)}\le\delta$ forces
-$\rho=\Omega(\sqrt{\log(1/\delta)/N})$. The plotted floor solves the exponent
-equation $e^{-NC(\rho^\star)}=\delta$ — a scale that is exact at the exponent
-level; the finite-$N$ boundary sits an order-one factor below it.
+(a) Chernoff information is the optimal Bayes error exponent for i.i.d.\
+observations \cite{cover2006elements}; Taylor expansion gives $\rho^2/16$, and
+$e^{-NC(\rho)}\le\delta$ forces the scaling. (b) Independent curl coordinates
+give $I(\Scal;\bm c^N)\le Nk\,\mathrm{KL}(\mathcal N(0,v_1)\|\mathcal N(0,v_0))$;
+Fano finishes (supplement \S S1, incl.\ a signal-agnostic variant). Honest
+scope: (a) is exponent-level --- the finite-$N$ $50\%$ boundary sits an
+order-one factor below the floor (same $1/\sqrt N$ law,
+Fig.~\ref{fig:phase}); the scaling is the classical variance-detection rate
+\cite{poor1994introduction,wainwright2009information}; specific to our
+problem are the reduction producing $\rho$ and the constants $(3,9)$.
 \end{proof}
 
-\subsection{Support recovery: the edge-disjoint case}
-When the candidates in $\Tcal$ are pairwise edge-disjoint, the coordinates of
-$\bm c_t$ are \emph{independent} across triangles (the columns of $\B_2$ have
-disjoint supports and the noise is white), so support recovery decouples exactly.
+When the candidates are pairwise edge-disjoint, the coordinates of $\bm c_t$
+are \emph{independent} across triangles, so support recovery decouples
+exactly:
 
 \begin{proposition}[Exact finite-sample recovery law]\label{prop:disjoint}
 For edge-disjoint candidates and the per-triangle Bayes-optimal energy threshold,
-the probability of exact support recovery equals
-$\prod_{\tau\in\Scal}(1-P_{\mathrm{miss}})\prod_{\tau\notin\Scal}(1-P_{\mathrm{fa}})$,
+$P(\hat\Scal=\Scal)=
+\prod_{\tau\in\Scal}(1-P_{\mathrm{miss}})\prod_{\tau\notin\Scal}(1-P_{\mathrm{fa}})$,
 with $P_{\mathrm{miss}},P_{\mathrm{fa}}$ given by $\chi^2_N$ tails at the common
-threshold. Its $50\%$ contour in the $(N,\rho)$ plane is the empirical phase
-boundary (Fig.~\ref{fig:phase}).
+threshold. Its $50\%$ contour in the $(N,\rho)$ plane is the empirical
+recovery boundary (Fig.~\ref{fig:phase}).
 \end{proposition}
 
-\subsection{Confusable triangles: geometry-aware whitening}
+\subsection{Confusable triangles: geometry-aware decorrelation}
 Edge-sharing candidates are \emph{confusable}: an active triangle leaks curl
 energy onto neighbours through the off-diagonal entries of $\bm G$, so naive
-curl-energy thresholding fails (Fig.~\ref{fig:conf}, left) --- and, once
-leakage dominates the noise, \emph{worsens} as $\rho$ grows, since stronger
-signals leak harder. Whitening repairs this.
+curl-energy thresholding fails (Fig.~\ref{fig:conf}, left) and \emph{worsens}
+as $\rho$ grows. The repair is the textbook GLS/BLUE inversion of the curl map
+\cite{kay1993fundamentals} (for invertible $\bm G$, OLS, GLS, BLUE and ML all
+coincide at $\bm G^{-1}\bm c$); what matters here is the \emph{exact
+finite-sample marginal detection law} it induces, with a geometry factor that
+is precisely the classical variance-inflation factor.
 
-\begin{theorem}[Whitened marginal laws]\label{thm:whiten}
+\begin{theorem}[Decorrelated marginal laws]\label{thm:whiten}
 Assume $\B_2$ has full column rank, so $\bm G$ is invertible. Let
 $\hat{\bm y}_t=\bm G^{-1}\bm c_t$ and let $\tilde{\bm y}_t$ denote $\bm y_t$
 zero-padded to all of $\Tcal$. Then, exactly,
@@ -252,12 +273,12 @@ the indexing). Applying $\bm G^{-1}$ gives the mean exactly; the noise covarianc
 is $\sigma_n^2\bm G^{-1}\bm G\bm G^{-1}=\sigma_n^2\bm G^{-1}$. Gaussian marginals
 of \eqref{eq:whiten} give the per-coordinate two-variance laws.
 \end{proof}
-The factor $(\bm G^{-1})_{\tau\tau}$ is the price of geometry: it equals $1/3$
-for an isolated triangle (recovering $\rho^{\mathrm{eff}}_\tau=\rho$ of
-\eqref{eq:rho}) and grows as curl signatures overlap. The coordinates of
-$\bm e_t$ are correlated whenever $\bm G^{-1}$ is not diagonal, so the joint
-recovery probability does \emph{not} factorize in general; what survives arbitrary
-correlations is a union bound over the exact marginals:
+$\bm G^{-1}$ decorrelates the \emph{mean} (removing leakage exactly); the
+noise stays correlated --- $\sigma_n^2\bm G^{-1}$ is not diagonal --- hence
+no ``whitening'', and the joint law does \emph{not} factorize.
+$(\bm G^{-1})_{\tau\tau}$ is the price of geometry: $1/3$ when isolated
+(recovering $\rho^{\mathrm{eff}}_\tau=\rho$), growing as signatures overlap.
+What survives arbitrary correlations is a union bound over exact marginals:
 
 \begin{corollary}[Rigorous recovery guarantee]\label{cor:union}
 Threshold each $\sum_t\hat y_{\tau,t}^2$ at its marginal-optimal (or Bonferroni)
@@ -268,41 +289,103 @@ regardless of the correlation structure of $\bm e_t$.
 \end{corollary}
 
 \begin{remark}[Independence approximation]\label{rem:indep}
-The product $\prod_\tau(1-P_{\mathrm{err},\tau})$ is exact whenever the whitened
-scores are independent --- for edge-disjoint candidates
-(Prop.~\ref{prop:disjoint}), or more generally whenever $\bm G$ is diagonal ---
-and is an approximation otherwise. In our benchmarks $\bm G$ is diagonally
-dominant, the off-diagonal correlations of $\bm G^{-1}$ are weak, and the
-product law tracks Monte-Carlo within $0.03$ across the whole transition,
-while the union bound is a valid lower bound that is conservative in the
-transition region (Fig.~\ref{fig:conf}, right).
+The product $\prod_\tau(1-P_{\mathrm{err},\tau})$ is exact when the scores are
+independent (diagonal $\bm G$; Prop.~\ref{prop:disjoint}) and an approximation
+otherwise; on our diagonally-dominant benchmarks it tracks Monte-Carlo within
+$0.03$ across the transition, while the union bound stays a valid, more
+conservative floor (Fig.~\ref{fig:conf}, right).
 \end{remark}
 
-\subsection{The rank obstruction}
-Whitening cannot help when curl signatures are linearly dependent, i.e.\ when
-$\bm G$ is singular.
+\subsection{The rank obstruction is a dichotomy, not impossibility}
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.98\textwidth]{real_cyclone.png}
+\caption{Unplanted recovery of real higher-order structure. (A)~Decorrelated
+curl scores on the mesh for one 4-day window; red circles: independent
+IBTrACS cyclone fixes. (B)~ROC of the (fully plug-in) detector against both
+ground truths across all windows. (C)~Detection quality vs.\ snapshot budget
+$N$, with the theory floor $\rho^\star(N)$ overlaid.}
+\label{fig:cyclone}
+\end{figure*}
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.98\textwidth]{real_traffic.png}
+\caption{Real road-network geometry. (A)~Full-column-rank $\B_2$: DoF ratio
+$1$ (green) vs.\ $K_9$'s $3/n$ (red). (B)~Anaheim ($\bm G=3\bm I$): planted
+recovery follows the exact edge-disjoint product law (df $N{-}1$ after
+centering out the real background). (C)~EMA (non-diagonal $\bm G$): the
+geometry-aware detector's heterogeneous marginal laws at work on real
+geometry --- empirical vs.\ independence approximation and union bound.}
+\label{fig:traffic}
+\end{figure*}
+When curl signatures are linearly dependent ($\bm G$ singular --- e.g.\ all
+$\binom n3$ triangles of $K_n$), the folklore answer --- ``identifiable only
+modulo $\ker\B_2$'' --- is correct for \emph{deterministic} signals but
+\emph{false} for the random model \eqref{eq:model}: the covariance carries
+$\sigma_c^2\sum_{\tau\in\Scal}\bm b_\tau\bm b_\tau^{\!\top}$, strictly finer
+than the column space. The correct statement is a dichotomy, resting on a
+spark property of the \emph{lifted} signatures:
 
-\begin{theorem}[Geometry-side degrees-of-freedom obstruction]\label{thm:rank}
-If $\mathrm{im}\,\B_{2,\Scal}=\mathrm{im}\,\B_{2,\Scal'}$ then $\Scal$ and
-$\Scal'$ induce identical flow distributions and are indistinguishable at any SNR
-and any $N$: without further priors, supports are identifiable only modulo
-$\ker\B_2$. On the complete graph $K_n$ with all $\binom n3$ triangles as
-candidates, $\dim\mathrm{im}\,\B_2=\binom{n-1}{2}$, so the ratio of observable
-curl degrees of freedom to candidate triangle coefficients is exactly $3/n$.
-\end{theorem}
+\begin{lemma}[Lifted spark]\label{lem:spark}
+For any candidate set of distinct $3$-cliques of a simple graph, the matrices
+$\{\bm b_\tau\bm b_\tau^{\!\top}\}_{\tau\in\Tcal}$ are linearly independent.
+\end{lemma}
 \begin{proof}
-Only $\mathrm{im}\,\B_{2,\Scal}$ enters the distribution of \eqref{eq:model},
-giving the indistinguishability claim. For $K_n$ the $2$-skeleton is simply
-connected, so $\mathrm{im}\,\B_2=\ker\B_1$, the cycle space, of dimension
-$|\mathcal E|-(n-1)=\binom{n-1}{2}$; dividing by $\binom n3$ gives $3/n$.
+A pair of distinct edges lies in at most one common triangle, so for
+$e\ne e'$ both in $\tau$, the $(e,e')$ entry of
+$\sum_\tau w_\tau\bm b_\tau\bm b_\tau^{\!\top}$ equals $\pm w_\tau$: every
+coefficient is read off a distinct matrix entry.
 \end{proof}
 
-\begin{remark}[Sparsity can restore identifiability]\label{rem:sparse}
-Theorem~\ref{thm:rank} concerns \emph{arbitrary} supports. Under a sparsity
-prior, specific supports with $|\Scal|$ small may remain identifiable even when
-$p>\rank\B_2$, provided the participating columns satisfy compressed-sensing-type
-(spark/coherence) conditions; characterizing those sparse thresholds is an open
-problem beyond this paper's scope.
+\begin{theorem}[First- vs.\ second-order identifiability]\label{thm:rank}
+Let $r=\rank\B_2$ and write $\rho_2=\sigma_c^2/\sigma_n^2$.
+\emph{(i) First order.} If $\mathrm{im}\,\B_{2,\Scal}=\mathrm{im}\,\B_{2,\Scal'}$,
+then under \emph{unknown deterministic} triangle signals the two supports induce
+identical families of flow distributions --- indistinguishable at any SNR and
+any $N$. Such confusers exist whenever the candidate set contains all four faces
+of a tetrahedron ($\bm b_{012}-\bm b_{013}+\bm b_{023}-\bm b_{123}=\bm 0$); on
+$K_n$, $\dim\mathrm{im}\,\B_2=\binom{n-1}{2}$, a $3/n$ DoF ratio.
+\emph{(ii) Second order.} Under the random model \eqref{eq:model}, the map
+$\Scal\mapsto\mathrm{Cov}(\bm f)$ is injective (Lemma~\ref{lem:spark}), so
+\emph{every} support is identifiable from i.i.d.\ snapshots --- at any rank
+deficiency, including all of $K_n$.
+\emph{(iii) The price.} For a minimal confuser pair (a tetrahedral face swap
+$\Scal'=\Scal\setminus\{\tau_a\}\cup\{\tau_b\}$), the optimal test between the
+two curl-coordinate covariances has Chernoff exponent
+$C_G=\rho_2^2\,(1+o(1))$ as $\rho_2\to0$, since the curl-domain separation is
+\emph{universal}:
+$\|\bm u_a\bm u_a^{\!\top}-\bm u_b\bm u_b^{\!\top}\|_F^2
+= 9+9-2(\bm u_a^{\!\top}\bm u_b)^2 = 16$
+(faces share exactly one edge), and the Bhattacharyya expansion gives
+$C_G=(\rho_2^2/16)\cdot16\,(1+o(1))$. Hence distinguishing the pair costs
+$N^\star\sim\log(1/\delta)/\rho_2^2$ snapshots, and a Fano argument over the
+$4\binom n4$ leave-one-face-out hypotheses adds a $\log n$ factor for full
+support recovery on $K_n$.
+\end{theorem}
+\begin{proof}[Proof sketch]
+(i) Equal images make the deterministic mean families coincide. (ii) In curl
+coordinates $\bm z_t=\bm Q^{\!\top}\bm f_t$ ($\bm Q$ orthonormal basis of
+$\mathrm{im}\,\B_2$) the law is $\mathcal N(\bm 0,\ \sigma_n^2\bm I_r
++\sigma_c^2\sum_{\tau\in\Scal}\bm u_\tau\bm u_\tau^{\!\top})$,
+$\bm u_\tau=\bm Q^{\!\top}\bm b_\tau$; injectivity transfers from
+Lemma~\ref{lem:spark} since $\bm b_\tau\in\mathrm{im}\,\B_2$. (iii) Direct
+computation plus the second-order (Bhattacharyya) expansion of the Chernoff
+information; constants Monte-Carlo-validated in the released tests
+($C_G/\rho_2^2\to1$ to $0.998$; separation $16$ exact, exhaustively minimal
+over all equal-image pairs on $K_5$). Full proofs: supplement \S S4.
+\end{proof}
+
+Theorem~\ref{thm:rank} reconciles theory with practice: second-order
+estimators --- fitting the empirical curl covariance with the atoms
+$\{\bm g_\tau\bm g_\tau^{\!\top}\}$, greedily or by non-negative lasso --- are
+the achievers of regime (ii), verified on rank-deficient $K_5$. The $3/n$
+ratio survives as \emph{first-order} observability; unfavorable geometry is a
+quantifiable snapshot premium, not a wall.
+
+\begin{remark}[Open]\label{rem:sparse}
+Sharp \emph{first-order} sparse-support thresholds over $\ker\B_2$
+(spark/coherence conditions) and the exact constant in (iii)'s $\log n$
+factor remain open.
 \end{remark}
 
 \section{Experiments}
@@ -311,117 +394,91 @@ on independent Monte-Carlo simulation, and a released test-suite checks each
 closed form against simulation. Code and data reproduce all figures via a single
 script.
 
-\subsection{Phase transition (validation of Thm.~\ref{thm:invis}, Prop.~\ref{prop:disjoint})}
+\subsection{Recovery threshold (validation of Thm.~\ref{thm:invis}, Prop.~\ref{prop:disjoint})}
 Fig.~\ref{fig:phase} sweeps $(N,\rho)$ on an edge-disjoint planted complex
-($p=8$, $4$ active) with gradient and harmonic nuisance present. The empirical
-exact-recovery probability undergoes a sharp transition; the solid curve is the
-exact product law of Prop.~\ref{prop:disjoint}, whose empirical $50\%$ contour it
-tracks to a median ratio of $1.01$ across the grid. The dotted curve is the
-Bonferroni-corrected Chernoff floor (Theorem~\ref{thm:invis} with
-$\delta\to\delta/p$), visibly the $1/\sqrt N$ law.
+($p=8$, $4$ active, gradient/harmonic nuisance present). Recovery transitions
+rapidly (the steepness is the finite-$p$ product of sigmoids --- no
+critical-point claim); the exact product law of Prop.~\ref{prop:disjoint}
+tracks the empirical $50\%$ contour to a median ratio $1.01$; the dotted
+Bonferroni-corrected Chernoff floor ($\delta\to\delta/p$) shows the
+$1/\sqrt N$ law.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.92\linewidth]{phase_transition.png}
-\caption{Curl-invisibility phase transition for exact triangle recovery. Colour
-is empirical $P(\text{exact recovery})$; the solid line is the exact
-finite-sample law (Prop.~\ref{prop:disjoint}), the dotted line the
-Bonferroni-corrected Chernoff floor of Thm.~\ref{thm:invis} ($\delta\to\delta/p$).}
-\label{fig:phase}
-\end{figure}
 
 \subsection{Confusability (validation of Thm.~\ref{thm:whiten}, Cor.~\ref{cor:union})}
-On an edge-sharing triangle strip ($p=9$, alternating $4$ active, $\rho=8$;
-$\B_2$ has full column rank), the naive curl-energy detector plateaus at a mean
-Hamming error of ${\approx}2.6$ and does not improve with $N$, while the whitened
-detector of Theorem~\ref{thm:whiten} recovers the support exactly
-(Fig.~\ref{fig:conf}, left). Its empirical exact-recovery probability tracks
-the independence approximation (Remark~\ref{rem:indep}) within Monte-Carlo
-error across the whole transition, and respects the rigorous union bound
-(Cor.~\ref{cor:union}), which is conservative in the transition region as a
-bound should be (Fig.~\ref{fig:conf}, right). A greedy residual-fitting baseline (standing in for
-greedy topology learning \cite{buciulea2025learning}) stalls at ${\approx}0.3$.
+On an edge-sharing strip ($p=9$, alternating $4$ active, $\rho=8$; full
+column rank), the naive energy detector plateaus at Hamming error
+${\approx}2.6$ regardless of $N$, while the decorrelated detector of
+Theorem~\ref{thm:whiten} recovers exactly (Fig.~\ref{fig:conf}, left); its
+recovery probability tracks the independence approximation within Monte-Carlo
+error and respects the union bound, conservative in the transition as a bound
+should be (right). A greedy residual-fitting baseline (standing in for
+\cite{buciulea2025learning}) stalls at ${\approx}0.3$.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{confusability.png}
-\caption{Edge-sharing strip. Left: mean Hamming error vs.\ $N$; the naive
-detector never recovers. Right: whitened detector vs.\ the exact marginal theory
---- independence approximation (dashed) and rigorous union bound (dotted).}
-\label{fig:conf}
-\end{figure}
 
-\subsection{FX flows: both obstructions bind (converse side)}
-We form edge flows from $257$ trading days of ECB daily reference rates over nine
-currencies (complete graph $K_9$; Fig.~\ref{fig:fx}). This study \emph{illustrates
-the obstructions} --- it is not a recovery benchmark, since real FX carries no
-ground-truth triangle support. (A)~An arbitrage-free market is a pure gradient
-flow \cite{jiang2011statistical}: measured curl energy is $10^{-31}$ of gradient
-energy --- machine zero --- so higher-order structure is invisible at any budget,
-exactly as Theorem~\ref{thm:invis} predicts for $\rho\to0$. (B)~The measured curl
-rank on $K_9$ is $28$ against $84$ candidate coefficients, matching the $3/n$
-degrees-of-freedom law of Theorem~\ref{thm:rank} (verified numerically for
-$K_5$--$K_{12}$).
+\subsection{Second-order identifiability where subspaces fail (Thm.~\ref{thm:rank})}
+On $K_5$ ($p=10$, $\rank\B_2=6$: where a subspace argument forbids recovery),
+the greedy covariance-atom estimator recovers a planted $4$-triangle support
+exactly ($N=1200$, gradient nuisance present); exhaustively, all equal-image
+support pairs of $K_4$ have distinct covariances and every tetrahedral swap
+has separation exactly $16$. The Monte-Carlo error of the optimal
+confuser-pair test respects the $e^{-NC_G}$ envelope with empirical exponent
+converging onto $C_G$, and $C_G/\rho_2^2\in[0.95,1.0]$ for $\rho_2\le0.01$
+(released tests).
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{real_fx.png}
-\caption{Real FX flows (illustration). (A)~SNR-side invisibility: curl energy is
-machine-zero relative to gradient (the harmonic bar is likewise numerical
-zero --- the fully filled $K_9$ has $b_1=0$). (B)~Geometry-side obstruction:
-curl degrees-of-freedom ratio equals $3/n$.}
-\label{fig:fx}
-\end{figure}
+\subsection{Real, unplanted recovery: cyclones from wind-field edge flows}
+The achievability side is exercised on \emph{genuine} latent structure
+(Fig.~\ref{fig:cyclone}): tropical-cyclone circulation in ERA5 winds
+\cite{hersbach2020era5}, Western North Pacific, Aug--Sep 2020. Ten-meter winds
+($0.7^\circ$ grid) become edge flows on a triangulated mesh (line integrals);
+by Stokes' theorem a triangle's curl is its circulation --- area-integrated
+vorticity --- so high-curl triangles are real atmospheric vortices. The mesh
+is simply connected, so $\B_2$ has full column rank by Euler's formula: no
+confusers, the favorable regime of Theorem~\ref{thm:rank}. Per 4-day window
+(16 six-hourly snapshots) the temporally centered curl-\emph{energy} statistic
+of Prop.~\ref{prop:single}, area-normalized to the vorticity scale, scores
+each triangle; \emph{nothing is planted, no oracle parameters} (the
+decorrelated variant is reported in the repository: its $\bm G^{-1}$ noise
+amplification hurts pure detection ranking on this near-regular mesh).
+Validation is against two independent references: full-resolution
+finite-difference vorticity (never seen by the mesh detector) and the IBTrACS
+best-track archive \cite{knapp2010ibtracs}, agency-verified positions
+independent of the reanalysis (panel B). Degrading the snapshot budget traces
+the predicted $1/\sqrt N$ scaling (panel C).
 
-\subsection{Road traffic: favorable geometry and achievability}
-Road networks sit on the opposite side of the limit
-(Fig.~\ref{fig:traffic}). (A)~On three standard traffic-assignment networks
-(TNTP: Sioux Falls, Eastern-Massachusetts, Anaheim
-\cite{transportationnetworks}), the planar-like street geometry contains few
-$3$-cliques and $\B_2$ has \emph{full column rank} in all three --- curl
-degrees-of-freedom ratio exactly $1$, against $3/n$ on $K_n$: every candidate
-triangle is identifiable. Unlike FX, the real user-equilibrium flows carry
-genuine rotational energy ($2.4\%$ curl on Sioux Falls, $4.6\%$ on Anaheim).
-(B)~Achievability at the predicted budget: on Anaheim ($p=54$ candidate
-triangles, pairwise edge-disjoint, so $\bm G=3\bm I$ and the product law is
-exact), we plant $18$ active triangles on top of the \emph{real} equilibrium
-flow (plus Gaussian gradient/harmonic nuisance) at $\rho=3$ and run the whitened
-detector on temporally centered scores --- centering removes any constant
-background flow exactly at the cost of one degree of freedom, so the theory
-curves use $N{-}1$. Empirical recovery matches the exact product law across the
-whole transition. Planted signals are used because real traffic carries no
-labelled triangle support; what is real is the geometry and the equilibrium-flow
-background the detector must be invariant to. Together with the FX study this
-closes the loop: the same theory that certifies impossibility on $K_9$
-predicts---quantitatively---when recovery succeeds on real road geometry.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{real_traffic.png}
-\caption{Road-network traffic. (A)~All three TNTP networks have full-column-rank
-$\B_2$: DoF ratio $1$ (green) vs.\ $K_9$'s $3/n$ (red). (B)~Planted-support
-recovery on Anaheim's real geometry over the real equilibrium flow: empirical
-matches the exact df-$(N{-}1)$ product law.}
-\label{fig:traffic}
-\end{figure}
+\subsection{Geometry on real infrastructure; FX as a consistency check}
+Fig.~\ref{fig:traffic} grounds the recovery laws on real road geometry (TNTP
+\cite{transportationnetworks}). (A)~All three networks have full-column-rank
+$\B_2$ (DoF ratio $1$ vs.\ $3/n$ on $K_9$); the real equilibrium flows carry
+genuine rotational energy ($2.4\%$/$4.6\%$ curl). (B)~Anaheim is
+edge-disjoint, so $\bm G=3\bm I$ and planted recovery \emph{collapses to the
+product law} (Prop.~\ref{prop:disjoint}); the real constant background is
+removed exactly by centering (df $N{-}1$) and the nuisances are annihilated,
+so --- stated plainly --- the surviving statistical problem is synthetic; the
+honest real recovery evidence is Fig.~\ref{fig:cyclone}. (C)~EMA exercises
+Theorem~\ref{thm:whiten} on real geometry: $10$ edge-sharing pairs make
+$\bm G$ non-diagonal; empirical recovery tracks the independence
+approximation and respects the union bound. \emph{FX consistency check (no
+figure):} edge flows from $257$ days of ECB rates on $K_9$ are by
+construction a single-potential gradient $\bm f=\B_1^{\!\top}\bm p$, so
+Lemma~\ref{lem:curl} predicts \emph{identically zero} curl; measured
+curl/gradient $=1.8\times10^{-31}$, floating-point residue. A consistency
+check on real market data (HodgeRank's arbitrage-free reading
+\cite{jiang2011statistical}), not a market discovery; $K_9$'s $28/84$ rank is
+panel~(A)'s red bar.
 
 \section{Conclusion}
-We characterized when higher-order structure can be identified from edge flows:
-a curl-invisibility phase transition in the curl-SNR, exact per-triangle marginal
-laws with a geometry-aware effective SNR after whitening, a rigorous union-bound
-recovery guarantee, and a rank obstruction that no SNR can overcome. The results
-delimit when algorithmic TSP inference
-\cite{gurugubelli2024simplicial,buciulea2025learning,hoppe2023representing} can
-succeed, and real data instantiate both sides: FX flows where the obstructions
-bind, road networks where recovery succeeds at the predicted budget. The
-code repository additionally contains derivations extending the theory: Fano
-converses for joint recovery (a $\log\binom pk$ factor, with a signal-agnostic
-variant and a sub-Gaussian achievability counterpart), an exact $q^{3k}$
-recovery law for curl-based detectors on edge-disjoint candidates under
-Bernoulli($q$) edge sampling \cite{chen2015discrete} (general identifiability
-under partial observation remains open), and consistent plug-in variance
-estimation. Sharp sparse-support thresholds
-(Remark~\ref{rem:sparse}) remain open.
+We characterized when higher-order structure is identifiable from edge flows:
+a curl-invisibility threshold with a $\log\binom pk$ joint converse; exact
+marginal laws after GLS-type decorrelation with a union-bound guarantee; and
+a first- vs.\ second-order dichotomy --- rank deficiency binds only for
+deterministic signals; random signals make every support identifiable at a
+quantified snapshot premium. This delimits when algorithmic TSP inference
+\cite{gurugubelli2024simplicial,buciulea2025learning,hoppe2023representing}
+succeeds, with achievability shown on genuine, unplanted structure (ERA5
+cyclone circulation, two independent references). The repository adds a
+signal-agnostic Fano variant, sub-Gaussian achievability, an exact $q^{3k}$
+edge-sampling law \cite{chen2015discrete}, and plug-in estimation.
+Remark~\ref{rem:sparse}'s thresholds remain open.
 
 % ICASSP allows a 5th page containing ONLY references.
 \newpage

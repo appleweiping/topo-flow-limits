@@ -1,19 +1,23 @@
-"""Real-data study on daily foreign-exchange flows (ECB reference rates).
+"""FX consistency check (ECB reference rates) + the K_n DoF geometry panel.
 
-Currencies are the nodes of a complete graph; the edge flow on day ``t`` is the
-log-price difference ``p_i,t - p_j,t``. Real FX flows land in the curl-invisible
-regime along BOTH axes of the theory:
+HONEST FRAMING (revised after adversarial self-review): the edge flow here is
+CONSTRUCTED as f = B1^T p from a single daily log-price vector p (one price
+per currency against a common base), so B2^T f = (B1 B2)^T p = 0 holds
+IDENTICALLY, for any prices whatsoever — arbitrage-free or not. Panel (A)'s
+curl/gradient ratio of ~1e-31 is floating-point residue: it validates the
+curl-annihilation arithmetic (Lemma 1) on real market data, and instantiates
+HodgeRank's "consistent prices = pure gradient" reading, but it is NOT an
+empirical discovery about markets. A genuine market test would need
+independent per-pair cross-rate quotes, whose triangular inconsistencies
+(true arbitrage) would carry nonzero curl.
 
-(A) SNR-side invisibility. An arbitrage-free market's flow is a pure gradient,
-    so its curl energy is ~machine-zero relative to the gradient energy: there is
-    no higher-order signal to detect at any snapshot budget.
-
-(B) Geometry-side (rank) obstruction. On the complete currency graph K_n the
-    number of candidate triangle coefficients C(n,3) far exceeds the
-    curl-subspace dimension rank(B2) = C(n-1,2); the degrees-of-freedom ratio
-    is exactly 3/n. Without sparsity or other priors, supports are therefore
-    identifiable only modulo ker(B2). On K9 (this dataset) the observable curl
-    shadow of the 84 triangle coefficients is only 28-dimensional.
+(B) Geometry-side first-order obstruction (this part is a real measurement of
+    the geometry): on the complete currency graph K_n the candidate triangle
+    coefficients C(n,3) exceed the curl-subspace dimension
+    rank(B2) = C(n-1,2); the DoF ratio is exactly 3/n. Per the dichotomy
+    theorem this blocks FIRST-ORDER identification (deterministic signals);
+    second-order identification remains possible in principle, at a
+    sample-complexity price.
 
 Data are cached in ``data/fx_rates.json`` (fetched once from api.frankfurter.app),
 so the experiment is fully offline-reproducible.

@@ -377,6 +377,264 @@ def fano_rho_floor(p: int, k: int, N: int, err: float = 0.5) -> float:
     return float(np.sqrt(lo * hi))
 
 
+# ---------------------------------------------------------------------------
+# First- vs second-order identifiability: the corrected "rank obstruction"
+# ---------------------------------------------------------------------------
+#
+# The observable consequence of the support S splits into two orders:
+#
+#   FIRST ORDER  (a single snapshot / unknown deterministic signals): the flow
+#   mean set is  im B_{2,S}. Supports with equal column-image are genuinely
+#   indistinguishable — identifiable only modulo ker B2. On K_n the curl
+#   subspace has dim C(n-1, 2) against C(n, 3) candidates: the 3/n DoF ratio.
+#
+#   SECOND ORDER (i.i.d. random signals): the flow covariance carries
+#   sigma_c^2 * sum_{tau in S} b_tau b_tau^T, which is strictly finer than the
+#   column space. The lifted atoms {b_tau b_tau^T} are ALWAYS linearly
+#   independent for distinct 3-cliques of a simple graph (two edges lie in at
+#   most one common triangle — see `lifted_atoms_linearly_independent`), so the
+#   covariance map S -> Sigma(S) is injective and EVERY support is identifiable
+#   at sufficient snapshot budget, at any rank deficiency.
+#
+# The price of the geometry is therefore a SAMPLE-COMPLEXITY separation, not an
+# impossibility: distinguishing an equal-image confuser pair costs
+# N ~ log(1/delta) / C_G snapshots, where C_G is the Gaussian Chernoff
+# information between the two covariances (computed in the r-dimensional curl
+# coordinate z = Q^T f, which annihilates the gradient/harmonic nuisances).
+# For the minimal confusers — single-triangle swaps inside a tetrahedron —
+# || Delta M ||_F^2 = 16 exactly (9 + 9 - 2, from ||u||^2 = 3 and u_a.u_b = ±1),
+# giving C_G = (rho_2^2 / 16) * 16 * (1+o(1)) = rho_2^2 (1+o(1)) with
+# rho_2 = sigma_c^2 / sigma_n^2. All constants below are Monte-Carlo-validated
+# in tests/test_second_order.py.
+
+
+def curl_domain_signatures(B2: np.ndarray) -> np.ndarray:
+    """Curl-domain triangle signatures ``U = Q.T B2`` (shape ``(r, p)``),
+    where ``Q`` is an orthonormal basis of ``im(B2)``.
+
+    Column ``u_tau`` satisfies ``||u_tau||^2 = 3`` and
+    ``u_sigma . u_tau = G_{sigma tau}`` (the triangle Gram matrix) — the
+    signatures preserve all curl-domain geometry in minimal coordinates.
+    """
+    from tfl.hodge import curl_subspace_basis
+
+    Q = curl_subspace_basis(B2)
+    return Q.T @ B2
+
+
+def second_order_covariance(
+    U: np.ndarray, support: np.ndarray, sigma_curl: float, sigma_noise: float
+) -> np.ndarray:
+    """Curl-coordinate snapshot covariance ``Sigma_z(S) = sigma_n^2 I_r +
+    sigma_c^2 sum_{tau in S} u_tau u_tau^T`` for signatures ``U = Q.T B2``.
+
+    This is the exact law of ``z_t = Q.T f_t`` under the generative model:
+    gradient and harmonic components are annihilated by ``Q.T`` and the white
+    edge noise projects to white ``r``-dimensional noise.
+    """
+    support = np.asarray(support, bool)
+    r = U.shape[0]
+    Us = U[:, support]
+    return sigma_noise**2 * np.eye(r) + sigma_curl**2 * (Us @ Us.T)
+
+
+def lifted_atoms_linearly_independent(B2: np.ndarray, tol: float = 1e-8) -> bool:
+    """Certify the spark condition: the lifted atoms ``{b_tau b_tau^T}`` are
+    linearly independent.
+
+    This always holds for distinct 3-cliques of a simple graph: a PAIR of
+    distinct edges lies in at most one common triangle, so the off-diagonal
+    entry ``(e, e')`` of ``sum_tau w_tau b_tau b_tau^T`` equals ``± w_tau`` for
+    that unique triangle — every coefficient is directly readable off the
+    matrix. The numerical rank check below certifies it for any given ``B2``
+    (and guards against degenerate candidate sets).
+    """
+    p = B2.shape[1]
+    if p == 0:
+        return True
+    atoms = np.stack([np.outer(B2[:, t], B2[:, t]).ravel() for t in range(p)])
+    return int(np.linalg.matrix_rank(atoms, tol=tol)) == p
+
+
+def matrix_gaussian_chernoff(
+    Sigma0: np.ndarray, Sigma1: np.ndarray
+) -> tuple[float, float]:
+    """Chernoff information between ``N(0, Sigma0)`` and ``N(0, Sigma1)``.
+
+    ``C = max_s (1/2) [ log det( (1-s) W0 + s W1 ) - (1-s) log det W0
+    - s log det W1 ]`` with ``W_i = Sigma_i^{-1}`` — the optimal error exponent
+    of the binary test between the two covariances from i.i.d. snapshots
+    (``P_err ~ exp(-N C)``). Returns ``(C, s*)``.
+    """
+    W0 = np.linalg.inv(Sigma0)
+    W1 = np.linalg.inv(Sigma1)
+    ld0 = np.linalg.slogdet(W0)[1]
+    ld1 = np.linalg.slogdet(W1)[1]
+
+    def neg_g(s: float) -> float:
+        _, ld = np.linalg.slogdet((1.0 - s) * W0 + s * W1)
+        return -0.5 * (ld - (1.0 - s) * ld0 - s * ld1)
+
+    res = minimize_scalar(neg_g, bounds=(1e-6, 1 - 1e-6), method="bounded")
+    return float(-res.fun), float(res.x)
+
+
+def candidate_tetrahedra(
+    triangles: list[tuple[int, int, int]]
+) -> list[tuple[int, int, int, int]]:
+    """Indices (into ``triangles``) of the four faces of every tetrahedron —
+    every 4-clique of vertices whose four triangular faces are ALL candidates.
+
+    The four face signatures of a tetrahedron satisfy the signed relation
+    ``b_{012} - b_{013} + b_{023} - b_{123} = 0`` (boundary of the solid
+    3-simplex), so any three faces span the same 3-space as any other three:
+    tetrahedra host the MINIMAL equal-image confuser pairs.
+    """
+    from itertools import combinations
+
+    tri_index = {t: i for i, t in enumerate(triangles)}
+    verts = sorted({v for t in triangles for v in t})
+    quads: list[tuple[int, int, int, int]] = []
+    for quad in combinations(verts, 4):
+        faces = [tuple(sorted(c)) for c in combinations(quad, 3)]
+        if all(f in tri_index for f in faces):
+            quads.append(tuple(tri_index[f] for f in faces))  # type: ignore[arg-type]
+    return quads
+
+
+def equal_image_single_swap_pairs(
+    B2: np.ndarray, triangles: list[tuple[int, int, int]]
+) -> list[tuple[int, int]]:
+    """All UNORDERED candidate pairs ``(a, b)`` lying in a common tetrahedron:
+    swapping ``a`` for ``b`` preserves the column image of any support that
+    contains the other two faces. These are the minimal equal-image confusers,
+    with curl-domain separation
+    ``|| u_a u_a^T - u_b u_b^T ||_F^2 = 9 + 9 - 2 (u_a . u_b)^2 = 16`` exactly
+    (tetrahedron faces share exactly one edge, so ``u_a . u_b = ±1``).
+    """
+    from itertools import combinations
+
+    pairs: set[tuple[int, int]] = set()
+    for quad in candidate_tetrahedra(triangles):
+        for a, b in combinations(quad, 2):
+            pairs.add((min(a, b), max(a, b)))
+    return sorted(pairs)
+
+
+def confuser_pair_chernoff(
+    B2: np.ndarray,
+    support_a: np.ndarray,
+    support_b: np.ndarray,
+    sigma_curl: float,
+    sigma_noise: float,
+) -> float:
+    """Chernoff information ``C_G`` between the curl-coordinate covariances of
+    two supports — the exact error exponent for telling them apart. Finite and
+    positive whenever the supports differ (second-order identifiability);
+    the sample complexity of the pair is ``N* ~ log(1/delta) / C_G``.
+    """
+    U = curl_domain_signatures(B2)
+    S0 = second_order_covariance(U, support_a, sigma_curl, sigma_noise)
+    S1 = second_order_covariance(U, support_b, sigma_curl, sigma_noise)
+    C, _ = matrix_gaussian_chernoff(S0, S1)
+    return C
+
+
+def second_order_snr(sigma_curl: float, sigma_noise: float) -> float:
+    """Second-order SNR ``rho_2 = sigma_c^2 / sigma_n^2``. (The per-triangle
+    curl-SNR of the first-order theory is ``rho = 3 rho_2``.)"""
+    return sigma_curl**2 / sigma_noise**2
+
+
+def tetra_confuser_chernoff_small_snr(sigma_curl: float, sigma_noise: float) -> float:
+    """Leading-order Chernoff information of the MINIMAL (tetrahedral swap)
+    confuser pair: ``C_G = rho_2^2 (1 + o(1))`` as ``rho_2 -> 0``.
+
+    Derivation: with ``E = Sigma_0^{-1/2} (Sigma_1 - Sigma_0) Sigma_0^{-1/2}
+    ~ rho_2 * Delta M``, the Bhattacharyya expansion gives ``C = (1/16)
+    tr(E^2) (1+o(1)) = (rho_2^2 / 16) ||Delta M||_F^2 (1+o(1))``, and the swap
+    separation is ``||Delta M||_F^2 = ||u_a||^4 + ||u_b||^4 - 2 (u_a.u_b)^2 =
+    9 + 9 - 2 = 16`` (faces of a tetrahedron share exactly one edge). The
+    ``16``s cancel: the constant is UNIVERSAL — independent of n, of the
+    support size, and of which tetrahedron hosts the swap.
+    """
+    return second_order_snr(sigma_curl, sigma_noise) ** 2
+
+
+def second_order_min_snapshots(
+    B2: np.ndarray,
+    support_a: np.ndarray,
+    support_b: np.ndarray,
+    sigma_curl: float,
+    sigma_noise: float,
+    target_error: float = 0.05,
+) -> float:
+    """Chernoff-rate snapshot budget for distinguishing two supports:
+    ``N* = log(1/delta) / C_G``. For minimal tetrahedral confusers at small
+    SNR this is ``N* ~ log(1/delta) / rho_2^2`` — finite (second-order
+    identifiable) but a factor ``~1/rho_2`` beyond the ``log(1/delta)/rho^2``
+    single-triangle budget once ``rho_2`` is small, and INFINITE for the
+    first-order (deterministic-signal) model. That gap is the corrected
+    content of the rank obstruction."""
+    C = confuser_pair_chernoff(B2, support_a, support_b, sigma_curl, sigma_noise)
+    if C <= 0:
+        return np.inf
+    return float(np.log(1.0 / target_error) / C)
+
+
+def confuser_family_fano_min_snapshots(
+    B2: np.ndarray,
+    triangles: list[tuple[int, int, int]],
+    sigma_curl: float,
+    sigma_noise: float,
+    err: float = 0.5,
+    max_tetra_scan: int = 8,
+) -> float:
+    """Fano converse over the tetrahedral-confuser family.
+
+    Prior: pick one tetrahedron uniformly among the ``n_tetra`` hosted by the
+    candidate set and one of its 4 faces to leave inactive (the other 3
+    active) — ``M = 4 n_tetra`` hypotheses. Any estimator identifying the
+    support must distinguish them, and every pair of hypotheses is separated
+    by Gaussian KL at most ``KL_max`` per snapshot, so Fano gives
+    ``N >= ((1-err) log M - log 2) / KL_max``. KLs are computed at the ACTUAL
+    leave-one-out supports (exact curl-coordinate covariances); tetrahedra
+    beyond ``max_tetra_scan`` are skipped in the KL scan (they are isomorphic
+    on a symmetric complex, and skipping can only underestimate ``KL_max``,
+    which would only make the reported bound conservative in the safe
+    direction after the final max).
+    """
+    quads = candidate_tetrahedra(triangles)
+    if not quads:
+        return 0.0
+    M = 4 * len(quads)
+    U = curl_domain_signatures(B2)
+    p = B2.shape[1]
+
+    def kl(S0: np.ndarray, S1: np.ndarray) -> float:
+        W1 = np.linalg.inv(S1)
+        r = S0.shape[0]
+        return float(0.5 * (np.trace(W1 @ S0) - r
+                            + np.linalg.slogdet(S1)[1] - np.linalg.slogdet(S0)[1]))
+
+    from itertools import combinations
+
+    kl_max = 0.0
+    for quad in quads[:max_tetra_scan]:
+        # 4 leave-one-out hypotheses of this tetrahedron
+        covs = []
+        for leave in range(4):
+            s = np.zeros(p, bool)
+            s[[quad[i] for i in range(4) if i != leave]] = True
+            covs.append(second_order_covariance(U, s, sigma_curl, sigma_noise))
+        for i, j in combinations(range(4), 2):
+            kl_max = max(kl_max, kl(covs[i], covs[j]), kl(covs[j], covs[i]))
+    if kl_max <= 0:
+        return np.inf
+    numer = (1.0 - err) * np.log(M) - np.log(2.0)
+    return float(max(numer, 0.0) / kl_max)
+
+
 def median_sigma_envelope(
     d: int, p: int, active_fraction: float, delta: float = 0.05,
 ) -> tuple[float, float]:

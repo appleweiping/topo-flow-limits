@@ -335,6 +335,193 @@ Script: \texttt{experiments/run\_plugin.py}.}
 \label{fig:plugin}
 \end{figure}
 
+\section{First- vs.\ second-order identifiability: proofs}\label{sec:dichotomy}
+
+This section proves the main paper's Lemma~2 (lifted spark) and
+Theorem~3 (first- vs.\ second-order dichotomy), and records the exhaustive
+numerical verifications.
+Here the candidate set is arbitrary (edge-sharing allowed, $\B_2$ possibly
+rank-deficient); $\rho_2=\sigma_c^2/\sigma_n^2$ denotes the second-order SNR
+(the per-triangle curl-SNR of the main text is $\rho=3\rho_2$).
+
+\subsection{The lifted spark lemma}
+
+\begin{lemma}[Lifted spark]\label{lem:spark-supp}
+Let $\Tcal$ be any set of distinct $3$-cliques of a simple graph, with
+signatures $\bm b_\tau\in\{0,\pm1\}^{|\mathcal E|}$ (columns of $\B_2$). The
+matrices $\{\bm b_\tau\bm b_\tau^{\!\top}\}_{\tau\in\Tcal}$ are linearly
+independent.
+\end{lemma}
+\begin{proof}
+Fix $\tau=(i,j,k)$ and its edge pair $e=(i,j)$, $e'=(j,k)$. A pair of distinct
+edges determines at most one triangle containing both (two edges sharing a
+vertex fix the third vertex; disjoint edges lie in no common triangle). Hence
+in $\bm A(\bm w)=\sum_{\sigma}w_\sigma\bm b_\sigma\bm b_\sigma^{\!\top}$, the
+$(e,e')$ entry equals $w_\tau\,\bm b_\tau(e)\bm b_\tau(e')=\pm w_\tau$: no
+other candidate contributes. $\bm A(\bm w)=\bm 0$ therefore forces
+$w_\tau=0$ for every $\tau$.
+\end{proof}
+
+\begin{corollary}[Second-order identifiability]\label{cor:inject}
+Under the main paper's model~(2), the map
+$\Scal\mapsto\mathrm{Cov}(\bm f)=\sigma_g^2\B_1^{\!\top}\B_1
++\sigma_c^2\sum_{\tau\in\Scal}\bm b_\tau\bm b_\tau^{\!\top}
++\Sigma_{\rm harm}+\sigma_n^2\bm I$ is injective in $\Scal$; equivalently, in
+the curl coordinate $\bm z=\bm Q^{\!\top}\bm f$ ($\bm Q$ an orthonormal basis
+of $\mathrm{im}\,\B_2$, $r=\rank\B_2$),
+\begin{equation}\label{eq:sigz}
+\bm\Sigma_z(\Scal)=\sigma_n^2\bm I_r
++\sigma_c^2\!\!\sum_{\tau\in\Scal}\bm u_\tau\bm u_\tau^{\!\top},
+\qquad \bm u_\tau=\bm Q^{\!\top}\bm b_\tau,
+\end{equation}
+determines $\Scal$ uniquely. (The gradient and harmonic covariance terms are
+annihilated by $\bm Q^{\!\top}$; since $\bm b_\tau\in\mathrm{im}\,\B_2$, the
+compression to curl coordinates loses nothing:
+$\bm u_\sigma^{\!\top}\bm u_\tau=\bm b_\sigma^{\!\top}\bm b_\tau=G_{\sigma\tau}$.)
+\end{corollary}
+
+\subsection{First-order impossibility}
+
+\begin{proposition}[Deterministic indistinguishability]
+If $\mathrm{im}\,\B_{2,\Scal}=\mathrm{im}\,\B_{2,\Scal'}$ and the triangle
+signals are unknown deterministic nuisance parameters, the families of flow
+distributions $\{\mathcal N(\B_{2,\Scal}\bm y+\bm m,\ \sigma_n^2\bm I):\bm y\}$
+and $\{\mathcal N(\B_{2,\Scal'}\bm y'+\bm m,\ \sigma_n^2\bm I):\bm y'\}$
+coincide for every nuisance mean $\bm m$; consequently no test distinguishes
+$\Scal$ from $\Scal'$ at any SNR and any $N$.
+\end{proposition}
+\begin{proof}
+Equal column spaces: for every $\bm y$ there is $\bm y'$ with
+$\B_{2,\Scal'}\bm y'=\B_{2,\Scal}\bm y$ and vice versa; apply per snapshot.
+\end{proof}
+
+Tetrahedral confusers realize the hypothesis: the four faces of a tetrahedron
+satisfy $\bm b_{012}-\bm b_{013}+\bm b_{023}-\bm b_{123}=\bm 0$ (boundary of
+the solid $3$-simplex), so any three faces span the same $3$-space as any
+other three. On $K_n$ ($n\ge4$) there are $\binom n4$ tetrahedra.
+
+\subsection{The price: exact separation and Chernoff exponent}
+
+\begin{lemma}[Universal swap separation]\label{lem:sep16}
+Let $\Scal'=\Scal\setminus\{\tau_a\}\cup\{\tau_b\}$ with $\tau_a,\tau_b$
+faces of a common tetrahedron. Then
+$\bm\Sigma_z(\Scal)-\bm\Sigma_z(\Scal')
+=\sigma_c^2(\bm u_a\bm u_a^{\!\top}-\bm u_b\bm u_b^{\!\top})$ and
+\[
+\|\bm u_a\bm u_a^{\!\top}-\bm u_b\bm u_b^{\!\top}\|_F^2
+=\|\bm u_a\|^4+\|\bm u_b\|^4-2(\bm u_a^{\!\top}\bm u_b)^2
+=9+9-2=16 ,
+\]
+independent of $n$, of $|\Scal|$, and of the hosting tetrahedron (any two
+faces share exactly one edge, so $\bm u_a^{\!\top}\bm u_b=G_{ab}=\pm1$).
+\end{lemma}
+
+\begin{proposition}[Chernoff exponent of the minimal confuser]\label{prop:cg}
+Let $C_G$ be the Chernoff information between
+$\mathcal N(\bm 0,\bm\Sigma_z(\Scal))$ and
+$\mathcal N(\bm 0,\bm\Sigma_z(\Scal'))$ for a tetrahedral swap. As
+$\rho_2\to0$,
+\[
+C_G=\tfrac{1}{16}\,\rho_2^2\,
+\|\bm u_a\bm u_a^{\!\top}-\bm u_b\bm u_b^{\!\top}\|_F^2\,(1+o(1))
+=\rho_2^2\,(1+o(1)),
+\]
+and the optimal error of the binary test from $N$ snapshots satisfies
+$P_{\rm err}\le e^{-N C_G}$, with matching exponent
+($\liminf_N -\tfrac1N\log P_{\rm err}=C_G$). Hence
+$N^\star(\delta)\sim\log(1/\delta)/\rho_2^2$.
+\end{proposition}
+\begin{proof}[Proof sketch]
+Write $\bm E=\bm\Sigma_0^{-1/2}(\bm\Sigma_1-\bm\Sigma_0)\bm\Sigma_0^{-1/2}$.
+The Chernoff exponent between equal-mean Gaussians is
+$\max_s\frac12[\log\det((1-s)\bm W_0+s\bm W_1)-(1-s)\log\det\bm W_0
+-s\log\det\bm W_1]$; a second-order expansion in $\bm E$ around $\bm E=\bm 0$
+is maximized at $s=1/2$ (Bhattacharyya) with value
+$\tfrac1{16}\operatorname{tr}\bm E^2+O(\|\bm E\|^3)$. Here
+$\bm E=\rho_2(\bm u_a\bm u_a^{\!\top}-\bm u_b\bm u_b^{\!\top})+O(\rho_2^2)$
+(the shared atoms of $\Scal\cap\Scal'$ perturb $\bm\Sigma_0^{-1/2}$ only at
+$O(\rho_2)$, entering $C_G$ at $O(\rho_2^3)$), so
+$\operatorname{tr}\bm E^2=\rho_2^2\cdot16\,(1+O(\rho_2))$ by
+Lemma~\ref{lem:sep16}. The bound $P_{\rm err}\le e^{-NC_G}$ is the Chernoff
+bound; exponent tightness is classical for i.i.d.\ observations.
+\end{proof}
+
+\begin{proposition}[Fano over the confuser family]
+On $K_n$, consider the $M=4\binom n4$ hypotheses obtained by choosing a
+tetrahedron and leaving one of its four faces out of an otherwise-active
+tetrad. Any estimator with error $\le\epsilon$ over the uniform prior needs
+\[
+N\ \ge\ \frac{(1-\epsilon)\log\!\big(4\tbinom n4\big)-\log 2}
+{\max_{\text{pairs}}\KL\big(\bm\Sigma_z\|\bm\Sigma_z'\big)}
+\ \asymp\ \frac{\log n}{\rho_2^2},
+\]
+i.e.\ full support recovery over the confuser family pays a $\log n$ factor
+on top of the pairwise budget.
+\end{proposition}
+
+\subsection{Numerical verification (released tests)}
+
+\texttt{tests/test\_second\_order.py} certifies, deterministically or by
+Monte-Carlo: (i) Lemma~\ref{lem:spark-supp} on $K_4$--$K_9$, strips, disjoint
+unions, and random clique complexes; (ii) injectivity of
+$\Scal\mapsto\bm\Sigma_z(\Scal)$ \emph{exhaustively} over all $2^4$ supports
+of $K_4$; (iii) the deterministic replication of first-order confusers
+(residual $<10^{-9}$); (iv) separation exactly $16$ for every tetrahedral
+swap, and (exhaustively on $K_5$, all support sizes $k\le5$) minimality of
+$16$ over \emph{all} equal-image pairs; (v)
+$C_G/\rho_2^2\in[0.95,1.005]$ for $\rho_2\le10^{-2}$ and the Monte-Carlo
+error of the optimal test within the $e^{-NC_G}$ envelope with empirical
+exponent decreasing onto $C_G$; (vi) exact greedy covariance-atom recovery on
+rank-deficient $K_5$ (the regime where first-order arguments forbid it).
+
+\section{The cyclone study: construction details}\label{sec:cyclone}
+
+This section records the methodological details of the main paper's
+real-data recovery experiment (Fig.~3 there) beyond what fits in the page
+budget.
+
+\paragraph{From winds to edge flows.} ERA5 10\,m winds (ARCO-ERA5 public
+archive, $0.703^\circ$ equiangular grid, 6-hourly), Western North Pacific
+($0$--$45^\circ$N, $100$--$180^\circ$E), Aug--Sep 2020 (244 snapshots; the
+season contains 13 IBTrACS storms, incl.\ Bavi, Maysak, Haishen). Mesh nodes
+subsample every third grid point ($\approx2.1^\circ$); each grid cell splits
+into two right triangles; edge flow $=$ trapezoidal line integral
+$\tfrac12(\bm V_i+\bm V_j)\!\cdot\!(\Delta x,\Delta y)$ in the local
+equirectangular metric ($\Delta x = R\cos(\bar\phi)\Delta\lambda$). The mesh
+is simply connected, so $\#\text{triangles}=|\mathcal E|-|\mathcal V|+1
+=\dim\ker\B_1$ and $\B_2$ has full column rank (verified: $1554/1554$) --- the
+favorable-geometry regime of the dichotomy, with no equal-image confusers.
+By Stokes' theorem the curl statistic of a triangle approximates its
+circulation, i.e.\ area-integrated relative vorticity; a sign convention
+(sorted-vertex traversal vs.\ geometric orientation) is tracked explicitly in
+the code and is irrelevant to the energy detector.
+
+\paragraph{Detection.} Per 4-day window (16 snapshots), the temporally
+centered decorrelated scores $\hat{\bm y}=\bm G^{-1}\bm c$ are computed with
+NO oracle parameters: centering removes any window-constant background
+exactly, and thresholds/scales are plug-in (\S\ref{sec:plugin} machinery).
+Windows are the device that maps the i.i.d.-snapshot theory onto moving
+weather: a cyclone translates $\sim$$3$--$6^\circ$/day, so over 4 days it
+crosses a few $2.1^\circ$ triangles --- the "support" is quasi-static at the
+window scale, and the per-window scores are pooled across the season for
+evaluation. This is an idealization and is labeled as such (README honesty
+note 9).
+
+\paragraph{Validation.} Internal: relative vorticity
+$\zeta=\partial_x v-\partial_y u$ by centered differences on the FULL
+$0.7^\circ$ grid (the detector only ever sees the $2.1^\circ$ mesh flows);
+per-triangle truth $=$ window-mean $|\zeta|$ averaged over grid points inside
+the triangle; ROC sweeps the detector score against truth binarized at
+typhoon-scale $3\times10^{-5}\,\mathrm{s}^{-1}$. External: IBTrACS v04r01
+best-track fixes ($\ge$ 34\,kt where wind is reported), a triangle labeled
+positive if a fix falls within $1.5^\circ$ of its centroid during the window.
+The external reference shares nothing with ERA5's assimilation of winds into
+our statistic --- it is the community's independent record of where cyclones
+actually were. A synthetic Rankine-vortex test (\texttt{tests/test\_geo.py})
+verifies the whole bridge end-to-end: localization at the core, correct
+cyclonic sign after orientation correction, and rank agreement with the
+finite-difference vorticity.
+
 \section{Reproducibility}\label{sec:repro}
 
 All figures regenerate on CPU from fixed seeds via
@@ -342,11 +529,18 @@ All figures regenerate on CPU from fixed seeds via
 Fig.~\ref{fig:fano} $\leftarrow$ \texttt{run\_fano.py} (pure theory, seconds);
 Fig.~\ref{fig:partial} $\leftarrow$ \texttt{run\_partial\_sampling.py}
 ($\approx$4\,min);
-Fig.~\ref{fig:plugin} $\leftarrow$ \texttt{run\_plugin.py} ($\approx$3\,min).
-The test-suite (\texttt{pytest -q}) checks: the Fano bounds against the
-empirical phase boundary of the main paper's Fig.~1 (a converse must lower
-bound it), the closed form \eqref{eq:qform} against Monte-Carlo, the envelope
-of Lemma~\ref{lem:median}, and the adaptive-vs-known recovery gap.
+Fig.~\ref{fig:plugin} $\leftarrow$ \texttt{run\_plugin.py} ($\approx$3\,min);
+the main paper's cyclone study $\leftarrow$ \texttt{run\_real\_cyclone.py}
+($\approx$3\,min from the cached ERA5/IBTrACS files).
+The test-suite (\texttt{pytest -q}, 34 tests) checks: the Fano bounds against
+the empirical recovery boundary of the main paper's Fig.~1 (a converse must
+lower bound it), the closed form \eqref{eq:qform} against Monte-Carlo, the
+envelope of Lemma~\ref{lem:median}, the adaptive-vs-known recovery gap, every
+claim of Section~\ref{sec:dichotomy} (spark, exhaustive $K_4$ injectivity,
+separation $16$, $C_G/\rho_2^2\to1$, Chernoff envelope, rank-deficient
+recovery), and the wind-to-edge-flow bridge (mesh full rank by Euler; a
+synthetic Rankine vortex localizes at the correct triangles with the correct
+sign and matches the finite-difference vorticity ranking).
 
 \begin{thebibliography}{9}
 \bibitem{vershynin2018high}

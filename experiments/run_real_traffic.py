@@ -13,19 +13,29 @@ Two panels, honest labels:
     energy split of the REAL flow: unlike arbitrage-free FX (curl ~ 1e-31 of
     gradient), real traffic carries a few percent of genuine curl energy.
 
-(B) Recovery (planted signals on real geometry + real-flow background). On
-    Anaheim (54 candidate triangles, 18 active), snapshots are
-        f_t = f_UE + B1' a_t + B2_S y_t + H h_t + n_t,
-    where f_UE is the real (normalized) equilibrium flow. The centered whitened
-    detector removes the constant background exactly (one degree of freedom),
-    and because G = 3I the whitened scores are INDEPENDENT — the product
-    recovery law is exact here (with N-1 degrees of freedom). Empirical recovery
-    matches it, demonstrating achievability at the theory-predicted budget on
-    real infrastructure geometry.
+(B) Recovery on Anaheim (planted signals on real geometry + real-flow
+    background). Honest scope: Anaheim's triangles are pairwise edge-disjoint,
+    so G = 3I and the recovery law COLLAPSES TO the edge-disjoint product law
+    — this panel checks that law on a real-derived geometry, it does not
+    exercise the geometry-aware machinery. The real UE background is a
+    constant across snapshots, which temporal centering removes exactly (one
+    degree of freedom, df = N-1); the gradient/harmonic nuisances are
+    annihilated by the curl map. Those invariances are the POINT of the
+    detector, but they also mean the surviving statistical problem is fully
+    synthetic — stated plainly here and in the paper.
 
-Ground truth caveat (stated in the paper): real traffic has no labelled triangle
-support, so panel (B) uses planted signals; what is real is the network geometry
-and the equilibrium-flow background the detector must be invariant to.
+(C) Recovery on EMA (planted signals on real NON-TRIVIAL geometry). EMA has
+    10 edge-sharing triangle pairs (G genuinely non-diagonal, yet full column
+    rank), so the whitened detector's heterogeneous per-triangle laws
+    v0_tau = sigma_n^2 (G^{-1})_{tau tau} do real work: this is the panel that
+    exercises the geometry-aware theory on real infrastructure geometry. EMA
+    has no published UE flow; no background is added (the Anaheim panel shows
+    constant backgrounds are exactly removed anyway).
+
+Ground truth caveat (stated in the paper): real traffic has no labelled
+triangle support, so panels (B)/(C) use planted signals; the real ingredient
+is the network geometry. The genuinely UNPLANTED real recovery lives in the
+cyclone experiment (run_real_cyclone.py).
 """
 
 from __future__ import annotations
@@ -57,9 +67,10 @@ NETWORKS = [
     ("Anaheim", "Anaheim_net.tntp", "Anaheim_flow.tntp"),
 ]
 
-# Recovery-panel parameters (Anaheim)
+# Recovery-panel parameters
 RHO = 3.0            # curl SNR  => sigma_curl = sigma_noise = 1
-N_ACTIVE = 18
+N_ACTIVE = 18        # Anaheim (54 candidates)
+N_ACTIVE_EMA = 11    # EMA (33 candidates)
 N_GRID = [6, 10, 15, 22, 32, 46, 66, 95]
 N_TRIALS = 200
 SEED = 7
@@ -147,10 +158,59 @@ def recovery_panel(seed: int = SEED) -> dict:
     }
 
 
-def _plot(geo: list[dict], rec: dict):
+def recovery_panel_ema(seed: int = SEED) -> dict:
+    """Planted recovery on EMA: full-column-rank B2 with 10 edge-sharing
+    triangle pairs — non-diagonal G, heterogeneous per-triangle whitened laws.
+    The product law is an independence APPROXIMATION here; the union bound is
+    the rigorous guarantee."""
+    net = load_tntp_network(DATA / "EMA_net.tntp", None, name="EMA")
+    cx = net.complex
+    p = len(cx.triangles)
+    sampler = FastFlowSampler(cx)
+    G = sampler.B2_all.T @ sampler.B2_all
+    assert not np.allclose(G, 3.0 * np.eye(p)), "EMA must be edge-sharing"
+    Gp_diag = np.clip(np.diag(np.linalg.pinv(G)), 1e-12, None)
+    n_sharing_pairs = int((np.abs(np.triu(G, 1)) > 0).sum())
+
+    rng = np.random.default_rng(seed)
+    active = np.zeros(p, dtype=bool)
+    active[rng.choice(p, N_ACTIVE_EMA, replace=False)] = True
+
+    sn = 1.0
+    sc = float(np.sqrt(RHO / 3.0))
+    params = FlowParams(sigma_curl=sc, sigma_grad=1.0, sigma_harm=0.5, sigma_noise=sn)
+    v0s, v1s = whitened_variances(Gp_diag, sc, sn)
+
+    emp, theory, union = [], [], []
+    for N in N_GRID:
+        hits = 0
+        for _ in range(N_TRIALS):
+            F = sampler.sample(active, params, N, rng)
+            ds = FlowDataset(F=F, B1=sampler.B1, B2_all=sampler.B2_all,
+                             active=active, params=params,
+                             candidate_triangles=list(cx.triangles))
+            est = whitened_curl_detector_support(ds, sc, sn, mode="bayes")
+            hits += exact_recovery(est, active)
+        emp.append(hits / N_TRIALS)
+        theory.append(heterogeneous_exact_recovery_probability(v0s, v1s, active, N))
+        union.append(heterogeneous_recovery_union_bound(v0s, v1s, active, N))
+
+    return {
+        "network": "EMA", "n_candidates": p, "n_active": N_ACTIVE_EMA,
+        "n_edge_sharing_pairs": n_sharing_pairs,
+        "Gp_diag_range": [float(Gp_diag.min()), float(Gp_diag.max())],
+        "rho": RHO, "sigma_noise": sn, "sigma_grad": 1.0, "sigma_harm": 0.5,
+        "detector": "whitened (heterogeneous v0_tau), uncentered (df=N)",
+        "N_grid": N_GRID, "empirical": emp,
+        "theory_product_approx": theory, "union_bound": union,
+        "n_trials": N_TRIALS, "seed": seed,
+    }
+
+
+def _plot(geo: list[dict], rec: dict, rec_ema: dict):
     import matplotlib.pyplot as plt
 
-    fig, (a0, a1) = plt.subplots(1, 2, figsize=(9.0, 3.4))
+    fig, (a0, a1, a2) = plt.subplots(1, 3, figsize=(13.0, 3.0))
 
     names = [r["network"].replace(" (FX, contrast)", "\n(FX)") for r in geo]
     ratios = [r["dof_ratio"] for r in geo]
@@ -171,11 +231,25 @@ def _plot(geo: list[dict], rec: dict):
     a1.plot(N, rec["union_bound"], "k:", label="union bound")
     a1.set_xlabel("number of snapshots  N")
     a1.set_ylabel("P(exact recovery)")
-    a1.set_title(f"(B) Anaheim: planted support on real\ngeometry + real UE flow "
-                 f"($\\rho$={rec['rho']:.0f}, {rec['n_active']}/{rec['n_candidates']} active)")
+    a1.set_title(f"(B) Anaheim ($G{{=}}3I$: edge-disjoint\nproduct law is exact; "
+                 f"$\\rho$={rec['rho']:.0f}, {rec['n_active']}/{rec['n_candidates']})")
     a1.set_ylim(-0.03, 1.03)
     a1.legend(loc="lower right", fontsize=8)
     a1.grid(alpha=0.3)
+
+    Ne = rec_ema["N_grid"]
+    a2.plot(Ne, rec_ema["empirical"], "^-", color="tab:purple",
+            label="whitened: empirical")
+    a2.plot(Ne, rec_ema["theory_product_approx"], "k--",
+            label="product law (indep. approx.)")
+    a2.plot(Ne, rec_ema["union_bound"], "k:", label="union bound (rigorous)")
+    a2.set_xlabel("number of snapshots  N")
+    a2.set_ylabel("P(exact recovery)")
+    a2.set_title(f"(C) EMA: non-diagonal $G$\n({rec_ema['n_edge_sharing_pairs']} edge-sharing pairs, "
+                 f"{rec_ema['n_active']}/{rec_ema['n_candidates']})")
+    a2.set_ylim(-0.03, 1.03)
+    a2.legend(loc="lower right", fontsize=8)
+    a2.grid(alpha=0.3)
 
     fig.tight_layout()
     savefig(fig, "real_traffic.png")
@@ -184,9 +258,10 @@ def _plot(geo: list[dict], rec: dict):
 def run() -> dict:
     geo = geometry_panel()
     rec = recovery_panel()
-    out = {"geometry": geo, "recovery": rec}
+    rec_ema = recovery_panel_ema()
+    out = {"geometry": geo, "recovery": rec, "recovery_ema": rec_ema}
     save_json("real_traffic.json", out)
-    _plot(geo, rec)
+    _plot(geo, rec, rec_ema)
     return out
 
 
