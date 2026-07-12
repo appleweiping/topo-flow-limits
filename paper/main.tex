@@ -109,9 +109,9 @@ sample-complexity scaling $\rho^\star(N)=\Theta(\sqrt{\log(1/\delta)/N})$ at
 the exponent level, and a Fano $\log\binom pk$ factor for joint recovery.
 \item \emph{Geometry-aware decorrelation} for edge-sharing candidates --- the
 GLS/BLUE inversion $\hat{\bm y}=\bm G^{-1}\bm c$ \cite{kay1993fundamentals}
---- with exact marginal laws whose effective SNR is the variance-inflation
-factor's (Thm.~\ref{thm:whiten}), plus a union-bound guarantee
-(Cor.~\ref{cor:union}).
+--- with exact marginal laws whose effective SNR is governed by the
+classical variance-inflation factor (Thm.~\ref{thm:whiten}), plus a
+union-bound guarantee (Cor.~\ref{cor:union}).
 \item Main theorem: a \emph{first- vs.\ second-order identifiability dichotomy}
 (Thm.~\ref{thm:rank}) correcting the folklore rank obstruction: equal-image
 supports are indistinguishable under deterministic signals (on $K_n$: a $3/n$
@@ -206,7 +206,7 @@ $\max_{s}\tfrac12[\log(s/v_0+(1-s)/v_1)+s\log v_0+(1-s)\log v_1]$.
 
 \begin{theorem}[Curl-invisibility threshold; joint-recovery converse]\label{thm:invis}
 (a) With $\rho$ as in \eqref{eq:rho}, $C(\rho)=\rho^2/16+o(\rho^2)$; hence
-attaining a target error \emph{exponent} $\delta$ at budget $N$ requires
+attaining error $\le\delta$ \emph{at the exponent level} at budget $N$ requires
 $\rho\ge\rho^\star(N)=\Theta\big(\sqrt{\log(1/\delta)/N}\big)$ for \emph{any}
 estimator. (b) Recovering a uniformly random size-$k$ support among $p$
 edge-disjoint candidates with error $\le\epsilon$ requires
@@ -373,14 +373,12 @@ $\mathrm{im}\,\B_2$) the law is $\mathcal N(\bm 0,\ \sigma_n^2\bm I_r
 +\sigma_c^2\sum_{\tau\in\Scal}\bm u_\tau\bm u_\tau^{\!\top})$,
 $\bm u_\tau=\bm Q^{\!\top}\bm b_\tau$; injectivity transfers from
 Lemma~\ref{lem:spark} since $\bm b_\tau\in\mathrm{im}\,\B_2$. (iii) Direct
-computation plus the second-order (Bhattacharyya) expansion of the Chernoff
-information; every constant is verified in the released tests: swap
-$C_G/\rho_2^2\to1$ (to $0.998$), subset $C_G\to\tfrac9{16}\rho_2^2$ matching
-the single-triangle exponent to $10^{-4}$ relative, and the separations $16$
-(equal-cardinality minimum) and $9$ (unrestricted minimum) are exhaustive
-over all $2^{10}$ supports of $K_5$
-(\texttt{test\_exhaustive\_k5\_confuser\_separations}). Full proofs:
-supplement \S S4.
+computation plus the second-order (Bhattacharyya) expansion; every constant
+is test-certified: swap $C_G/\rho_2^2$ within $6\times10^{-4}$ of $1$ and
+subset $C_G$ matching the single-triangle exponent to $3\times10^{-5}$
+relative (at $\rho_2=10^{-4},10^{-5}$ resp.), separations $16$/$9$
+exhaustive over all $2^{10}$ supports of $K_5$. Full proofs: supplement
+\S S4.
 \end{proof}
 
 Theorem~\ref{thm:rank} reconciles theory with practice: second-order
@@ -440,10 +438,10 @@ are real atmospheric vortices. The mesh is simply connected, so $\B_2$ has
 full column rank by Euler's formula: no confusers, the favorable regime of
 Theorem~\ref{thm:rank}. Per 4-day window (16 six-hourly snapshots) the
 temporally centered curl-\emph{energy} statistic of
-Prop.~\ref{prop:single}, area-normalized to the vorticity scale, scores each
-triangle; \emph{nothing is planted, no oracle parameters} (the decorrelated
-variant, reported in the repository, ranks worse here: $\bm G^{-1}$
-amplifies noise). Storms translate several triangle-widths per window:
+Prop.~\ref{prop:single}, area$^2$-normalized to the vorticity scale, scores
+each triangle; \emph{nothing is planted, no oracle parameters} (the
+decorrelated variant, reported in the repository, ranks worse here:
+$\bm G^{-1}$ amplifies noise). Storms translate several triangle-widths per window:
 centering removes the window-mean flow, so the statistic detects the
 \emph{time-varying} circulation a moving vortex deposits. Validation
 (panel B): a \emph{same-field consistency reference} (finite-difference

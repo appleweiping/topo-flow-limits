@@ -401,11 +401,14 @@ def fano_rho_floor(p: int, k: int, N: int, err: float = 0.5) -> float:
 # N ~ log(1/delta) / C_G snapshots, where C_G is the Gaussian Chernoff
 # information between the two covariances (computed in the r-dimensional curl
 # coordinate z = Q^T f, which annihilates the gradient/harmonic nuisances).
-# For the minimal confusers — single-triangle swaps inside a tetrahedron —
-# || Delta M ||_F^2 = 16 exactly (9 + 9 - 2, from ||u||^2 = 3 and u_a.u_b = ±1),
-# giving C_G = (rho_2^2 / 16) * 16 * (1+o(1)) = rho_2^2 (1+o(1)) with
-# rho_2 = sigma_c^2 / sigma_n^2. All constants below are Monte-Carlo-validated
-# in tests/test_second_order.py.
+# For the minimal EQUAL-CARDINALITY confusers — single-triangle swaps inside
+# a tetrahedron — || Delta M ||_F^2 = 16 exactly (9 + 9 - 2, from
+# ||u||^2 = 3 and u_a.u_b = ±1), giving C_G = rho_2^2 (1+o(1)) with
+# rho_2 = sigma_c^2 / sigma_n^2. The UNRESTRICTED worst case is the subset
+# confuser (S vs S plus a hosted tetrahedron's fourth face), separation 9,
+# C_G = (9/16) rho_2^2 (1+o(1)) — exactly the isolated-triangle exponent.
+# All constants below are validated in tests/test_second_order.py, incl.
+# exhaustively over all 2^10 supports of K5.
 
 
 def curl_domain_signatures(B2: np.ndarray) -> np.ndarray:

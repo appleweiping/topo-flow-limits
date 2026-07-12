@@ -27,3 +27,4 @@ paper/*.fls
 paper/page-*.png
 paper/build*.log
 texput.log
+paper/main_text.txt

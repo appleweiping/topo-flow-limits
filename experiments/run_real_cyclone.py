@@ -24,7 +24,7 @@ Pipeline per 4-day window (16 six-hourly snapshots):
   wind field -> mesh edge flows F -> temporally centered curl-ENERGY scores
   (the paper's primary statistic, Prop. 1), area^2-normalized so scores rank
   triangles on a common mean-VORTICITY scale across latitudes
-  -> compare to both ground truths. No oracle parameters anywhere.
+  -> compare to both references. No oracle parameters anywhere.
 
 Statistic choice, stated honestly: the GLS/BLUE-decorrelated score (Thm. 2)
 targets exact-support recovery under edge-sharing leakage at a known SNR; on
@@ -32,9 +32,10 @@ this nearly-regular full-rank mesh its G^{-1} noise amplification hurts pure
 DETECTION ranking (AUC 0.77 vs 0.91 internal). Both scores are computed and
 reported in the JSON; the energy score is the headline panel.
 
-A third panel degrades the snapshot budget N inside each window and compares
-the empirical detection performance against the N-scaling predicted by the
-two-variance theory at the plug-in SNR (the "real-data phase transition").
+A third panel degrades the snapshot budget N inside each window and shows the
+empirical detection quality alongside the theoretical invisibility floor
+rho*(N) (arbitrary units — a shape reference for the N-scaling, not a fitted
+prediction; evaluation is threshold-free ROC ranking throughout).
 
 Outputs: results/real_cyclone.json + results/figures/real_cyclone.png
 Run:     python experiments/run_real_cyclone.py            (~2-4 min CPU)
@@ -274,7 +275,7 @@ def main() -> None:
     ax.plot([0, 1], [0, 1], "k:", lw=0.8)
     ax.set_xlabel("false-positive rate")
     ax.set_ylabel("true-positive rate")
-    ax.set_title("(B) unplanted recovery: ROC vs both ground truths")
+    ax.set_title("(B) unplanted recovery: ROC vs both references")
     ax.legend(loc="lower right", fontsize=8)
 
     ax = fig.add_subplot(1, 3, 3)

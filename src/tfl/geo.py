@@ -7,13 +7,14 @@ integral of the wind along it. By Stokes' theorem the curl of that edge flow
 over a triangle approximates the CIRCULATION of the wind around it — i.e.
 area-integrated relative vorticity. Detecting high-curl triangles from edge
 flows is therefore detecting real atmospheric vortices (tropical cyclones),
-for which two independent ground truths exist:
+validated against two references:
 
-* INTERNAL: relative vorticity computed from the full-resolution field by
-  finite differences (the mesh detector only ever sees the subsampled edge
-  flows, so this is a strictly finer reference);
-* EXTERNAL: the IBTrACS best-track archive (agency-verified cyclone positions,
-  fully independent of the reanalysis winds).
+* INTERNAL: a SAME-FIELD consistency reference — relative vorticity computed
+  from the full-resolution field by finite differences (a different
+  functional of the same winds, at finer resolution than anything the mesh
+  detector sees; NOT an independent measurement);
+* EXTERNAL: the IBTrACS best-track archive (agency-verified cyclone
+  positions, genuinely independent of the reanalysis winds).
 
 Geometry note: edges are measured in a local equirectangular metric
 (dx = R cos(lat) dlon, dy = R dlat) — standard for regional meshes at these

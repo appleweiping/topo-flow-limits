@@ -97,7 +97,7 @@ def test_tetrahedral_confusers_have_equal_image_and_separation_16():
     assert len(pairs) == 6 * len(candidate_tetrahedra(cx.triangles))
     assert len(candidate_tetrahedra(cx.triangles)) == 15  # C(6,4)
 
-    for a, b in pairs[:12]:
+    for a, b in pairs:  # ALL 90 swap pairs of K6's 15 tetrahedra
         # equal image of the two swap supports inside the host tetrahedron
         quad = next(q for q in candidate_tetrahedra(cx.triangles) if a in q and b in q)
         others = [t for t in quad if t not in (a, b)]
@@ -148,7 +148,8 @@ def test_chernoff_small_snr_constant_is_rho2_squared():
     s_a = np.zeros(p, bool); s_a[others + [a]] = True
     s_b = np.zeros(p, bool); s_b[others + [b]] = True
 
-    for sigma_c, rtol in [(0.1, 0.25), (0.03, 0.05)]:
+    for sigma_c, rtol in [(0.1, 0.25), (0.03, 0.05), (0.01, 6e-4)]:
+        # at rho_2 = 1e-4 the ratio is 0.9995 (quoted in the paper)
         C = confuser_pair_chernoff(B2, s_a, s_b, sigma_c, 1.0)
         pred = tetra_confuser_chernoff_small_snr(sigma_c, 1.0)
         assert C == pytest.approx(pred, rel=rtol), (sigma_c, C, pred)
@@ -312,12 +313,14 @@ def test_subset_confuser_exponent_equals_isolated_triangle_exponent():
     s3 = np.zeros(p, bool); s3[list(quad[:3])] = True
     s4 = s3.copy(); s4[quad[3]] = True
 
-    rho2 = 1e-4
-    sc, sn = np.sqrt(rho2), 1.0
-    C_sub = confuser_pair_chernoff(B2, s3, s4, sc, sn)
-    v0, v1 = curl_variances(sc, sn)
-    C_single, _ = gaussian_chernoff_information(v0, v1)
-    assert C_sub == pytest.approx(9.0 / 16.0 * rho2**2, rel=2e-3)
-    assert C_sub == pytest.approx(C_single, rel=2e-3)
-    assert subset_confuser_chernoff_small_snr(sc, sn) == pytest.approx(
-        9.0 / 16.0 * rho2**2)
+    # rel_asym: gap to the asymptote (9/16) rho_2^2 (O(rho_2) correction);
+    # rel_single: gap to the exact isolated-triangle exponent (smaller).
+    for rho2, rel_asym, rel_single in [(1e-4, 8e-4, 3e-4), (1e-5, 8e-5, 3e-5)]:
+        sc, sn = np.sqrt(rho2), 1.0
+        C_sub = confuser_pair_chernoff(B2, s3, s4, sc, sn)
+        v0, v1 = curl_variances(sc, sn)
+        C_single, _ = gaussian_chernoff_information(v0, v1)
+        assert C_sub == pytest.approx(9.0 / 16.0 * rho2**2, rel=rel_asym)
+        assert C_sub == pytest.approx(C_single, rel=rel_single)
+        assert subset_confuser_chernoff_small_snr(sc, sn) == pytest.approx(
+            9.0 / 16.0 * rho2**2)
