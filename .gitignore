@@ -26,3 +26,4 @@ paper/*.fdb_latexmk
 paper/*.fls
 paper/page-*.png
 paper/build*.log
+texput.log
