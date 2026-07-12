@@ -2,8 +2,11 @@
 
 These tests pin down the corrected "rank obstruction": equal-image supports
 are indistinguishable at FIRST order (deterministic/adversarial signals) but
-identifiable at SECOND order (random signals), at a sample-complexity price
-whose constants are validated here against exact algebra and Monte-Carlo.
+identifiable under ISOTROPIC/DIAGONAL random excitation (trichotomy case (a);
+random signals per se do NOT remove the obstruction — see
+tests/test_excitation.py for the other excitation classes), at a
+sample-complexity price whose constants are validated here against exact
+algebra and Monte-Carlo.
 """
 from __future__ import annotations
 

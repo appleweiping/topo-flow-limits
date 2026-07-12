@@ -1,9 +1,11 @@
-"""Real, UNPLANTED higher-order structure recovery: tropical cyclones from
-ERA5 edge flows.
+"""CURL-BASED VORTEX LOCALIZATION on real data: tropical cyclones from ERA5
+edge flows.
 
-This is the experiment the FX/traffic studies could not provide: the latent
-triangle structure being recovered is genuinely present in nature (cyclone
-circulation), nothing is planted, and the recovery is validated against two
+Honest framing (this is NOT "filled-triangle topology recovery"): the mesh is
+full column rank with no equal-image confusers, and real weather has no
+latent boolean triangle support — what this experiment demonstrates is that
+the paper's curl statistic LOCALIZES genuine, unplanted rotational structure
+(cyclone circulation) on a real vector field, validated against two
 references:
 
   INTERNAL  relative vorticity by finite differences on the FULL SOURCE GRID
@@ -67,7 +69,6 @@ from tfl.geo import (  # noqa: E402
     wind_edge_flows,
 )
 from tfl.hodge import build_incidences  # noqa: E402
-from tfl.limits import invisibility_curl_snr_floor  # noqa: E402
 
 DATA = Path(__file__).resolve().parent.parent / "data"
 MESH_STEP = 3          # 3 x 0.703 deg ~ 2.1 deg mesh (~230 km edges)
@@ -101,6 +102,48 @@ def roc_curve(scores: np.ndarray, labels: np.ndarray, n_thresh: int = 200):
         fpr.append(fp / max(Nn, 1))
     auc = float(np.trapezoid(tpr, fpr))
     return np.array(fpr), np.array(tpr), auc
+
+
+def pr_auc(scores: np.ndarray, labels: np.ndarray) -> float:
+    """Average precision (step-wise PR-AUC): sum over positives, in score
+    order, of precision-at-that-rank weighted by recall increments."""
+    order = np.argsort(-scores)
+    l_sorted = labels[order].astype(float)
+    P = l_sorted.sum()
+    if P == 0:
+        return 0.0
+    tp = 0.0
+    ap = 0.0
+    for i, v in enumerate(l_sorted, start=1):
+        if v:
+            tp += 1
+            ap += (tp / i) / P
+    return float(ap)
+
+
+def cluster_bootstrap_ci(
+    per_window_scores: list[np.ndarray],
+    per_window_labels: list[np.ndarray],
+    metric,
+    n_boot: int = 1000,
+    seed: int = 7,
+) -> tuple[float, float]:
+    """95% percentile CI for a pooled ranking metric, resampling WHOLE
+    WINDOWS with replacement (windows are the exchangeable clusters here;
+    storms span windows, so window-level resampling is the conservative
+    unit)."""
+    rng = np.random.default_rng(seed)
+    W = len(per_window_scores)
+    vals = []
+    for _ in range(n_boot):
+        idx = rng.integers(0, W, size=W)
+        s = np.concatenate([per_window_scores[i] for i in idx])
+        l = np.concatenate([per_window_labels[i] for i in idx])
+        if l.sum() == 0 or l.sum() == len(l):
+            continue
+        vals.append(metric(s, l))
+    lo, hi = np.percentile(vals, [2.5, 97.5])
+    return float(lo), float(hi)
 
 
 def main() -> None:
@@ -184,15 +227,28 @@ def main() -> None:
     print(f"INTERNAL: {int(int_labels.sum())}/{len(int_labels)} vorticity-positive "
           f"triangle-windows; AUC = {auc_i:.3f}")
 
-    # ---- external validation: ROC + P/R against IBTrACS ----
+    # ---- external validation: ROC + PR + P@k against IBTrACS ----
     fpr_e, tpr_e, auc_e = roc_curve(scores_flat, ext_gt_flat)
+    ap_e = pr_auc(scores_flat, ext_gt_flat)
     # operating point: top-k where k = number of external positives
     k = int(ext_gt_flat.sum())
     top = np.argsort(-scores_flat)[:k]
     hits = int(ext_gt_flat[top].sum())
     precision = hits / max(k, 1)
     print(f"EXTERNAL: {k} cyclone triangle-windows; AUC = {auc_e:.3f}; "
-          f"P@k = {precision:.3f}")
+          f"PR-AUC = {ap_e:.3f}; P@k = {precision:.3f}")
+
+    # cluster (per-window) bootstrap CIs for the headline pooled metrics
+    int_labels_pw = [g > VORT_THRESH for g in all_int_gt]
+    boot = {
+        "auc_internal": cluster_bootstrap_ci(all_scores, int_labels_pw,
+                                             lambda s, l: roc_curve(s, l)[2]),
+        "auc_external": cluster_bootstrap_ci(all_scores, all_ext_gt,
+                                             lambda s, l: roc_curve(s, l)[2]),
+        "pr_auc_external": cluster_bootstrap_ci(all_scores, all_ext_gt, pr_auc),
+    }
+    print(f"window-bootstrap 95% CI: AUC_int={boot['auc_internal']}, "
+          f"AUC_ext={boot['auc_external']}, PR_ext={boot['pr_auc_external']}")
 
     # rank correlation between detector score and internal GT
     from scipy.stats import spearmanr
@@ -204,11 +260,17 @@ def main() -> None:
     rho_s_wh, _ = spearmanr(scores_wh_flat, int_gt_flat)
     print(f"decorrelated variant: AUC_int={auc_i_wh:.3f} AUC_ext={auc_e_wh:.3f} "
           f"spearman={rho_s_wh:.3f}")
-    # classical baseline at the same information budget
+    # classical baseline at the same information budget (full metric set)
     fpr_b, tpr_b, auc_i_base = roc_curve(scores_base_flat, int_labels)
     _, _, auc_e_base = roc_curve(scores_base_flat, ext_gt_flat)
+    ap_e_base = pr_auc(scores_base_flat, ext_gt_flat)
+    top_b = np.argsort(-scores_base_flat)[:k]
+    precision_base = int(ext_gt_flat[top_b].sum()) / max(k, 1)
+    boot["auc_external_baseline"] = cluster_bootstrap_ci(
+        all_scores_base, all_ext_gt, lambda s, l: roc_curve(s, l)[2])
     print(f"coarse-vorticity baseline: AUC_int={auc_i_base:.3f} "
-          f"AUC_ext={auc_e_base:.3f}")
+          f"AUC_ext={auc_e_base:.3f} PR_ext={ap_e_base:.3f} "
+          f"P@k={precision_base:.3f}")
     # sensitivity of the internal AUC to the vorticity threshold
     thresh_sweep = {}
     for th in (1e-5, 2e-5, 3e-5, 4e-5, 5e-5):
@@ -228,6 +290,7 @@ def main() -> None:
                                # uniformly (mixing statistics across N made
                                # the curve non-monotone and uninterpretable)
     degradation = {}
+    deg_std = {}
     F_w = F_all[:, w]
     flow_rms = float(np.sqrt(np.mean(F_w**2)))
     for nl in noise_levels:
@@ -243,14 +306,13 @@ def main() -> None:
                 _, _, a = roc_curve(s, gt_labels_w)
                 vals.append(a)
             aucs.append(float(np.mean(vals)))
+            deg_std.setdefault(str(nl), []).append(float(np.std(vals)))
         degradation[str(nl)] = aucs
 
-    # theory reference: rho*(N) invisibility floor (arbitrary units, for the
-    # N-scaling shape) mapped onto the same axes
-    rho_floor = [invisibility_curl_snr_floor(1.0, max(N - 1, 1)) for N in Ns]
-
     # ---- figure ----
-    fig = plt.figure(figsize=(13.5, 3.6))
+    plt.rcParams.update({"font.size": 12, "axes.titlesize": 12,
+                         "axes.labelsize": 12})
+    fig = plt.figure(figsize=(12.5, 3.6))
 
     ax = fig.add_subplot(1, 3, 1)
     wi_show = wi
@@ -268,26 +330,27 @@ def main() -> None:
     fig.colorbar(im, ax=ax, label="log10 score")
 
     ax = fig.add_subplot(1, 3, 2)
-    ax.plot(fpr_i, tpr_i, label=f"internal (vorticity), AUC={auc_i:.3f}")
-    ax.plot(fpr_e, tpr_e, label=f"external (IBTrACS), AUC={auc_e:.3f}")
+    ax.plot(fpr_i, tpr_i,
+            label=f"internal (vorticity), AUC={auc_i:.3f}")
+    ax.plot(fpr_e, tpr_e,
+            label=f"external (IBTrACS), AUC={auc_e:.3f}, PR={ap_e:.3f}")
     ax.plot(fpr_b, tpr_b, ":", color="gray",
-            label=f"baseline: coarse FD vorticity, AUC={auc_i_base:.3f}")
+            label=f"baseline (coarse vort.), AUC={auc_i_base:.3f}")
     ax.plot([0, 1], [0, 1], "k:", lw=0.8)
     ax.set_xlabel("false-positive rate")
     ax.set_ylabel("true-positive rate")
-    ax.set_title("(B) unplanted recovery: ROC vs both references")
+    ax.set_title("(B) vortex localization: ROC vs both references")
     ax.legend(loc="lower right", fontsize=8)
 
     ax = fig.add_subplot(1, 3, 3)
     for nl in noise_levels:
-        ax.plot(Ns, degradation[str(nl)], "o-", label=f"noise x{nl}")
-    ax2 = ax.twinx()
-    ax2.plot(Ns, rho_floor, "k--", alpha=0.6, label=r"theory $\rho^\star(N)$")
-    ax2.set_ylabel(r"$\rho^\star(N)$ (theory floor, reference)")
-    ax2.set_yscale("log")
+        y = np.array(degradation[str(nl)])
+        e = np.array(deg_std[str(nl)])
+        ax.errorbar(Ns, y, yerr=e, fmt="o-", ms=3, capsize=2,
+                    label=f"noise x{nl}")
     ax.set_xlabel("snapshots N in window")
     ax.set_ylabel("AUC vs internal GT")
-    ax.set_title("(C) budget degradation (theory floor for reference)")
+    ax.set_title("(C) budget degradation (mean ± sd over 12 draws)")
     ax.legend(loc="lower right", fontsize=8)
 
     fig.tight_layout()
@@ -300,15 +363,25 @@ def main() -> None:
         "season": {"t0": np.datetime_as_string(times[0], unit="h"),
                    "t1": np.datetime_as_string(times[-1], unit="h"),
                    "n_snapshots": int(T), "n_windows": len(windows)},
+        "task": "curl-based vortex localization (NOT filled-triangle "
+                "topology recovery: the mesh has no equal-image confusers "
+                "and real weather has no latent boolean support)",
         "statistic": "temporally centered curl energy, area^2-normalized "
                      "(vorticity scale); decorrelated (Thm.2) variant reported "
                      "for comparison",
-        "internal_validation": {"auc": auc_i, "vort_thresh_per_s": VORT_THRESH,
+        "internal_validation": {"auc": auc_i,
+                                "auc_ci95_window_bootstrap": list(boot["auc_internal"]),
+                                "vort_thresh_per_s": VORT_THRESH,
                                 "n_positive": int(int_labels.sum()),
                                 "n_total": int(len(int_labels)),
                                 "spearman_score_vs_vorticity": float(rho_s)},
-        "external_validation": {"auc": auc_e, "n_cyclone_triangle_windows": k,
+        "external_validation": {"auc": auc_e,
+                                "auc_ci95_window_bootstrap": list(boot["auc_external"]),
+                                "pr_auc": ap_e,
+                                "pr_auc_ci95_window_bootstrap": list(boot["pr_auc_external"]),
+                                "n_cyclone_triangle_windows": k,
                                 "precision_at_k": precision,
+                                "prevalence": k / int(len(ext_gt_flat)),
                                 "n_ibtracs_fixes": len(fixes)},
         "decorrelated_variant": {"auc_internal": float(auc_i_wh),
                                  "auc_external": float(auc_e_wh),
@@ -318,6 +391,9 @@ def main() -> None:
                                          "full-rank mesh"},
         "baseline_coarse_fd_vorticity": {
             "auc_internal": float(auc_i_base), "auc_external": float(auc_e_base),
+            "auc_external_ci95_window_bootstrap": list(boot["auc_external_baseline"]),
+            "pr_auc_external": float(ap_e_base),
+            "precision_at_k_external": float(precision_base),
             "note": "classical pointwise FD vorticity from winds subsampled at "
                     "the mesh nodes (2.1 deg) — same information budget; the "
                     "edge-flow statistic should match it (the contribution is "
@@ -325,7 +401,9 @@ def main() -> None:
         "internal_auc_vs_vorticity_threshold": thresh_sweep,
         "degradation": {"Ns": Ns, "noise_levels": noise_levels,
                         "auc_by_noise": degradation,
-                        "theory_rho_floor": [float(r) for r in rho_floor]},
+                        "auc_sd_by_noise": deg_std,
+                        "note": "uniform centered statistic, N>=3; no "
+                                "theory-floor overlay (units incommensurate)"},
         "per_window": per_window,
     })
     print("done.")

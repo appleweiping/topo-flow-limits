@@ -23,10 +23,12 @@
 \newcommand{\Scal}{\mathcal{S}}
 \newcommand{\Tcal}{\mathcal{T}}
 \newcommand{\KL}{\mathrm{KL}}
+\newcommand{\Gam}{\bm{\Gamma}}
+\DeclareMathOperator{\im}{im}
 
 \title{Supplementary Material for\\
-``When Are Triangles Invisible? Fundamental Limits of\\
-Higher-Order Structure Identifiability from Edge Flows''}
+``Excitation-Dependent Identifiability of Latent\\
+Higher-Order Structure from Edge Flows''}
 \author{Weiping Yan\\ \small University of Minnesota, Twin Cities}
 \date{}
 
@@ -40,8 +42,9 @@ signal-distribution-agnostic bound and a sub-Gaussian achievability
 counterpart); \textbf{S2} identifiability under \emph{partial edge
 observation}; \textbf{S3} \emph{plug-in} estimation of the variance parameters
 and a fully adaptive detector; \textbf{S4} full proofs of the main paper's
-lifted-spark lemma and first- vs.\ second-order identifiability dichotomy,
-with exhaustive numerical verification; \textbf{S5} construction details of
+lifted-spark lemma, excitation trichotomy, separation/exponent theorem, and
+NNLS consistency/failure bound, with exhaustive numerical verification;
+\textbf{S5} construction details of
 the cyclone recovery study. All statements are validated numerically by the
 released test-suite; Section~\ref{sec:repro} maps every figure to its script.
 Notation follows the main paper: $N$ snapshots, candidate set $\Tcal$ with
@@ -53,11 +56,11 @@ $\Scal$ and the triangle Gram matrix is $\bm G=3\bm I$.
 
 \section{Fano-type converses for joint support recovery}\label{sec:fano}
 
-The main paper's Theorem~1(a) is a \emph{single-triangle} converse yielding
-the floor $\rho^\star(N)=\Theta(\sqrt{\log(1/\delta)/N})$; its part~(b)
-states the Gaussian Fano bound for \emph{joint} recovery of the whole
-support, which Theorem~\ref{thm:fano-gauss} below proves, and
-the signal-agnostic variant extends.
+The main paper's Prop.~2 contains a \emph{single-triangle} converse yielding
+the floor $\rho^\star(N)=\Theta(\sqrt{\log(1/\delta)/N})$ together with the
+Gaussian Fano bound for \emph{joint} recovery of the whole support;
+Theorem~\ref{thm:fano-gauss} below proves the latter, and the
+signal-agnostic variant extends it.
 
 We first record a reduction used by both proofs.
 
@@ -330,22 +333,23 @@ medians.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{plugin.png}
-\caption{Plug-in estimation on the strip benchmark of the main paper's
-Fig.~2 ($\rho=8$, $4/9$ active). (A) Consistency of
+\caption{Plug-in estimation on the edge-sharing strip benchmark
+($\rho=8$, $4/9$ active; cf.\ main Prop.~1). (A) Consistency of
 \eqref{eq:sn-hat}--\eqref{eq:sc-hat} (after refinement). (B) The fully
 adaptive detector matches the known-parameter detector.
 Script: \texttt{experiments/run\_plugin.py}.}
 \label{fig:plugin}
 \end{figure}
 
-\section{First- vs.\ second-order identifiability: proofs}\label{sec:dichotomy}
+\section{Excitation-dependent identifiability: proofs}\label{sec:dichotomy}
 
-This section proves the main paper's Lemma~2 (lifted spark) and
-Theorem~3 (first- vs.\ second-order dichotomy), and records the exhaustive
+This section proves the main paper's Lemma~1 (lifted spark), Theorem~1
+(excitation trichotomy), Theorem~2 (separations and exponents), and
+Theorem~3 (NNLS consistency and failure bound), and records the exhaustive
 numerical verifications.
 Here the candidate set is arbitrary (edge-sharing allowed, $\B_2$ possibly
 rank-deficient); $\rho_2=\sigma_c^2/\sigma_n^2$ denotes the second-order SNR
-(the per-triangle curl-SNR of the main text is $\rho=3\rho_2$).
+(the per-triangle curl-SNR is $\rho=3\rho_2$).
 
 \subsection{The lifted spark lemma}
 
@@ -365,43 +369,61 @@ other candidate contributes. $\bm A(\bm w)=\bm 0$ therefore forces
 $w_\tau=0$ for every $\tau$.
 \end{proof}
 
-\begin{corollary}[Second-order identifiability]\label{cor:inject}
-Under the main paper's model~(2), the map
-$\Scal\mapsto\mathrm{Cov}(\bm f)=\sigma_g^2\B_1^{\!\top}\B_1
-+\sigma_c^2\sum_{\tau\in\Scal}\bm b_\tau\bm b_\tau^{\!\top}
-+\Sigma_{\rm harm}+\sigma_n^2\bm I$ is injective in $\Scal$; equivalently, in
-the curl coordinate $\bm z=\bm Q^{\!\top}\bm f$ ($\bm Q$ an orthonormal basis
-of $\mathrm{im}\,\B_2$, $r=\rank\B_2$),
-\begin{equation}\label{eq:sigz}
-\bm\Sigma_z(\Scal)=\sigma_n^2\bm I_r
-+\sigma_c^2\!\!\sum_{\tau\in\Scal}\bm u_\tau\bm u_\tau^{\!\top},
-\qquad \bm u_\tau=\bm Q^{\!\top}\bm b_\tau,
-\end{equation}
-determines $\Scal$ uniquely. (The gradient and harmonic covariance terms are
-annihilated by $\bm Q^{\!\top}$; since $\bm b_\tau\in\mathrm{im}\,\B_2$, the
-compression to curl coordinates loses nothing:
-$\bm u_\sigma^{\!\top}\bm u_\tau=\bm b_\sigma^{\!\top}\bm b_\tau=G_{\sigma\tau}$.)
-\end{corollary}
+\subsection{The excitation trichotomy (main Theorem 1)}
 
-\subsection{First-order impossibility}
+With $\bm z=\bm Q^{\!\top}\bm f$ ($\bm Q$ an orthonormal basis of
+$\mathrm{im}\,\B_2$, $r=\rank\B_2$, $\bm U=\bm Q^{\!\top}\B_2$), the
+gradient/harmonic covariance terms are annihilated and
+$\bm\Sigma_z(\Scal,\Gam)=\sigma_n^2\bm I_r+\bm U_\Scal\Gam\bm U_\Scal^{\!\top}$;
+since $\bm b_\tau\in\mathrm{im}\,\B_2$, the compression loses nothing
+($\bm u_\sigma^{\!\top}\bm u_\tau=G_{\sigma\tau}$).
 
-\begin{proposition}[Deterministic indistinguishability]
-If $\mathrm{im}\,\B_{2,\Scal}=\mathrm{im}\,\B_{2,\Scal'}$ and the triangle
-signals are unknown deterministic nuisance parameters, the families of flow
-distributions $\{\mathcal N(\B_{2,\Scal}\bm y+\bm m,\ \sigma_n^2\bm I):\bm y\}$
-and $\{\mathcal N(\B_{2,\Scal'}\bm y'+\bm m,\ \sigma_n^2\bm I):\bm y'\}$
-coincide for every nuisance mean $\bm m$; consequently no test distinguishes
-$\Scal$ from $\Scal'$ at any SNR and any $N$.
+\begin{proposition}[(a) positive diagonal]\label{prop:diag}
+If $\Gam_\Scal=\mathrm{diag}(\gamma_\tau)>0$, then
+$\bm\Sigma_z-\sigma_n^2\bm I=\sum_\tau w_\tau\bm u_\tau\bm u_\tau^{\!\top}$
+with $w_\tau=\gamma_\tau\mathbf 1\{\tau\in\Scal\}$, and by
+Lemma~\ref{lem:spark-supp} the coefficients $w$ (hence $\Scal$ and the
+weights) are uniquely determined --- at any rank deficiency of $\B_2$. On
+$K_n$ with $\sigma_n$ \emph{unknown}, exactly one direction is ambiguous:
+$\sum_{\tau\in\Tcal}\bm u_\tau\bm u_\tau^{\!\top}=n\bm I_r$ (the up-Laplacian
+of the full complex acts as $n$ on the curl space), so a uniform weight shift
+trades off against the noise floor; this is verified numerically for
+$K_5$--$K_7$.
+\end{proposition}
+
+\begin{proposition}[(b) arbitrary PSD]\label{prop:psd}
+$\{\bm U_\Scal\Gam\bm U_\Scal^{\!\top}:\Gam\succeq0\}
+=\{\bm M\succeq0:\mathrm{im}\,\bm M\subseteq\mathrm{im}\,\bm U_\Scal\}$.
+Hence the family of achievable covariances depends on $\Scal$ only through
+$\mathrm{im}\,\B_{2,\Scal}$, and with unknown unrestricted $\Gam$ exactly the
+curl subspace is identifiable.
 \end{proposition}
 \begin{proof}
-Equal column spaces: for every $\bm y$ there is $\bm y'$ with
-$\B_{2,\Scal'}\bm y'=\B_{2,\Scal}\bm y$ and vice versa; apply per snapshot.
+($\subseteq$) immediate. ($\supseteq$) For PSD $\bm M$ with
+$\mathrm{im}\,\bm M\subseteq\mathrm{im}\,\bm U_\Scal$, set
+$\Gam=\bm U_\Scal^{+}\bm M(\bm U_\Scal^{+})^{\!\top}\succeq0$; then
+$\bm U_\Scal\Gam\bm U_\Scal^{\!\top}
+=\bm P_{\im\bm U_\Scal}\bm M\bm P_{\im\bm U_\Scal}=\bm M$.
 \end{proof}
 
-Tetrahedral confusers realize the hypothesis: the four faces of a tetrahedron
-satisfy $\bm b_{012}-\bm b_{013}+\bm b_{023}-\bm b_{123}=\bm 0$ (boundary of
-the solid $3$-simplex), so any three faces span the same $3$-space as any
-other three. On $K_n$ ($n\ge4$) there are $\binom n4$ tetrahedra.
+\begin{proposition}[(c) projector excitation]\label{prop:proj}
+For $\Gam_\Scal=\sigma_c^2(\B_{2,\Scal}^{\!\top}\B_{2,\Scal})^{+}$,
+$\bm U_\Scal\Gam_\Scal\bm U_\Scal^{\!\top}=\sigma_c^2\bm P_{\im\bm U_\Scal}$
+exactly (SVD: $\bm A(\bm A^{\!\top}\bm A)^{+}\bm A^{\!\top}=\bm P_{\im\bm A}$).
+Supports with equal curl image therefore induce identical snapshot
+distributions --- indistinguishable at every SNR and $N$.
+\end{proposition}
+
+\begin{remark}[Deterministic boundary]
+Unknown deterministic signals are the degenerate boundary of class (b): for
+equal-image supports the mean families
+$\{\B_{2,\Scal}\bm y\}=\{\B_{2,\Scal'}\bm y'\}$ coincide per snapshot, so no
+test distinguishes them at any SNR and any $N$. Tetrahedral confusers realize
+equal image: the four faces satisfy
+$\bm b_{012}-\bm b_{013}+\bm b_{023}-\bm b_{123}=\bm 0$, so any three faces
+span the same $3$-space as any other three; on $K_n$ there are
+$\binom n4$ tetrahedra.
+\end{remark}
 
 \subsection{The price: exact separations and Chernoff exponents}
 
@@ -487,6 +509,93 @@ i.e.\ full support recovery over the confuser family pays a $\log n$ factor
 on top of the pairwise budget.
 \end{proposition}
 
+\subsection{Global analytic separations (main Theorem 2)}
+
+\begin{theorem}[Separations on every clique complex]\label{thm:sep-global}
+Let $\Tcal$ be any candidate set of distinct $3$-cliques of a simple graph
+and let $\Scal\ne\Scal'$ be binary supports with equal curl image, isotropic
+excitation $\sigma_c^2\bm I$. Then
+$\|\bm M_\Scal-\bm M_{\Scal'}\|_F^2\ \ge\ 9\sigma_c^4$, with equality iff
+$\Scal,\Scal'$ differ in exactly one (linearly dependent) face; and
+$\ \ge16\sigma_c^4$ if additionally $|\Scal|=|\Scal'|$, with equality iff the
+difference is a single edge-sharing swap.
+\end{theorem}
+\begin{proof}
+Write $\bm M_\Scal-\bm M_{\Scal'}
+=\sigma_c^2\sum_\tau c_\tau\bm b_\tau\bm b_\tau^{\!\top}$ with
+$c_\tau\in\{-1,0,+1\}$, $\bm c\ne\bm0$. Then
+\[
+\Big\|\sum_\tau c_\tau\bm b_\tau\bm b_\tau^{\!\top}\Big\|_F^2
+=\sum_{\sigma,\tau}c_\sigma c_\tau G_{\sigma\tau}^2
+=\bm c^{\!\top}\!\big(9\bm I+\bm A\big)\bm c ,
+\]
+since $G_{\tau\tau}^2=9$ and $G_{\sigma\tau}^2\in\{0,1\}$ equals the
+share-an-edge adjacency $\bm A$. Two triangles share an edge iff their vertex
+triples intersect in two elements, so $\bm A$ is the adjacency of an induced
+subgraph of the Johnson graph $J(n,3)$ ($n$ = number of vertices); the
+Johnson spectrum $\lambda_j=(3-j)(n-3-j)-j$ gives
+$\lambda_{\min}\ge-3$, and Cauchy interlacing transfers this to every induced
+subgraph (for $n<6$, direct computation gives $\lambda_{\min}\in\{-1,-2\}$).
+Hence $\mathrm{sep}\ge(9-3)\|\bm c\|^2=6\|\bm c\|^2$. If $\|\bm c\|^2=1$
+(single-face difference) then $\bm c^{\!\top}\bm A\bm c=0$ and
+$\mathrm{sep}=9$ exactly; equal image with a single-face difference requires
+that face's signature to lie in the span of the shared columns (e.g.\ a
+hosted tetrahedron's fourth face). If $\|\bm c\|^2\ge2$ then
+$\mathrm{sep}\ge12>9$, so $9$ is the unrestricted minimum. Under
+$|\Scal|=|\Scal'|$, $\sum_\tau c_\tau=0$ forces $\|\bm c\|^2$ even and
+$\ge2$; for $\|\bm c\|^2=2$ ($\bm c=\bm e_a-\bm e_b$),
+$\mathrm{sep}=18-2G_{ab}^2\ge16$ with equality iff the two faces share an
+edge (tetrahedral swap); for $\|\bm c\|^2\ge4$,
+$\mathrm{sep}\ge24>16$.
+\end{proof}
+
+The Chernoff exponents then follow from the Bhattacharyya expansion
+(Prop.~\ref{prop:cg}), for \emph{fixed graph and support pair} as
+$\rho_2\to0$; in particular the unrestricted worst case (subset confuser,
+separation $9$) has exponent $\tfrac9{16}\rho_2^2(1+o(1))$, equal to the
+isolated-triangle detection exponent.
+
+\subsection{NNLS consistency and failure bound (main Theorem 3)}
+
+\begin{proof}[Proof of main Theorem 3]
+Let $\bm A=[\mathrm{vec}(\bm u_\tau\bm u_\tau^{\!\top})]_\tau$,
+$\bm s=\mathrm{vec}(\hat{\bm\Sigma}_z-\sigma_n^2\bm I)$, true coefficients
+$\bm w^\star\ge0$ with $\bm A\bm w^\star
+=\mathrm{vec}(\bm\Sigma_z-\sigma_n^2\bm I)$, and
+$\bm E=\mathrm{vec}(\hat{\bm\Sigma}_z-\bm\Sigma_z)$.
+\emph{(i) Deterministic perturbation.} Optimality of $\hat{\bm w}$ over the
+cone $\{\bm w\ge0\}\ni\bm w^\star$ gives
+$\|\bm A\hat{\bm w}-\bm s\|^2\le\|\bm A\bm w^\star-\bm s\|^2=\|\bm E\|^2$;
+expanding $\bm A\hat{\bm w}-\bm s=\bm A(\hat{\bm w}-\bm w^\star)-\bm E$
+yields $\|\bm A(\hat{\bm w}-\bm w^\star)\|^2\le
+2\langle\bm A(\hat{\bm w}-\bm w^\star),\bm E\rangle
+\le2\|\bm A(\hat{\bm w}-\bm w^\star)\|\|\bm E\|$, so
+$\|\bm A(\hat{\bm w}-\bm w^\star)\|\le2\|\bm E\|$ and
+$\|\hat{\bm w}-\bm w^\star\|_2\le2\|\bm E\|/\sigma_{\min}(\bm A)$, with
+$\sigma_{\min}(\bm A)>0$ by Lemma~\ref{lem:spark-supp}.
+\emph{(ii) Exact covariance-error moment.} For i.i.d.\
+$\bm z_t\sim\mathcal N(\bm0,\bm\Sigma_z)$ and
+$\hat{\bm\Sigma}_z=\frac1N\sum_t\bm z_t\bm z_t^{\!\top}$, Wishart second
+moments give
+$\mathrm{Var}(\hat\Sigma_{ij})
+=(\Sigma_{ii}\Sigma_{jj}+\Sigma_{ij}^2)/N$, hence
+$\mathbb E\|\bm E\|^2=\sum_{ij}\mathrm{Var}(\hat\Sigma_{ij})
+=[(\mathrm{tr}\,\bm\Sigma_z)^2+\|\bm\Sigma_z\|_F^2]/N$ exactly.
+\emph{(iii) Markov.} Thresholding at $w_{\min}/2$ fails only if
+$\|\hat{\bm w}-\bm w^\star\|_\infty\ge w_{\min}/2$, so
+\[
+\Pr[\hat\Scal\ne\Scal]
+\le\Pr\Big[\|\bm E\|\ge\frac{\sigma_{\min}(\bm A)\,w_{\min}}4\Big]
+\le\frac{16\,\mathbb E\|\bm E\|^2}{\sigma_{\min}^2(\bm A)\,w_{\min}^2},
+\]
+which is the stated bound. Consistency: $\hat{\bm\Sigma}_z\to\bm\Sigma_z$
+a.s.\ (LLN), so by (i) $\hat{\bm w}\to\bm w^\star$ a.s., and any threshold in
+$(0,w_{\min})$ recovers $\Scal$ eventually. Each step is separately
+Monte-Carlo verified (\texttt{test\_excitation.py}): the moment identity to
+$6\%$ relative at $N=40$, zero violations of (i) in $2000$ trials, and the
+final bound upper-bounds empirical failure across an $(N,\rho_2)$ grid.
+\end{proof}
+
 \subsection{Numerical verification (released tests)}
 
 \texttt{tests/test\_second\_order.py} certifies, deterministically or by
@@ -502,14 +611,31 @@ $C_G/\rho_2^2$ within $6\times10^{-4}$ of $1$ at $\rho_2=10^{-4}$ (and
 within $5\%$ at $\rho_2\le10^{-2}$), subset $C_G$ matching the
 isolated-triangle exponent to $3\times10^{-5}$ relative at
 $\rho_2=10^{-5}$, and the Monte-Carlo error of the optimal test within the
-$e^{-NC_G}$ envelope with empirical exponent decreasing onto $C_G$; (vi) exact greedy covariance-atom recovery on rank-deficient $K_5$
-(the regime where first-order arguments forbid it).
+$e^{-NC_G}$ envelope with empirical exponent decreasing onto $C_G$; (vi)
+exact greedy covariance-atom recovery on rank-deficient $K_5$.
+\texttt{tests/test\_excitation.py} additionally certifies every claim of the
+trichotomy and estimator theory: weighted-diagonal identifiability and the
+$K_n$ unknown-noise ambiguity direction
+($\sum_\tau\bm u_\tau\bm u_\tau^{\!\top}=n\bm I_r$); PSD matching for
+equal-image supports (Prop.~\ref{prop:psd}, residual $<10^{-9}$, matched
+$\Gam'$ PSD); exact projector-excitation indistinguishability
+(Prop.~\ref{prop:proj}); the separation identity
+$\bm c^{\!\top}(9\bm I+\bm A)\bm c$ and $\lambda_{\min}(\bm A)\ge-3$ on
+$K_4$--$K_7$ and random clique complexes; the three steps of main
+Theorem~3's proof individually plus the assembled failure bound against
+empirical failure rates on an $(N,\rho_2)$ grid; the population score-tie of
+the matched-subspace baseline and its collapse (with NNLS) to chance under
+projector excitation; and the monotone vanishing of the equal-image gap
+under the $\Gam_\alpha$ interpolation, exactly zero at $\alpha=1$.
 
 \section{The cyclone study: construction details}\label{sec:cyclone}
 
 This section records the methodological details of the main paper's
-real-data recovery experiment (Fig.~3 there) beyond what fits in the page
-budget.
+curl-based vortex-localization study (Fig.~3 there) beyond what fits in the
+page budget. Positioning: this is \emph{not} filled-triangle topology
+recovery --- the mesh has no equal-image confusers and weather has no latent
+boolean support; it grounds the sufficient statistic on genuinely unplanted
+rotational structure.
 
 \paragraph{From winds to edge flows.} ERA5 10\,m winds (ARCO-ERA5 public
 archive, $0.703^\circ$ equiangular grid, 6-hourly), Western North Pacific
@@ -567,10 +693,14 @@ Fig.~\ref{fig:fano} $\leftarrow$ \texttt{run\_fano.py} (pure theory, seconds);
 Fig.~\ref{fig:partial} $\leftarrow$ \texttt{run\_partial\_sampling.py}
 ($\approx$4\,min);
 Fig.~\ref{fig:plugin} $\leftarrow$ \texttt{run\_plugin.py} ($\approx$3\,min);
-the main paper's cyclone study $\leftarrow$ \texttt{run\_real\_cyclone.py}
+the main paper's achievability grid and $\alpha$-sweep $\leftarrow$
+\texttt{run\_second\_order.py} ($\approx$15--25\,min; $K_4$--$K_8$, random
+supports, full $(N,\rho_2)$ grid, Wilson intervals, all cells in
+\texttt{results/second\_order.json});
+the main paper's vortex-localization study $\leftarrow$ \texttt{run\_real\_cyclone.py}
 ($\approx$3\,min from the cached ERA5/IBTrACS files).
-The test-suite (\texttt{pytest -q}, 36 tests) checks: the Fano bounds against
-the empirical recovery boundary of the main paper's Fig.~1 (a converse must
+The test-suite (\texttt{pytest -q}, 45 tests) checks: the Fano bounds against
+the empirical recovery boundary of the main paper's Fig.~2 (a converse must
 lower bound it), the closed form \eqref{eq:qform} against Monte-Carlo, the
 envelope of Lemma~\ref{lem:median}, the adaptive-vs-known recovery gap, every
 claim of Section~\ref{sec:dichotomy} (spark, exhaustive $K_4$ injectivity,

@@ -47,12 +47,23 @@ class FastFlowSampler:
         self.n_nodes = self.B1.shape[0]
         self.H = harmonic_basis(self.B1, self.B2_all)
 
-    def sample(self, active: np.ndarray, params, T: int, rng) -> np.ndarray:
-        """Return an ``(n_edges, T)`` flow matrix."""
+    def sample(self, active: np.ndarray, params, T: int, rng,
+               gamma_sqrt: np.ndarray | None = None) -> np.ndarray:
+        """Return an ``(n_edges, T)`` flow matrix.
+
+        ``gamma_sqrt`` (optional): a ``(k, k)`` square root of the triangle
+        excitation covariance ``Gamma_S`` (``y_t = gamma_sqrt @ g_t`` with
+        ``g_t`` standard normal), overriding the isotropic
+        ``params.sigma_curl``. Pass ``sqrtm``/Cholesky/eigh-based roots — only
+        ``gamma_sqrt @ gamma_sqrt.T = Gamma_S`` matters.
+        """
         B2S = self.B2_all[:, np.asarray(active, bool)]
         F = self.B1.T @ (params.sigma_grad * rng.standard_normal((self.n_nodes, T)))
-        if B2S.shape[1] > 0 and params.sigma_curl > 0:
-            F += B2S @ (params.sigma_curl * rng.standard_normal((B2S.shape[1], T)))
+        if B2S.shape[1] > 0:
+            if gamma_sqrt is not None:
+                F += B2S @ (gamma_sqrt @ rng.standard_normal((B2S.shape[1], T)))
+            elif params.sigma_curl > 0:
+                F += B2S @ (params.sigma_curl * rng.standard_normal((B2S.shape[1], T)))
         if self.H.shape[1] > 0 and params.sigma_harm > 0:
             F += self.H @ (params.sigma_harm * rng.standard_normal((self.H.shape[1], T)))
         F += params.sigma_noise * rng.standard_normal((self.n_edges, T))

@@ -212,6 +212,80 @@ def sparse_curl_covariance_support(
     return wv > tol * wv.max()
 
 
+def nnls_lifted_support(
+    Z: np.ndarray,
+    U: np.ndarray,
+    sigma_noise: float,
+    threshold: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    """The lifted-covariance NNLS estimator (the achievability workhorse of
+    the excitation-dependent theory, diagonal-excitation class).
+
+    Model: curl-coordinate snapshots ``z_t ~ N(0, sigma_n^2 I + sum_tau
+    w_tau u_tau u_tau^T)`` with ``w >= 0`` supported on ``S``. Estimator:
+
+        w_hat = argmin_{w >= 0} || Sigma_hat - sigma_n^2 I
+                                   - sum_tau w_tau u_tau u_tau^T ||_F^2,
+        S_hat = { tau : w_hat_tau > threshold }.
+
+    Consistency: Sigma_hat -> Sigma a.s.; the atom map is linear and
+    injective (spark lemma), so the cone-constrained LS minimizer is unique
+    and continuous in Sigma_hat, whence w_hat -> w a.s. and thresholding at
+    any 0 < threshold < w_min recovers S exactly w.p. -> 1. A fully explicit
+    O(1/N) failure bound (threshold = w_min/2) is
+    :func:`tfl.limits.nnls_recovery_bound`.
+
+    Parameters: ``Z`` (r, N) curl-coordinate snapshots (``Q^T F``); ``U``
+    (r, p) signatures; returns ``(support_bool, w_hat)``.
+    """
+    from scipy.optimize import nnls as _nnls
+
+    from tfl.limits import lifted_atom_matrix
+
+    r, N = Z.shape
+    Sig_hat = (Z @ Z.T) / N
+    A = lifted_atom_matrix(U)
+    s = (Sig_hat - sigma_noise**2 * np.eye(r)).ravel()
+    w_hat, _ = _nnls(A, s)
+    return w_hat > threshold, w_hat
+
+
+def subspace_matched_support(
+    Z: np.ndarray,
+    U: np.ndarray,
+    k: int,
+    subspace_dim: int,
+) -> np.ndarray:
+    """First-order / matched-subspace baseline (oracle-aided: true ``k`` and
+    true ``dim im B_{2,S}`` are given).
+
+    Estimates the signal subspace as the top-``subspace_dim`` eigenvectors of
+    the sample covariance and scores each candidate by the fraction of its
+    signature energy inside that subspace, ``||P_hat u_tau||^2 / ||u_tau||^2``,
+    selecting the top ``k``. This is the natural subspace method in the vein
+    of (Hodge-aware) matched subspace detection. Its POPULATION scores depend
+    on S only through ``im B_{2,S}`` — every dependent candidate ties at
+    score exactly 1 — so it has no population-level margin on equal-image
+    supports. At finite N it can still break ties through the eigen-
+    anisotropy of the sample covariance (a second-order side channel), but
+    that margin is fragile: under projector excitation (limits.py case (c))
+    the within-subspace anisotropy vanishes and the method provably drops to
+    chance, as does every method. NNLS retains a margin whenever the
+    excitation is (approximately) diagonal. Both behaviours are pinned in
+    tests/test_excitation.py.
+    """
+    N = Z.shape[1]
+    Sig_hat = (Z @ Z.T) / N
+    vals, vecs = np.linalg.eigh(Sig_hat)
+    P = vecs[:, -subspace_dim:] if subspace_dim > 0 else vecs[:, :0]
+    num = np.sum((P.T @ U) ** 2, axis=0)
+    den = np.sum(U**2, axis=0)
+    scores = num / den
+    support = np.zeros(U.shape[1], dtype=bool)
+    support[np.argsort(-scores)[:k]] = True
+    return support
+
+
 def greedy_support(
     dataset: FlowDataset,
     sigma_noise: float,

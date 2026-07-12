@@ -378,26 +378,30 @@ def fano_rho_floor(p: int, k: int, N: int, err: float = 0.5) -> float:
 
 
 # ---------------------------------------------------------------------------
-# First- vs second-order identifiability: the corrected "rank obstruction"
+# Isotropic-excitation identifiability and its price
 # ---------------------------------------------------------------------------
 #
-# The observable consequence of the support S splits into two orders:
+# SCOPE NOTE: the statements in this section live inside the DIAGONAL /
+# isotropic excitation class of the trichotomy above. What the excitation
+# section makes precise is that "random signals" per se do NOT remove the
+# rank obstruction — only excitation STRUCTURE does:
 #
 #   FIRST ORDER  (a single snapshot / unknown deterministic signals): the flow
 #   mean set is  im B_{2,S}. Supports with equal column-image are genuinely
 #   indistinguishable — identifiable only modulo ker B2. On K_n the curl
 #   subspace has dim C(n-1, 2) against C(n, 3) candidates: the 3/n DoF ratio.
 #
-#   SECOND ORDER (i.i.d. random signals): the flow covariance carries
-#   sigma_c^2 * sum_{tau in S} b_tau b_tau^T, which is strictly finer than the
-#   column space. The lifted atoms {b_tau b_tau^T} are ALWAYS linearly
-#   independent for distinct 3-cliques of a simple graph (two edges lie in at
-#   most one common triangle — see `lifted_atoms_linearly_independent`), so the
-#   covariance map S -> Sigma(S) is injective and EVERY support is identifiable
-#   at sufficient snapshot budget, at any rank deficiency.
+#   ISOTROPIC/DIAGONAL EXCITATION (trichotomy case (a)): the flow covariance
+#   carries sigma_c^2 * sum_{tau in S} b_tau b_tau^T, strictly finer than the
+#   column space; the lifted atoms are always linearly independent (see
+#   `lifted_atoms_linearly_independent`), so S -> Sigma(S) is injective and
+#   every support is identifiable at any rank deficiency. Under UNKNOWN
+#   ARBITRARY PSD excitation only im B_{2,S} is identifiable, and at the
+#   projector excitation equal-image supports are exactly indistinguishable
+#   (cases (b), (c) above).
 #
-# The price of the geometry is therefore a SAMPLE-COMPLEXITY separation, not an
-# impossibility: distinguishing an equal-image confuser pair costs
+# Within case (a) the price of geometry is a SAMPLE-COMPLEXITY separation,
+# not an impossibility: distinguishing an equal-image confuser pair costs
 # N ~ log(1/delta) / C_G snapshots, where C_G is the Gaussian Chernoff
 # information between the two covariances (computed in the r-dimensional curl
 # coordinate z = Q^T f, which annihilates the gradient/harmonic nuisances).
@@ -409,6 +413,125 @@ def fano_rho_floor(p: int, k: int, N: int, err: float = 0.5) -> float:
 # C_G = (9/16) rho_2^2 (1+o(1)) — exactly the isolated-triangle exponent.
 # All constants below are validated in tests/test_second_order.py, incl.
 # exhaustively over all 2^10 supports of K5.
+
+
+# ---------------------------------------------------------------------------
+# Excitation-dependent identifiability (the corrected core theory)
+# ---------------------------------------------------------------------------
+#
+# Triangle excitation is y_S ~ N(0, Gamma_S) with Gamma_S PSD. The curl-
+# coordinate snapshot covariance is
+#     Sigma_z(S, Gamma_S) = sigma_n^2 I_r + U_S Gamma_S U_S^T,
+# with U = Q^T B2. WHAT is identifiable depends on the excitation class:
+#
+#  (a) Gamma_S POSITIVE DIAGONAL (known or unknown): the weighted support
+#      (S, diag weights) is identifiable at ANY rank deficiency, because the
+#      lifted atoms {u_tau u_tau^T} are always linearly independent (spark
+#      lemma) and Sigma - sigma_n^2 I = sum_tau w_tau u_tau u_tau^T with
+#      w_tau = gamma_tau 1{tau in S}. (On K_n with sigma_n UNKNOWN there is
+#      exactly one ambiguous direction: sum_ALL u_tau u_tau^T = n I_r, so a
+#      uniform weight shift trades off against the noise floor.)
+#  (b) Gamma_S UNKNOWN ARBITRARY PSD: {U_S Gamma U_S^T : Gamma PSD} =
+#      {M PSD : im M ⊆ im U_S}, which depends on S only through im B_{2,S}.
+#      Identifiable exactly up to equal image — second-order statistics do
+#      NOT remove the rank obstruction without excitation structure.
+#  (c) Gamma_S = sigma_c^2 (B_{2,S}^T B_{2,S})^+ (projector excitation):
+#      U_S Gamma_S U_S^T = sigma_c^2 P_im(U_S) EXACTLY, so equal-image
+#      supports induce IDENTICAL covariances at every SNR and N — the
+#      explicit worst case inside class (b).
+#
+# All three statements are verified numerically in tests/test_excitation.py.
+
+
+def excitation_covariance(
+    U: np.ndarray, support: np.ndarray, Gamma: np.ndarray, sigma_noise: float
+) -> np.ndarray:
+    """Curl-coordinate covariance ``sigma_n^2 I + U_S Gamma U_S^T`` for a
+    general PSD triangle-excitation covariance ``Gamma`` ((k, k), ordered as
+    the active columns of ``U``)."""
+    support = np.asarray(support, bool)
+    Us = U[:, support]
+    return sigma_noise**2 * np.eye(U.shape[0]) + Us @ Gamma @ Us.T
+
+
+def projector_excitation_gamma(B2: np.ndarray, support: np.ndarray,
+                               sigma_curl: float = 1.0) -> np.ndarray:
+    """The excitation ``Gamma_S = sigma_c^2 (B_{2,S}^T B_{2,S})^+`` for which
+    ``B_{2,S} Gamma_S B_{2,S}^T = sigma_c^2 P_{im B_{2,S}}`` exactly: the
+    projector excitation that makes equal-image supports second-order
+    indistinguishable."""
+    support = np.asarray(support, bool)
+    Bs = B2[:, support]
+    return sigma_curl**2 * np.linalg.pinv(Bs.T @ Bs)
+
+
+def interpolated_excitation_gamma(B2: np.ndarray, support: np.ndarray,
+                                  alpha: float, sigma_curl: float = 1.0
+                                  ) -> np.ndarray:
+    """``Gamma_alpha = sigma_c^2 [(1-alpha) I + alpha (B_{2,S}^T B_{2,S})^+]``:
+    interpolates from isotropic (alpha=0, identifiable) to projector
+    excitation (alpha=1, equal-image indistinguishable)."""
+    support = np.asarray(support, bool)
+    k = int(support.sum())
+    Bs = B2[:, support]
+    return sigma_curl**2 * ((1 - alpha) * np.eye(k)
+                            + alpha * np.linalg.pinv(Bs.T @ Bs))
+
+
+def lifted_atom_matrix(U: np.ndarray) -> np.ndarray:
+    """The ``(r^2, p)`` design matrix ``A`` with columns
+    ``vec(u_tau u_tau^T)`` — the lifted dictionary of the second-order
+    problem. Full column rank on every clique complex (spark lemma), with
+    smallest singular value ``sigma_min(A) > 0`` entering the estimator
+    bound."""
+    r, p = U.shape
+    return np.stack([np.outer(U[:, t], U[:, t]).ravel() for t in range(p)],
+                    axis=1)
+
+
+def nnls_recovery_bound(
+    Sigma: np.ndarray, sigma_min_A: float, w_min: float, N: int
+) -> float:
+    """Fully explicit non-asymptotic failure bound for the lifted-covariance
+    NNLS estimator with threshold ``w_min / 2`` (Theorem: estimator
+    consistency + O(1/N) failure probability):
+
+        P(support error)
+          <= 16 [ (tr Sigma)^2 + ||Sigma||_F^2 ] / ( N sigma_min(A)^2 w_min^2 ).
+
+    Derivation (no hidden constants; each step is verified in
+    tests/test_excitation.py):
+      1. cone-constrained least squares obeys the deterministic perturbation
+         bound ||w_hat - w||_2 <= 2 ||Sigma_hat - Sigma||_F / sigma_min(A)
+         (optimality of w_hat + feasibility of w + Cauchy-Schwarz);
+      2. for i.i.d. Gaussian snapshots with known mean,
+         E ||Sigma_hat - Sigma||_F^2 = [ (tr Sigma)^2 + ||Sigma||_F^2 ] / N
+         EXACTLY (Wishart second moments);
+      3. thresholding at w_min/2 fails only if ||w_hat - w||_inf >= w_min/2;
+         Markov's inequality on step 2 through step 1 gives the bound.
+    Markov makes it conservative: the empirical transition happens roughly an
+    order of magnitude earlier in N; the value is in the explicit O(1/N) rate
+    with computable constants, not in tightness.
+    """
+    num = 16.0 * ((np.trace(Sigma)) ** 2 + np.linalg.norm(Sigma, "fro") ** 2)
+    return float(min(1.0, num / (N * sigma_min_A**2 * w_min**2)))
+
+
+def share_edge_adjacency(B2: np.ndarray) -> np.ndarray:
+    """Adjacency matrix ``A`` of the share-an-edge graph on candidate
+    triangles (``A_{sigma tau} = 1`` iff the triangles share an edge). The
+    binary-support separation identity is
+    ``|| sum_tau c_tau b_tau b_tau^T ||_F^2 = c^T (9 I + A) c`` for ternary
+    ``c`` (since ``(G o G)`` has diagonal 9 and off-diagonal ``G^2 in {0,1}``).
+    ``A`` is an induced subgraph of the Johnson graph J(n, 3), whose least
+    eigenvalue is >= -3; Cauchy interlacing then gives the GLOBAL analytic
+    separations: unrestricted binary equal-image minimum 9 (attained exactly
+    by dependent single-face additions), equal-cardinality minimum 16
+    (attained exactly by tetrahedral swaps). See supplement S4."""
+    G = B2.T @ B2
+    A = (np.abs(G) > 1e-9).astype(float)
+    np.fill_diagonal(A, 0.0)
+    return A
 
 
 def curl_domain_signatures(B2: np.ndarray) -> np.ndarray:
