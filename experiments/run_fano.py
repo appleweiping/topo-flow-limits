@@ -2,7 +2,7 @@
 
 Plots the curl-SNR floor implied by the two Fano converses (Gaussian-KL and
 signal-agnostic max-entropy) against the single-triangle Chernoff floor of the
-main paper, for a small problem (the Fig. 1 setting, p=8) and a large one
+main paper, for a small problem (the paper-Fig.-2 setting, p=8) and a large one
 (p=10^4): the log(p) factor that joint recovery pays only becomes visible at
 scale. Note the error normalizations differ (Fano at error 1/2 vs Chernoff at
 delta=0.05), so the curves are not directly comparable in level: at p=10^4 the
@@ -30,7 +30,7 @@ from _util import save_json, savefig  # noqa: E402
 
 N_GRID = [int(n) for n in np.unique(np.geomspace(5, 2000, 24).astype(int))]
 CASES = [
-    {"p": 8, "k": 4, "label": "$p=8,\\ k=4$ (Fig. 1 setting)"},
+    {"p": 8, "k": 4, "label": "$p=8,\\ k=4$ (Fig. 2 setting)"},
     {"p": 10_000, "k": 10, "label": "$p=10^4,\\ k=10$"},
 ]
 ERR = 0.5   # Fano: error probability 1/2 (the standard converse normalization)

@@ -1,6 +1,6 @@
 """Fetch ERA5 10m winds for the Western North Pacific typhoon season 2020
 from the public ARCO-ERA5 archive (Google Cloud, anonymous access) and cache a
-compact regional slice for the real-cyclone recovery experiment.
+compact regional slice for the real-cyclone vortex-localization experiment.
 
 Store: gs://gcp-public-data-arco-era5/ar/1959-2022-6h-512x256_equiangular_conservative.zarr
   * 6-hourly, 0.703° equiangular grid (512 x 256), 10m u/v wind components

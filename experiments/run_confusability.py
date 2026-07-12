@@ -53,7 +53,7 @@ def run(
                         sigma_harm=sigma_harm, sigma_noise=sigma_noise)
 
     if T_grid is None:
-        # start below the transition so Fig. 2 (right) actually stresses the
+        # start below the transition so the right panel actually stresses the
         # marginal theory + union bound through the whole S-curve
         T_grid = np.unique(np.round(np.geomspace(3, 200, 12)).astype(int))
 

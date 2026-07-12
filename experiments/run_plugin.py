@@ -7,7 +7,7 @@ are active), sigma_c from the mean excess energy of a conservative
 Bonferroni-screened set. The experiment shows (A) both estimates are
 consistent, and (B) the fully adaptive detector's recovery curve is
 indistinguishable from the known-parameter detector on the confusable strip
-benchmark of Fig. 2.
+benchmark of the repo confusability figure.
 """
 
 from __future__ import annotations
@@ -74,7 +74,7 @@ def run(seed: int = SEED) -> dict:
         err_sc_mean.append(float(np.mean(errs_c)))
 
     out = {
-        "benchmark": "edge-sharing strip (Fig. 2 setting)",
+        "benchmark": "edge-sharing strip (repo confusability-figure setting)",
         "n_tri": p, "n_active": int(active.sum()), "rho": RHO,
         "N_grid": N_GRID,
         "recovery_known": rec_known, "recovery_plugin": rec_plugin,

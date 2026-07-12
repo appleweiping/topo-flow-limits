@@ -22,7 +22,7 @@ Two panels, honest labels:
     degree of freedom, df = N-1); the gradient/harmonic nuisances are
     annihilated by the curl map. Those invariances are the POINT of the
     detector, but they also mean the surviving statistical problem is fully
-    synthetic — stated plainly here and in the paper.
+    synthetic — stated plainly here and in the repository README.
 
 (C) Recovery on EMA (planted signals on real NON-TRIVIAL geometry). EMA has
     10 edge-sharing triangle pairs (G genuinely non-diagonal, yet full column

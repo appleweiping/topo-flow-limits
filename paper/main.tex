@@ -170,9 +170,10 @@ estimation).
 $K_4$--$K_8$ (random supports, $\rho_2=1$): NNLS (solid, $95\%$ Wilson
 bands) vs.\ oracle-aided subspace (dashed) and greedy (dotted) baselines.
 (B)~NNLS vs.\ $\rho_2$ at $N=200$ across rank deficiency (legend:
-$\rank\B_2/p$). (C)~Excitation interpolation on the $K_5$ tetrad: analytic
-equal-image gap (normalized) and NNLS recovery collapse together as
-$\alpha\to1$ (Thm.~\ref{thm:tri}(c)).}
+$\rank\B_2/p$). (C)~Excitation interpolation on the $K_5$ tetrad: the analytic
+equal-image gap (normalized) closes only at $\alpha=1$
+(Thm.~\ref{thm:tri}(c)); thresholded NNLS recovery collapses earlier
+(zero from $\alpha=0.75$).}
 \label{fig:so}
 \end{figure*}
 \begin{lemma}[Lifted spark]\label{lem:spark}
@@ -371,13 +372,14 @@ collapses on dependent candidates ($0.00$ at $K_8$, $k{=}28$): its
 \emph{population} scores tie there (Remark~\ref{rem:scope}(iii)), and its
 finite-$N$ tie-breaking rides on sample eigen-anisotropy, a side channel the
 projector excitation removes entirely. Greedy stalls at sparse supports
-($0.42$ on $K_5$ at $k{=}2$, $N{=}400$). (B)~Recovery improves
+($0.43$ on $K_5$ at $k{=}2$, $N{=}400$). (B)~Recovery improves
 monotonically in $\rho_2$ uniformly across rank deficiency --- the empirical
 face of Theorem~\ref{thm:tri}(a). The bound~\eqref{eq:bound} upper-bounds
 every cell; being a Markov bound it is conservative by one to three orders
 of magnitude (the empirical failure decays exponentially, the bound as
-$1/N$), and it is certified non-vacuously at cells where it drops to
-${\sim}0.75$. (C)~Under
+$1/N$), and it is certified non-vacuously at every informative cell ---
+down to $0.42$ on the released grid, ${\sim}0.75$ at the dedicated test
+cells, with zero observed failures at all of them. (C)~Under
 $\Gam_\alpha=\rho_2[(1-\alpha)\bm I+\alpha(\B_{2,\Scal}^{\!\top}\B_{2,\Scal})^{+}]$
 on the $K_5$ tetrad, with the same $w_{\min}/2$ rule (the diagonal model is
 deliberately misspecified for $\alpha>0$ --- that is the point), the

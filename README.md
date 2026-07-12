@@ -137,15 +137,18 @@ f_t \;=\; \underbrace{B_1^{\top} a_t}_{\text{gradient nuisance}}
 (in the code the snapshot-count argument is named `T`; the paper and this README
 use $N$ to avoid clashing with the candidate set $\mathcal{T}$)
 
-with $a_t \sim \mathcal N(0,\sigma_g^2 I)$, $y_t \sim \mathcal N(0,\sigma_c^2 I)$
-(one coordinate per *active* triangle), harmonic $h_t$, and
-$n_t \sim \mathcal N(0,\sigma_n^2 I)$. Only the snapshots $f_t$ are observed; the
-task is to recover $S$. This is the same generative family used by the algorithmic literature
-(e.g. Gurugubelli & Chepuri, EUSIPCO 2024) — we characterize when *their* task is
-solvable. Implementation: `src/tfl/generative.py` (`sample_flows`, `FlowParams`,
+with $a_t \sim \mathcal N(0,\sigma_g^2 I)$, triangle excitation
+$y_t \sim \mathcal N(0,\Gamma_S)$ (one coordinate per *active* triangle;
+the isotropic case $\Gamma_S=\sigma_c^2 I$ is trichotomy class (a)),
+harmonic $h_t$, and $n_t \sim \mathcal N(0,\sigma_n^2 I)$. Only the
+snapshots $f_t$ are observed; the task is to recover $S$. The isotropic
+special case is the model that algorithmic formulations implicitly adopt
+(e.g. Gurugubelli & Chepuri, EUSIPCO 2024) — the trichotomy characterizes
+when their task is solvable and when it provably is not (honesty note 10). Implementation: `src/tfl/generative.py` (`sample_flows`, `FlowParams`,
 planted-complex builders).
 
-The single most important structural fact (Lemma 1 in the paper):
+The single most important structural fact (the curl-annihilation identity,
+main paper §2):
 
 > **Curl annihilation.** $B_2^{\top} B_1^{\top} = 0$ and $B_2^{\top} h = 0$ for
 > harmonic $h$. So the curl statistic
@@ -278,7 +281,7 @@ test-certified; conservative by design (Markov), the empirical transition is
 (N, ρ₂) grid, 200 trials/cell, 95% Wilson CIs, vs an *oracle-aided*
 matched-subspace baseline (population scores tie on dependent candidates —
 its finite-N tie-breaking rides on eigen-anisotropy and dies under projector
-excitation) and the greedy atom fitter (stalls where atoms overlap: 0.42 on
+excitation) and the greedy atom fitter (stalls where atoms overlap: 0.43 on
 K5 at N=400 vs NNLS 1.00). See `results/second_order.json`.
 
 #### The price within class (a) — corrected constants (formerly "R5")
@@ -390,21 +393,24 @@ figures, CPU) into `results/figures/`; the copies in `paper/figures/` used by
 the manuscript are a manual copy of these outputs (kept in sync whenever
 figures change). **Paper figures**: Fig. 1 = `second_order.png`, Fig. 2 =
 `phase_transition.png`, Fig. 3 = `real_cyclone.png`. The confusability,
-traffic, and FX figures live in the repository/supplement.
+traffic, and FX figures are repo-only (the supplement's own figures are
+the Fano, partial-sampling, and plug-in panels).
 
 ### Paper Figure 1 — `second_order.png` (achievability + α-interpolation)
 
 **(A)** Exact-recovery vs $N$ on $K_4$–$K_8$ with per-trial *random*
 supports at $\rho_2=1$: the lifted-covariance **NNLS** estimator (solid,
 95% Wilson bands) reaches probability 1 by $N=400$ at *every* rank
-deficiency (incl. $21/56$ on $K_8$), dominating the *oracle-aided*
-matched-subspace baseline (dashed) and the greedy atom fitter (dotted;
-stalls at 0.42 on $K_5$). **(B)** NNLS vs $\rho_2$ at $N=200$ across rank
+deficiency (incl. $21/56$ on $K_8$) — the only estimator to do so: the
+*oracle-aided* matched-subspace baseline (dashed) can lead at small $N$
+but collapses on dependent candidates ($0.00$ at $K_8$), and the greedy
+atom fitter (dotted) stalls at 0.43 on $K_5$. **(B)** NNLS vs $\rho_2$ at $N=200$ across rank
 deficiency — the empirical face of trichotomy case (a). **(C)** Under
 $\Gamma_\alpha=(1-\alpha)I+\alpha(B_S^\top B_S)^+$ on the $K_5$ tetrad, the
-analytic equal-image covariance gap and the empirical NNLS recovery collapse
-*together*, from 1.00 at $\alpha=0$ to 0.07 ≈ chance at $\alpha=1$ —
-trichotomy case (c) made visible. Produced by
+analytic equal-image covariance gap closes only at $\alpha=1$, while
+thresholded NNLS recovery collapses *earlier* (1.00 → 0.82 → 0.00, zero
+from $\alpha=0.75$) — trichotomy case (c), and the price of thresholding,
+made visible. Produced by
 `experiments/run_second_order.py`, all cells (with the derived bound) in
 `results/second_order.json`.
 
@@ -420,7 +426,7 @@ $1/\sqrt N$ law and conservative, as an asymptotic bound should be.
 Produced by `experiments/run_phase_transition.py`, metrics in
 `results/phase_transition.json`.
 
-### Repo/supplement figure — `confusability.png` (why geometry matters)
+### Repo figure — `confusability.png` (why geometry matters)
 
 Left: mean Hamming error vs $N$ on a 9-triangle *edge-sharing strip* with
 alternating active triangles at $\rho = 8$ (here $B_2$ has full column rank, so
@@ -462,7 +468,7 @@ The GLS-decorrelated score ranks worse here (AUC 0.77 int / 0.81 ext;
 $G^{-1}$ amplifies noise on a near-regular mesh — in the JSON). Produced by
 `experiments/run_real_cyclone.py`, metrics in `results/real_cyclone.json`.
 
-### Repo/supplement figure — `real_traffic.png` (recovery laws on real road geometry)
+### Repo figure — `real_traffic.png` (recovery laws on real road geometry)
 
 **(A)** Curl DoF ratio for three real TNTP road networks — Sioux Falls
 (24 nodes / 38 edges / 2 triangles), Eastern-Massachusetts (74/129/33), Anaheim
@@ -581,7 +587,7 @@ topo-flow-limits/
 │   │                             4-page paper; A geometry,
 │   │                             B Anaheim G=3I, C EMA non-diagonal G)
 │   ├── run_real_fx.py            repo figure + real_fx.json (consistency check;
-│   │                             covered in the paper as text + the K9 bar)
+│   │                             one sentence in the paper; figure repo-only)
 │   ├── run_fano.py               supplement S1 figure + fano.json
 │   ├── run_partial_sampling.py   supplement S2 figure + partial_sampling.json
 │   ├── run_plugin.py             supplement S3 figure + plugin.json
@@ -698,7 +704,7 @@ Expected `run_all.py` output (seeds are fixed; numbers reproduce exactly):
 [4/8] real traffic ...      Anaheim DoF 54/54=1.0 ; recovery@N=95: emp=1.00 theory=1.00
 [5/8] Fano curves ...       floors at N=2000: chernoff=0.167 fano(p=1e4)=0.089
 [6/8] sampling + plug-in .. P(exact) emp=0.53 theory=0.56 at q=0.99 ; plugin max gap=0.057
-[7/8] second-order  ...     K8 (rank 21/56) NNLS=1.00 @ N=400; alpha sweep 1.00 -> 0.07
+[7/8] second-order  ...     K8 (rank 21/56) NNLS=1.00 @ N=400; alpha sweep 1.00 -> 0.00
 [8/8] vortex localization . INTERNAL AUC = 0.914 ; EXTERNAL AUC = 0.920, PR = 0.494, P@k = 0.483
 ```
 
@@ -715,7 +721,7 @@ Expected `run_all.py` output (seeds are fixed; numbers reproduce exactly):
 | `test_harmonic_space_dimension_matches_betti_1` | $\dim\ker L_1 = b_1$ (filled tetrahedron 0; hollow $K_4$ 3) |
 | `test_curl_dimension_ratio_on_complete_graph` | R5: $\mathrm{rank}(B_2)=\binom{n-1}{2}$ on $K_n$ ($K_5,\dots,K_{12}$), DoF ratio $3/n$ |
 | `test_analytic_bayes_error_matches_gaussian_montecarlo` | R1 closed form vs direct Gaussian MC (±0.02) |
-| `test_curl_detection_is_immune_to_gradient_and_harmonic_nuisance` | Lemma 1 end-to-end with 25× nuisance (±0.03) |
+| `test_curl_detection_is_immune_to_gradient_and_harmonic_nuisance` | curl annihilation (main §2) end-to-end with 25× nuisance (±0.03) |
 | `test_chernoff_is_error_exponent` | $-\log P_{\rm err}/N \downarrow C$ (within 10% at $N{=}640$) |
 | `test_small_rho_chernoff_scaling` | R2: $C(\rho)/(\rho^2/16) \to 1$ (±5% at $\rho\le0.02$) |
 | `test_exact_recovery_probability_matches_simulation` | R3 finite-sample law vs full pipeline (±0.06) |
@@ -742,8 +748,9 @@ Expected `run_all.py` output (seeds are fixed; numbers reproduce exactly):
 | `test_arbitrary_psd_excitation_only_image_identifiable` | Trichotomy (b): equal-image $S'$ matches any $S$-covariance with a PSD $\Gamma'$ |
 | `test_projector_excitation_equal_image_indistinguishable` | Trichotomy (c): $B_S G_S^+ B_S^\top = P_{\rm im}$ exactly; identical covariances |
 | `test_separation_identity_and_johnson_eigenvalue_bound` | sep $= c^\top(9I{+}A)c$; $\lambda_{\min}(A) \ge -3$ on $K_4$–$K_7$ + random complexes |
-| `test_nnls_consistency_and_recovery_bound_components` | NNLS theorem steps: exact Wishart moment (±6%), cone-LS bound (0 violations in 2000), contraction |
+| `test_nnls_consistency_and_recovery_bound_components` | NNLS theorem steps: exact Wishart moment (±6%), cone-LS bound (0 violations in 220 trials), contraction |
 | `test_nnls_recovery_bound_upper_bounds_empirical_failure` | the explicit $O(1/N)$ failure bound holds across an $(N,\rho_2)$ grid |
+| `test_nnls_recovery_bound_nonvacuous_cells` | the bound is informative ($\approx0.73$–$0.75<1$) at dedicated cells and still upper-bounds the observed failures (zero) |
 | `test_subspace_baseline_population_tie_and_projector_collapse` | subspace scores tie at 1 in population; both methods → chance under projector excitation |
 | `test_alpha_interpolation_kills_equal_image_distinguishability` | equal-image gap monotone → exactly 0 at $\alpha=1$ |
 | `test_geo.py` (4 tests) | wind→edge-flow bridge: Euler full rank; Rankine vortex localizes with correct sign; vorticity ranking |
@@ -955,7 +962,8 @@ the whole support of size $k$ among $\binom{p}{k}$ candidates is harder:
 
 Figure: `results/figures/fano_bounds.png` (script `experiments/run_fano.py`).
 Test: `test_fano_bounds_are_valid_converses` checks both bounds lower-bound
-the *empirical* 50%-recovery budget measured in Figure 1, are monotone, and
+the *empirical* 50%-recovery budget measured in Figure 2 (the phase
+transition), are monotone, and
 exhibit the documented sparse/dense ordering.
 
 ### S2 — Partial edge observation

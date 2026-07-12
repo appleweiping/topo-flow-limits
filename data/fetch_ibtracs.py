@@ -1,6 +1,6 @@
 """Fetch the IBTrACS v04r01 Western-Pacific best-track catalog (NOAA NCEI) and
 cache the 2020-season subset used as EXTERNAL ground truth by the real-cyclone
-recovery experiment.
+vortex-localization experiment.
 
 IBTrACS (International Best Track Archive for Climate Stewardship) is the
 authoritative, agency-merged tropical-cyclone position/intensity record — an

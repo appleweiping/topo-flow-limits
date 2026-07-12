@@ -270,7 +270,8 @@ def test_union_bound_is_rigorous_lower_bound():
 
 def test_fano_bounds_are_valid_converses():
     """Supplement S1: the Fano snapshot lower bounds must (a) lower-bound the
-    empirical 50%-recovery budget measured in the Fig. 1 experiment, (b) be
+    empirical 50%-recovery budget measured in the Fig. 2 (phase-transition)
+    experiment, (b) be
     monotone decreasing in rho, and (c) exhibit the documented sparse/dense
     regime ordering between the Gaussian-KL and signal-agnostic variants."""
     import json

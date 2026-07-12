@@ -46,7 +46,7 @@ and a fully adaptive detector; \textbf{S4} full proofs of the main paper's
 lifted-spark lemma, excitation trichotomy, separation/exponent theorem, and
 NNLS consistency/failure bound, with exhaustive numerical verification;
 \textbf{S5} construction details of
-the cyclone recovery study. All statements are validated numerically by the
+the cyclone vortex-localization study. All statements are validated numerically by the
 released test-suite; Section~\ref{sec:repro} maps every figure to its script.
 Notation follows the main paper: $N$ snapshots, candidate set $\Tcal$ with
 $p=|\Tcal|$, latent support $\Scal$ with $|\Scal|=k$, curl-SNR
@@ -206,7 +206,7 @@ probability $q^3$, independently across edge-disjoint candidates.
 An unobservable \emph{active} triangle is an automatic miss; an unobservable
 \emph{inactive} one is an automatic correct rejection (the detector defaults
 to ``inactive''). Combining with the exact per-triangle marginal laws (main
-paper, Thm.~2) gives a closed form on edge-disjoint geometries:
+paper, Prop.~2) gives a closed form on edge-disjoint geometries:
 
 \begin{corollary}[Exact recovery under edge sampling]\label{cor:qcubed}
 With edge-disjoint candidates, the centered whitened detector at budget $N$
@@ -662,7 +662,7 @@ the code and is irrelevant to the energy detector.
 
 \paragraph{Detection.} Per 4-day window (16 snapshots), the headline
 statistic is the temporally centered curl-\emph{energy} score of the main
-paper's Prop.~1, area$^2$-normalized to a common mean-vorticity scale; it is
+paper's Prop.~2, area$^2$-normalized to a common mean-vorticity scale; it is
 parameter-free (no thresholds are set --- evaluation is by ROC ranking), and
 nothing is planted. The decorrelated (GLS, main Prop.~1) score is computed alongside and
 reported in the released JSON; its $\bm G^{-1}$ noise amplification hurts

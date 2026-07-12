@@ -5,7 +5,7 @@ CONSTRUCTED as f = B1^T p from a single daily log-price vector p (one price
 per currency against a common base), so B2^T f = (B1 B2)^T p = 0 holds
 IDENTICALLY, for any prices whatsoever — arbitrage-free or not. Panel (A)'s
 curl/gradient ratio of ~1e-31 is floating-point residue: it validates the
-curl-annihilation arithmetic (Lemma 1) on real market data, and instantiates
+curl-annihilation arithmetic (main paper §2) on real market data, and instantiates
 HodgeRank's "consistent prices = pure gradient" reading, but it is NOT an
 empirical discovery about markets. A genuine market test would need
 independent per-pair cross-rate quotes, whose triangular inconsistencies

@@ -1,5 +1,5 @@
 {
-  "benchmark": "edge-sharing strip (Fig. 2 setting)",
+  "benchmark": "edge-sharing strip (repo confusability-figure setting)",
   "n_tri": 9,
   "n_active": 4,
   "rho": 8.0,

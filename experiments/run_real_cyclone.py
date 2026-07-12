@@ -343,7 +343,7 @@ def main() -> None:
     ax.set_xlabel("false-positive rate")
     ax.set_ylabel("true-positive rate")
     ax.set_title("(B) vortex localization: ROC vs both references")
-    ax.legend(loc="lower right", fontsize=8)
+    ax.legend(loc="lower right", fontsize=7)
 
     ax = fig.add_subplot(1, 3, 3)
     for nl in noise_levels:

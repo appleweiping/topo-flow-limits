@@ -35,8 +35,13 @@ This module provides:
   * ``curl_statistics`` / ``curl_energy_scores`` — the sufficient statistics;
   * ``energy_detector_support`` — per-triangle variance test (naive baseline &
     the estimator analyzed in the well-separated regime);
-  * ``sparse_curl_covariance_support`` — the proposed convex estimator (handles
-    edge-sharing confusability);
+  * ``nnls_lifted_support`` — THE paper's estimator (Thm. 3): non-negative
+    least squares on the lifted atoms, consistent with an explicit O(1/N)
+    failure bound;
+  * ``subspace_matched_support`` — oracle-aided matched-subspace baseline
+    (population scores tie on dependent candidates; see its docstring);
+  * ``sparse_curl_covariance_support`` — a convex lifted baseline (demoted:
+    kept for comparison, not used for any headline claim);
   * ``greedy_support`` — a greedy baseline standing in for greedy topology
     learning.
 """

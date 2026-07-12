@@ -8,7 +8,8 @@ INACTIVE triangle is an automatic correct rejection.
 
 On Anaheim the 54 candidate triangles are pairwise edge-disjoint, so survival
 events are independent across triangles and exact recovery admits the CLOSED
-FORM (df = N-1, centered detector, real UE background as in Fig. 4):
+FORM (df = N-1, centered detector, real UE background as in the repo
+traffic figure):
 
     P(exact | q) = [ q^3 (1 - P_miss) ]^k  *  [ 1 - q^3 P_fa ]^(p-k) .
 
@@ -37,7 +38,7 @@ from _util import save_json, savefig, FastFlowSampler  # noqa: E402
 DATA = Path(__file__).resolve().parent.parent / "data" / "traffic"
 
 RHO = 3.0
-N_SNAP = 46          # a budget where full observation recovers w.h.p. (Fig. 4)
+N_SNAP = 46          # a budget where full observation recovers w.h.p. (repo traffic figure)
 N_ACTIVE = 18
 Q_GRID = [0.50, 0.60, 0.70, 0.80, 0.875, 0.925, 0.95, 0.975, 0.99, 1.00]
 N_TRIALS = 200

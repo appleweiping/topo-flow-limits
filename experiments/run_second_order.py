@@ -25,7 +25,8 @@ identifiability theory (limits.py):
     projector case and equal-image distinguishability provably vanishes.
     Reported: the analytic covariance gap between the equal-image pair
     (normalised by its alpha=0 value) and the empirical NNLS exact-recovery
-    probability, collapsing together.
+    probability; with the declared rho2/2 threshold, recovery collapses
+    BEFORE the gap reaches zero (only the alpha=1 endpoint is threshold-free).
 
 Outputs: results/second_order.json + results/figures/second_order.png
 Runtime: ~15-25 min CPU (greedy dominates; every cap is logged, none silent).

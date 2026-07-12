@@ -1,4 +1,4 @@
-"""Headline experiment: the curl-invisibility phase transition.
+"""Paper Fig. 2: the curl-invisibility phase transition (isotropic class).
 
 Sweep snapshot budget ``T`` and per-triangle curl-SNR ``rho`` on a well-separated
 (edge-disjoint) planted 2-complex; measure the empirical probability of *exact*
