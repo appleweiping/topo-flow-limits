@@ -397,7 +397,7 @@ def fano_rho_floor(p: int, k: int, N: int, err: float = 0.5) -> float:
 #   `lifted_atoms_linearly_independent`), so S -> Sigma(S) is injective and
 #   every support is identifiable at any rank deficiency. Under ARBITRARY PSD
 #   excitation a single covariance identifies only the realized range
-#   R = im(U_S Gamma_S^{1/2}) (= im U_S iff Gamma_S is nonsingular; a singular
+#   R = im(U_S Gamma_S^{1/2}) (= im U_S whenever Gamma_S > 0; a singular
 #   Gamma can hide part of the image and even the support, case (b)), and the
 #   projector excitation makes equal-image supports exactly indistinguishable
 #   (case (c) above).
@@ -442,8 +442,11 @@ def fano_rho_floor(p: int, k: int, N: int, err: float = 0.5) -> float:
 #  (b) Gamma_S ARBITRARY PSD. What a SINGLE observed covariance reveals is only
 #      the REALIZED RANGE
 #          R(S, Gamma_S) = im(U_S Gamma_S^{1/2}) = im(Sigma_z - sigma_n^2 I),
-#      a subspace of im U_S, with equality R = im U_S iff Gamma_S is NONSINGULAR
-#      (Gamma_S > 0). Consequences:
+#      a subspace of im U_S. R = im U_S WHENEVER Gamma_S > 0 (always); the
+#      converse (R = im U_S => Gamma_S > 0) holds only when B_{2,S} has full
+#      column rank so U_S is injective -- if U_S has a kernel, a singular
+#      Gamma_S whose image complements ker U_S can still attain im U_S.
+#      Consequences:
 #        * Gamma_S > 0 (full-rank arbitrary): the full curl image
 #          im U_S = im B_{2,S} IS identifiable (R = im U_S).
 #        * Gamma_S SINGULAR: only R is identifiable, and R can be strictly

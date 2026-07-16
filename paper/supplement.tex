@@ -400,7 +400,9 @@ $K_5$--$K_7$.
 A single covariance $\bm\Sigma_z$ identifies exactly the realized range
 $\Rcal(\Scal,\Gam)=\mathrm{im}(\bm\Sigma_z-\sigma_n^2\bm I)
 =\mathrm{im}(\bm U_\Scal\Gam^{1/2})\subseteq\mathrm{im}\,\bm U_\Scal$, with
-equality $\Rcal=\mathrm{im}\,\bm U_\Scal$ iff $\Gam\succ0$. Consequences:
+equality $\Rcal=\mathrm{im}\,\bm U_\Scal$ whenever $\Gam\succ0$ (and, when
+$\B_{2,\Scal}$ has full column rank so $\bm U_\Scal$ is injective, only then).
+Consequences:
 \emph{(i)} a full-rank excitation identifies the curl image
 $\mathrm{im}\,\B_{2,\Scal}$; \emph{(ii)} a \emph{singular} $\Gam$ can conceal
 part of the image and even the support --- there exist $\Scal'\supsetneq\Scal$
@@ -414,7 +416,11 @@ support identifiability.
 \begin{proof}
 $\bm\Sigma_z-\sigma_n^2\bm I=\bm U_\Scal\Gam\bm U_\Scal^{\!\top}$ has range
 $\mathrm{im}(\bm U_\Scal\Gam^{1/2})$; if $\Gam\succ0$ this is
-$\mathrm{im}\,\bm U_\Scal$, otherwise strictly smaller. Family identity:
+$\mathrm{im}\,\bm U_\Scal$ (since $\Gam^{1/2}$ is invertible). If
+$\bm U_\Scal$ is injective the range has dimension $\rank\Gam$, so equality
+forces $\Gam\succ0$; if $\bm U_\Scal$ has a kernel a singular $\Gam$ whose
+image complements $\ker\bm U_\Scal$ can still attain $\mathrm{im}\,\bm
+U_\Scal$. Family identity:
 ($\subseteq$) immediate; ($\supseteq$) for PSD $\bm M$ with
 $\mathrm{im}\,\bm M\subseteq\mathrm{im}\,\bm U_\Scal$ set
 $\Gam=\bm U_\Scal^{+}\bm M(\bm U_\Scal^{+})^{\!\top}\succeq0$, giving
@@ -732,7 +738,7 @@ All figures regenerate on CPU from fixed seeds via
   \texttt{run\_real\_cyclone.py} ($\approx$3\,min from the cached
   ERA5/IBTrACS files).
 \end{itemize}
-The test-suite (\texttt{pytest -q}, 48 tests) checks: the Fano bounds against
+The test-suite (\texttt{pytest -q}, 49 tests) checks: the Fano bounds against
 the empirical recovery boundary of the phase-transition experiment
 (\texttt{run\_phase\_transition.py}, repo/supplement; a converse must
 lower bound it), the closed form \eqref{eq:qform} against Monte-Carlo, the

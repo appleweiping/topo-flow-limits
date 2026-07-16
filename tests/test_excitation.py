@@ -139,6 +139,24 @@ def test_full_rank_gamma_identifies_image():
     assert realized_range_dim(U, s3, Gam_sing) < np.linalg.matrix_rank(B2[:, s3])
 
 
+def test_singular_gamma_can_still_give_full_image_when_support_rank_deficient():
+    """The converse `R = im U_S ⇒ Γ ≻ 0` FAILS when B_{2,S} is rank-deficient
+    (U_S has a kernel): a singular Γ whose image complements ker U_S still
+    attains the full image. So the equality is only `Γ ≻ 0 ⇒ R = im U_S`
+    (always) plus the converse under full column rank — not a blanket iff."""
+    cx = complete_complex(4)                    # all 4 K4 faces: B2 rank 3
+    _, B2 = build_incidences(cx)
+    U = curl_domain_signatures(B2)
+    S = np.ones(4, bool)
+    assert np.linalg.matrix_rank(B2[:, S]) == 3          # rank-deficient support
+    c = np.array([1.0, -1.0, 1.0, -1.0])                 # tetra dependency ∈ ker U_S
+    assert np.linalg.norm(U[:, S] @ c) < 1e-9
+    Gam_sing = np.eye(4) - np.outer(c, c) / (c @ c)      # rank 3, singular
+    assert np.linalg.matrix_rank(Gam_sing) == 3
+    # singular Γ, yet realized range = full image (3)
+    assert realized_range_dim(U, S, Gam_sing) == 3
+
+
 def test_projector_excitation_equal_image_indistinguishable():
     """(c) Γ_S = sigma_c^2 (B_S^T B_S)^+ gives covariance sigma_n^2 I +
     sigma_c^2 P_im exactly, so the equal-image pair induces IDENTICAL

@@ -63,7 +63,7 @@ interpolation under which equal-image distinguishability provably vanishes.
 On real data, the same curl statistic \emph{localizes} genuine unplanted
 rotational structure --- tropical cyclones in ERA5 winds --- against a
 same-field vorticity reference and the independent IBTrACS archive. Code,
-data, and a 48-test suite numerically checking every constant are released.
+data, and a 49-test suite numerically checking every constant are released.
 \end{abstract}
 
 \begin{keywords}
@@ -188,8 +188,9 @@ $\mathcal G$ if it is constant on each equivalence class with excitations in
 $\mathcal G$. The \emph{realized range} is
 $\Rcal(\Scal,\Gam_\Scal)=\im(\bm\Sigma_z-\sigma_n^2\bm I)
 =\im(\bm U_\Scal\Gam_\Scal^{1/2})\subseteq\im\bm U_\Scal$, always identifiable
-since it is a function of $\bm\Sigma_z$ alone; $\Rcal=\im\bm U_\Scal$ iff
-$\Gam_\Scal\succ0$.
+since it is a function of $\bm\Sigma_z$ alone. If $\Gam_\Scal\succ0$ then
+$\Rcal=\im\bm U_\Scal$; when $\B_{2,\Scal}$ has full column rank (so $\bm
+U_\Scal$ is injective) the converse holds as well.
 \end{definition}
 
 \section{Excitation-dependent identifiability}
@@ -229,8 +230,9 @@ of $\B_2$, including all $\binom n3$ triangles of $K_n$.
 \emph{(b) Arbitrary PSD.} A single covariance $\bm\Sigma_z$ identifies only
 the \emph{realized range}
 $\Rcal(\Scal,\Gam_\Scal)=\im(\bm U_\Scal\Gam_\Scal^{1/2})
-=\im(\bm\Sigma_z-\sigma_n^2\bm I)$, a subspace of $\im\bm U_\Scal$ with
-$\Rcal=\im\bm U_\Scal$ \emph{iff} $\Gam_\Scal\succ0$. Hence a full-rank
+=\im(\bm\Sigma_z-\sigma_n^2\bm I)\subseteq\im\bm U_\Scal$, with
+$\Rcal=\im\bm U_\Scal$ whenever $\Gam_\Scal\succ0$ (and, for full-column-rank
+$\B_{2,\Scal}$, only then). Hence a full-rank
 excitation identifies the curl image $\im\B_{2,\Scal}$, but a rank-deficient
 $\Gam_\Scal$ can hide part of it --- and even the support: a strictly larger
 $\Scal'\supsetneq\Scal$ with a singular $\Gam'$ reproduces the same
@@ -519,7 +521,7 @@ across iterative adversarial-review cycles. Because IEEE/SPS policy does not
 permit AI-generated manuscript \emph{text}, the author will independently
 rewrite the manuscript before any formal submission and then disclose only
 the permitted uses (editing, code, visualization, and review feedback). All
-mathematical statements are checked by the released test suite (48 tests,
+mathematical statements are checked by the released test suite (49 tests,
 including exhaustive and Monte-Carlo checks for every quoted constant), and
 the full revision history is preserved unaltered in the public repository ---
 git history is deliberately \emph{not} rewritten to obscure AI use. The

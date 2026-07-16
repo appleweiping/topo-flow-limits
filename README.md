@@ -20,10 +20,11 @@ by the test suite before it is allowed into the manuscript.
 > lifted signatures `{b_τ b_τᵀ}` are *always* linearly independent (spark
 > lemma: two edges lie in at most one triangle);
 > **(b)** for **arbitrary PSD** `Γ_S`, a single covariance identifies only the
-> realized range `R = im(U_S Γ_S^½) ⊆ im B₂,S`, with `R = im B₂,S` **iff
-> `Γ_S ≻ 0`**: a *full-rank* excitation gives the curl image, but a *singular*
-> one hides part of it and even the support (K4 witness) — random signals per
-> se remove neither the support nor the image;
+> realized range `R = im(U_S Γ_S^½) ⊆ im B₂,S`, with `R = im B₂,S` whenever
+> `Γ_S ≻ 0` (and, for full-column-rank `B₂,S`, only then): a *full-rank*
+> excitation gives the curl image, but a *singular* one can hide part of it and
+> even the support (K4 witness) — random signals per se remove neither the
+> support nor the image;
 > **(c)** at the **projector excitation** `Γ_S = σ_c²(B₂,Sᵀ B₂,S)⁺` the
 > covariance equals `σ_n²I + σ_c²P_im` **exactly**, so equal-image supports
 > are indistinguishable at every SNR and N.
@@ -612,7 +613,7 @@ topo-flow-limits/
 │   ├── run_plugin.py             supplement S3 figure + plugin.json
 │   └── run_all.py                one-click: all of the above from fixed seeds
 │
-├── tests/                    48 tests — the theorems' guardrails (see §8)
+├── tests/                    49 tests — the theorems' guardrails (see §8)
 │   ├── test_hodge.py
 │   ├── test_theory_vs_sim.py
 │   ├── test_excitation.py    the trichotomy + NNLS guardrails (10 tests:
@@ -677,7 +678,7 @@ cd topo-flow-limits
 uv venv --python 3.11 .venv
 uv pip install --python .venv\Scripts\python.exe numpy scipy networkx cvxpy matplotlib pandas pytest
 
-# 1) validate all theory against Monte-Carlo (48 tests; ~3-5 min)
+# 1) validate all theory against Monte-Carlo (49 tests; ~3-5 min)
 .\.venv\Scripts\python.exe -m pytest -q
 
 # 2) regenerate every figure and metric (~30-45 min, 8 experiments)
@@ -1143,9 +1144,10 @@ curl detectors (supplement Rem. S2.3), and temporal dependence
      $\sum_\tau u_\tau u_\tau^\top=nI_r$）。配套估计器：**提升协方差
      NNLS**（一致 + 全显式 $O(1/N)$ 失败界，常数全部推导并数值核验）；
    - **(b) 任意 PSD $\Gamma_S$**：单个协方差只能辨识**实现秩空间**
-     $R=\mathrm{im}(U_S\Gamma_S^{1/2})\subseteq\mathrm{im}\,U_S$，且
-     $R=\mathrm{im}\,U_S$ **当且仅当 $\Gamma_S\succ0$**。故**满秩**激励可辨识
-     旋度像 $\mathrm{im}\,B_{2,S}$；但**奇异** $\Gamma_S$ 连支持集都藏得住：
+     $R=\mathrm{im}(U_S\Gamma_S^{1/2})\subseteq\mathrm{im}\,U_S$；$\Gamma_S\succ0$
+     时 $R=\mathrm{im}\,U_S$（当 $B_{2,S}$ 满列秩、$U_S$ 单射时反向也成立）。
+     故**满秩**激励可辨识旋度像 $\mathrm{im}\,B_{2,S}$；但**奇异** $\Gamma_S$
+     可能连支持集都藏得住：
      更大的 $S'\supsetneq S$ 配奇异 $\Gamma'$ 可复现同一协方差（$K_4$ 反例
      $S=\{\tau_1\}$、$S'=\{\tau_1,\tau_2\}$、$\Gamma'=\mathrm{diag}(1,0)$，
      协方差相同而像维数 $1\ne2$）——**随机性本身既不给支持集也不给像**；
@@ -1216,7 +1218,7 @@ $28/84=1/3$ 落在 $3/n$ 曲线上（这一半是真实的几何测量）。
 （$G$ 非对角、10 对共边三角形——真正让几何感知边际律干活的面板）。
 种植实验的真实成分是几何；真正未种植的恢复证据见 ①。
 
-**复现**：`pytest -q`（48 个测试，约 3–5 分钟，每条定理都对照蒙特卡洛验证）；
+**复现**：`pytest -q`（49 个测试，约 3–5 分钟，每条定理都对照蒙特卡洛验证）；
 `python experiments/run_all.py`（约 30–45 分钟重生成全部 9 张图）；
 论文在 `paper/main.pdf`（ICASSP 官方 spconf 格式，4 页正文 + 第 5 页参考
 文献与合规声明），补充材料在 `paper/supplement.pdf`（11 页）。全程只需 CPU。
