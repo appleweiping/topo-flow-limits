@@ -1248,7 +1248,7 @@
               1.0
             ]
           },
-          "nnls_theory_bound": 0.9900000000000003
+          "nnls_theory_bound": 0.9900000000000004
         },
         {
           "k": 3,
@@ -1423,10 +1423,10 @@
               1.0
             ]
           },
-          "nnls_theory_bound": 0.765
+          "nnls_theory_bound": 0.7650000000000003
         }
       ],
-      "runtime_s": 24.8
+      "runtime_s": 216.5
     },
     "K5": {
       "p": 10,
@@ -2131,7 +2131,7 @@
               1.0
             ]
           },
-          "nnls_theory_bound": 0.6200000000000004
+          "nnls_theory_bound": 0.6200000000000006
         },
         {
           "k": 5,
@@ -2834,7 +2834,7 @@
           "nnls_theory_bound": 1.0
         }
       ],
-      "runtime_s": 44.6
+      "runtime_s": 364.5
     },
     "K6": {
       "p": 20,
@@ -3539,7 +3539,7 @@
               1.0
             ]
           },
-          "nnls_theory_bound": 0.9966666666666673
+          "nnls_theory_bound": 0.9966666666666678
         },
         {
           "k": 5,
@@ -4942,7 +4942,7 @@
           "nnls_theory_bound": 1.0
         }
       ],
-      "runtime_s": 154.1
+      "runtime_s": 1657.7
     },
     "K7": {
       "p": 35,
@@ -7050,7 +7050,7 @@
           "nnls_theory_bound": 1.0
         }
       ],
-      "runtime_s": 332.2
+      "runtime_s": 2032.7
     },
     "K8": {
       "p": 56,
@@ -9158,7 +9158,7 @@
           "nnls_theory_bound": 1.0
         }
       ],
-      "runtime_s": 632.8
+      "runtime_s": 1796.4
     }
   },
   "alpha_sweep": {

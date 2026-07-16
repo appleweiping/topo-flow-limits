@@ -395,22 +395,30 @@ def fano_rho_floor(p: int, k: int, N: int, err: float = 0.5) -> float:
 #   carries sigma_c^2 * sum_{tau in S} b_tau b_tau^T, strictly finer than the
 #   column space; the lifted atoms are always linearly independent (see
 #   `lifted_atoms_linearly_independent`), so S -> Sigma(S) is injective and
-#   every support is identifiable at any rank deficiency. Under UNKNOWN
-#   ARBITRARY PSD excitation only im B_{2,S} is identifiable, and at the
-#   projector excitation equal-image supports are exactly indistinguishable
-#   (cases (b), (c) above).
+#   every support is identifiable at any rank deficiency. Under ARBITRARY PSD
+#   excitation a single covariance identifies only the realized range
+#   R = im(U_S Gamma_S^{1/2}) (= im U_S iff Gamma_S is nonsingular; a singular
+#   Gamma can hide part of the image and even the support, case (b)), and the
+#   projector excitation makes equal-image supports exactly indistinguishable
+#   (case (c) above).
 #
 # Within case (a) the price of geometry is a SAMPLE-COMPLEXITY separation,
 # not an impossibility: distinguishing an equal-image confuser pair costs
 # N ~ log(1/delta) / C_G snapshots, where C_G is the Gaussian Chernoff
 # information between the two covariances (computed in the r-dimensional curl
-# coordinate z = Q^T f, which annihilates the gradient/harmonic nuisances).
-# For the minimal EQUAL-CARDINALITY confusers — single-triangle swaps inside
-# a tetrahedron — || Delta M ||_F^2 = 16 exactly (9 + 9 - 2, from
-# ||u||^2 = 3 and u_a.u_b = ±1), giving C_G = rho_2^2 (1+o(1)) with
-# rho_2 = sigma_c^2 / sigma_n^2. The UNRESTRICTED worst case is the subset
-# confuser (S vs S plus a hosted tetrahedron's fourth face), separation 9,
-# C_G = (9/16) rho_2^2 (1+o(1)) — exactly the isolated-triangle exponent.
+# coordinate z = Q^T f, which annihilates the gradient nuisance and the
+# candidate-orthogonal harmonic nuisance h in ker B2^T).
+# Write D_S = sum_{tau in S} u_tau u_tau^T (DIMENSIONLESS; ||u||^2 = 3), so the
+# covariance signal is M_S = sigma_c^2 D_S and the leading Chernoff exponent is
+#     C_G = rho_2^2 || Delta D ||_F^2 / 16 + o(rho_2^2)
+#         = || Delta M ||_F^2 / (16 sigma_n^4) + o(rho_2^2),   rho_2 = sigma_c^2/sigma_n^2
+# (the two forms are identical; do NOT combine rho_2^2 with ||Delta M||, which
+# would double-count sigma_c^4). For the minimal EQUAL-CARDINALITY confusers —
+# single-triangle swaps inside a tetrahedron — ||Delta D||_F^2 = 16 exactly
+# (9 + 9 - 2, from ||u||^2 = 3 and u_a.u_b = ±1), giving C_G = rho_2^2 (1+o(1)).
+# The UNRESTRICTED worst case is the subset confuser (S vs S plus a hosted
+# tetrahedron's fourth face), ||Delta D||_F^2 = 9, C_G = (9/16) rho_2^2 (1+o(1))
+# — exactly the isolated-triangle exponent.
 # All constants below are validated in tests/test_second_order.py, incl.
 # exhaustively over all 2^10 supports of K5.
 
@@ -431,16 +439,33 @@ def fano_rho_floor(p: int, k: int, N: int, err: float = 0.5) -> float:
 #      w_tau = gamma_tau 1{tau in S}. (On K_n with sigma_n UNKNOWN there is
 #      exactly one ambiguous direction: sum_ALL u_tau u_tau^T = n I_r, so a
 #      uniform weight shift trades off against the noise floor.)
-#  (b) Gamma_S UNKNOWN ARBITRARY PSD: {U_S Gamma U_S^T : Gamma PSD} =
-#      {M PSD : im M ⊆ im U_S}, which depends on S only through im B_{2,S}.
-#      Identifiable exactly up to equal image — second-order statistics do
-#      NOT remove the rank obstruction without excitation structure.
-#  (c) Gamma_S = sigma_c^2 (B_{2,S}^T B_{2,S})^+ (projector excitation):
-#      U_S Gamma_S U_S^T = sigma_c^2 P_im(U_S) EXACTLY, so equal-image
-#      supports induce IDENTICAL covariances at every SNR and N — the
-#      explicit worst case inside class (b).
+#  (b) Gamma_S ARBITRARY PSD. What a SINGLE observed covariance reveals is only
+#      the REALIZED RANGE
+#          R(S, Gamma_S) = im(U_S Gamma_S^{1/2}) = im(Sigma_z - sigma_n^2 I),
+#      a subspace of im U_S, with equality R = im U_S iff Gamma_S is NONSINGULAR
+#      (Gamma_S > 0). Consequences:
+#        * Gamma_S > 0 (full-rank arbitrary): the full curl image
+#          im U_S = im B_{2,S} IS identifiable (R = im U_S).
+#        * Gamma_S SINGULAR: only R is identifiable, and R can be strictly
+#          smaller than im U_S. In particular the support itself is NOT
+#          identifiable: a LARGER support S' > S with a rank-deficient Gamma'
+#          can reproduce exactly the same covariance. Witness on K4:
+#          S={tau1}, S'={tau1,tau2}, Gamma_S=[1], Gamma_{S'}=diag(1,0) give
+#          identical Sigma_z although dim im B_{2,S}=1 != 2=dim im B_{2,S'}
+#          (see tests/test_excitation.py). So "random signals" do NOT by
+#          themselves recover even the image; a full-rank excitation does.
+#      The set identity {U_S Gamma U_S^T : Gamma PSD} = {M PSD : im M ⊆ im U_S}
+#      still holds, but it describes the achievable FAMILY, not what one
+#      observation identifies: the families of nested supports overlap, so a
+#      single covariance does not determine which support produced it.
+#  (c) Gamma_S = sigma_c^2 (B_{2,S}^T B_{2,S})^+ (projector excitation): a
+#      SPECIFIC full-rank-on-its-own-image excitation for which
+#      U_S Gamma_S U_S^T = sigma_c^2 P_im(U_S) EXACTLY, so DISTINCT supports
+#      with the SAME image induce IDENTICAL covariances at every SNR and N.
+#      (Here R = im U_S, but two equal-image supports collapse to one
+#      covariance — the sharp equal-image indistinguishability.)
 #
-# All three statements are verified numerically in tests/test_excitation.py.
+# All statements are verified numerically in tests/test_excitation.py.
 
 
 def excitation_covariance(
@@ -452,6 +477,37 @@ def excitation_covariance(
     support = np.asarray(support, bool)
     Us = U[:, support]
     return sigma_noise**2 * np.eye(U.shape[0]) + Us @ Gamma @ Us.T
+
+
+def realized_range_dim(U: np.ndarray, support: np.ndarray,
+                       Gamma: np.ndarray, tol: float = 1e-9) -> int:
+    """Dimension of the REALIZED RANGE ``R = im(U_S Gamma^{1/2})
+    = im(Sigma_z - sigma_n^2 I)`` — the object a single arbitrary-PSD
+    covariance actually identifies. Equals ``dim im U_S`` iff ``Gamma`` is
+    nonsingular; a singular ``Gamma`` yields a strictly smaller range and
+    hides part of the image (trichotomy case (b))."""
+    support = np.asarray(support, bool)
+    Us = U[:, support]
+    M = Us @ Gamma @ Us.T
+    s = np.linalg.svd(M, compute_uv=False)
+    return int((s > tol * max(1.0, s[0])).sum())
+
+
+def singular_gamma_equal_covariance_witness(
+    U: np.ndarray, tau_in: int, tau_extra: int, sigma_noise: float = 1.0
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Construct the case-(b) witness: supports ``S={tau_in}`` and
+    ``S'={tau_in, tau_extra}`` with excitations ``Gamma_S=[[1]]`` and
+    ``Gamma_S'=diag(1,0)`` produce IDENTICAL curl covariances even though
+    ``dim im B_{2,S'} > dim im B_{2,S}``. Returns
+    ``(Sigma_S, Sigma_Sp, support_S, support_Sp)`` so a caller can check the
+    covariances coincide while the supports (and their images) differ."""
+    p = U.shape[1]
+    sS = np.zeros(p, bool); sS[tau_in] = True
+    sSp = np.zeros(p, bool); sSp[tau_in] = True; sSp[tau_extra] = True
+    Sig_S = excitation_covariance(U, sS, np.array([[1.0]]), sigma_noise)
+    Sig_Sp = excitation_covariance(U, sSp, np.diag([1.0, 0.0]), sigma_noise)
+    return Sig_S, Sig_Sp, sS, sSp
 
 
 def projector_excitation_gamma(B2: np.ndarray, support: np.ndarray,
@@ -555,8 +611,9 @@ def second_order_covariance(
     sigma_c^2 sum_{tau in S} u_tau u_tau^T`` for signatures ``U = Q.T B2``.
 
     This is the exact law of ``z_t = Q.T f_t`` under the generative model:
-    gradient and harmonic components are annihilated by ``Q.T`` and the white
-    edge noise projects to white ``r``-dimensional noise.
+    the gradient component (and the candidate-orthogonal harmonic component,
+    ``h in ker B2.T``) is annihilated by ``Q.T`` and the white edge noise
+    projects to white ``r``-dimensional noise.
     """
     support = np.asarray(support, bool)
     r = U.shape[0]
@@ -686,11 +743,13 @@ def tetra_confuser_chernoff_small_snr(sigma_curl: float, sigma_noise: float) -> 
     """Leading-order Chernoff information of the tetrahedral SWAP confuser
     pair: ``C_G = rho_2^2 (1 + o(1))`` as ``rho_2 -> 0``.
 
-    Derivation: with ``E = Sigma_0^{-1/2} (Sigma_1 - Sigma_0) Sigma_0^{-1/2}
-    ~ rho_2 * Delta M``, the Bhattacharyya expansion gives ``C = (1/16)
-    tr(E^2) (1+o(1)) = (rho_2^2 / 16) ||Delta M||_F^2 (1+o(1))``; the swap
-    separation is ``||Delta M||_F^2 = 9 + 9 - 2 = 16`` (faces share exactly
-    one edge), so the ``16``s cancel. The swap is the minimal confuser among
+    Derivation: with ``E = Sigma_0^{-1/2}(Sigma_1 - Sigma_0) Sigma_0^{-1/2}``
+    and ``D = sum u_tau u_tau^T`` (DIMENSIONLESS), the Bhattacharyya expansion
+    gives ``C = (1/16) tr(E^2)(1+o(1)) = (rho_2^2/16) ||Delta D||_F^2 (1+o(1))``
+    ``= ||Delta M||_F^2/(16 sigma_n^4)(1+o(1))`` with ``M = sigma_c^2 D`` (the
+    two forms coincide; do NOT write ``rho_2^2 ||Delta M||^2``). The swap
+    separation is ``||Delta D||_F^2 = 9 + 9 - 2 = 16`` (faces share exactly one
+    edge), so the ``16``s cancel. The swap is the minimal confuser among
     EQUAL-CARDINALITY supports. See
     :func:`subset_confuser_chernoff_small_snr` for the unrestricted worst
     case.
@@ -723,11 +782,14 @@ def second_order_min_snapshots(
 ) -> float:
     """Chernoff-rate snapshot budget for distinguishing two supports:
     ``N* = log(1/delta) / C_G``. For minimal tetrahedral confusers at small
-    SNR this is ``N* ~ log(1/delta) / rho_2^2`` — finite (second-order
-    identifiable) but a factor ``~1/rho_2`` beyond the ``log(1/delta)/rho^2``
-    single-triangle budget once ``rho_2`` is small, and INFINITE for the
-    first-order (deterministic-signal) model. That gap is the corrected
-    content of the rank obstruction."""
+    SNR this is ``N* ~ log(1/delta) / rho_2^2`` — the SAME order as the
+    single-triangle detection budget ``log(1/delta)/C(rho)`` with
+    ``C(rho)=rho^2/16``, ``rho=3 rho_2`` (also ``Theta(1/rho_2^2)``): the two
+    differ only by a CONSTANT factor (the subset confuser matches the
+    single-triangle exponent exactly; the swap is smaller by 9/16). It is
+    finite (second-order identifiable) but INFINITE for the first-order
+    (deterministic-signal) model. That gap — finite vs infinite, not an extra
+    1/rho_2 — is the corrected content of the rank obstruction."""
     C = confuser_pair_chernoff(B2, support_a, support_b, sigma_curl, sigma_noise)
     if C <= 0:
         return np.inf

@@ -127,16 +127,23 @@ def cluster_bootstrap_ci(
     metric,
     n_boot: int = 1000,
     seed: int = 7,
+    block_len: int = 3,
 ) -> tuple[float, float]:
-    """95% percentile CI for a pooled ranking metric, resampling WHOLE
-    WINDOWS with replacement (windows are the exchangeable clusters here;
-    storms span windows, so window-level resampling is the conservative
-    unit)."""
+    """95% percentile CI for a pooled ranking metric via a MOVING-BLOCK
+    bootstrap over the time-ordered windows. A storm persists across several
+    consecutive 4-day windows, so windows are serially dependent, not
+    exchangeable; resampling contiguous blocks of ``block_len`` windows
+    (circular, default 3 ~ storm residence time) preserves that within-storm
+    correlation. (A plain window bootstrap, which assumes exchangeable
+    windows, would understate the variance; we make no conservatism claim.)"""
     rng = np.random.default_rng(seed)
     W = len(per_window_scores)
+    n_blocks = int(np.ceil(W / block_len))
     vals = []
     for _ in range(n_boot):
-        idx = rng.integers(0, W, size=W)
+        starts = rng.integers(0, W, size=n_blocks)
+        idx = np.concatenate(
+            [(np.arange(s, s + block_len) % W) for s in starts])[:W]
         s = np.concatenate([per_window_scores[i] for i in idx])
         l = np.concatenate([per_window_labels[i] for i in idx])
         if l.sum() == 0 or l.sum() == len(l):
@@ -247,7 +254,7 @@ def main() -> None:
                                              lambda s, l: roc_curve(s, l)[2]),
         "pr_auc_external": cluster_bootstrap_ci(all_scores, all_ext_gt, pr_auc),
     }
-    print(f"window-bootstrap 95% CI: AUC_int={boot['auc_internal']}, "
+    print(f"block-bootstrap 95% CI: AUC_int={boot['auc_internal']}, "
           f"AUC_ext={boot['auc_external']}, PR_ext={boot['pr_auc_external']}")
 
     # rank correlation between detector score and internal GT
@@ -311,9 +318,10 @@ def main() -> None:
         degradation[str(nl)] = aucs
 
     # ---- figure ----
-    plt.rcParams.update({"font.size": 12, "axes.titlesize": 12,
-                         "axes.labelsize": 12})
-    fig = plt.figure(figsize=(12.5, 3.6))
+    plt.rcParams.update({"font.size": 14, "axes.titlesize": 12,
+                         "axes.labelsize": 14, "xtick.labelsize": 12,
+                         "ytick.labelsize": 12})
+    fig = plt.figure(figsize=(13.5, 4.0))
 
     ax = fig.add_subplot(1, 3, 1)
     wi_show = wi
@@ -324,7 +332,7 @@ def main() -> None:
     fx_w = all_ext_gt[wi_show]
     ax.scatter(cen_lon[fx_w], cen_lat[fx_w], facecolors="none", edgecolors="red",
                s=60, linewidths=1.2, label="IBTrACS cyclone")
-    ax.set_title(f"(A) curl-energy score (vorticity scale), window {per_window[wi_show]['t0']}")
+    ax.set_title(f"(A) curl-energy score, {per_window[wi_show]['t0']}")
     ax.set_xlabel("lon")
     ax.set_ylabel("lat")
     ax.legend(loc="lower right", fontsize=8)
@@ -342,7 +350,7 @@ def main() -> None:
     ax.plot([0, 1], [0, 1], "k:", lw=0.8)
     ax.set_xlabel("false-positive rate")
     ax.set_ylabel("true-positive rate")
-    ax.set_title("(B) vortex localization: ROC vs both references")
+    ax.set_title("(B) ROC vs both references")
     ax.legend(loc="lower right", fontsize=7)
 
     ax = fig.add_subplot(1, 3, 3)
@@ -353,7 +361,7 @@ def main() -> None:
                     label=f"noise x{nl}")
     ax.set_xlabel("snapshots N in window")
     ax.set_ylabel("AUC vs internal GT")
-    ax.set_title("(C) budget degradation (mean ± sd over 12 draws)")
+    ax.set_title("(C) budget degradation (±sd, 12 draws)")
     ax.legend(loc="lower right", fontsize=8)
 
     fig.tight_layout()
@@ -373,15 +381,15 @@ def main() -> None:
                      "(vorticity scale); decorrelated (GLS, main Prop.1) variant reported "
                      "for comparison",
         "internal_validation": {"auc": auc_i,
-                                "auc_ci95_window_bootstrap": list(boot["auc_internal"]),
+                                "auc_ci95_block_bootstrap": list(boot["auc_internal"]),
                                 "vort_thresh_per_s": VORT_THRESH,
                                 "n_positive": int(int_labels.sum()),
                                 "n_total": int(len(int_labels)),
                                 "spearman_score_vs_vorticity": float(rho_s)},
         "external_validation": {"auc": auc_e,
-                                "auc_ci95_window_bootstrap": list(boot["auc_external"]),
+                                "auc_ci95_block_bootstrap": list(boot["auc_external"]),
                                 "pr_auc": ap_e,
-                                "pr_auc_ci95_window_bootstrap": list(boot["pr_auc_external"]),
+                                "pr_auc_ci95_block_bootstrap": list(boot["pr_auc_external"]),
                                 "n_cyclone_triangle_windows": k,
                                 "precision_at_k": precision,
                                 "prevalence": k / int(len(ext_gt_flat)),
@@ -394,7 +402,7 @@ def main() -> None:
                                          "full-rank mesh"},
         "baseline_coarse_fd_vorticity": {
             "auc_internal": float(auc_i_base), "auc_external": float(auc_e_base),
-            "auc_external_ci95_window_bootstrap": list(boot["auc_external_baseline"]),
+            "auc_external_ci95_block_bootstrap": list(boot["auc_external_baseline"]),
             "pr_auc_external": float(ap_e_base),
             "precision_at_k_external": float(precision_base),
             "note": "classical pointwise FD vorticity from winds subsampled at "

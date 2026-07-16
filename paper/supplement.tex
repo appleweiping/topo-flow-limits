@@ -23,6 +23,7 @@
 \newcommand{\E}{\mathbb{E}}
 \newcommand{\Scal}{\mathcal{S}}
 \newcommand{\Tcal}{\mathcal{T}}
+\newcommand{\Rcal}{\mathcal{R}}
 \newcommand{\KL}{\mathrm{KL}}
 \newcommand{\Gam}{\bm{\Gamma}}
 \DeclareMathOperator{\im}{im}
@@ -149,7 +150,7 @@ $k\KL_1\asymp k\rho^2/4$ versus $\asymp k\rho/2$). In the dense regime
 ($k\asymp p$) the agnostic budget grows only logarithmically in $\rho$, so it
 \emph{overtakes} the Gaussian-KL bound at high SNR
 (Fig.~\ref{fig:fano}B). Figure~\ref{fig:fano}A shows the $\log p$ effect: at
-the scale of the paper's Fig.~2 ($p=8$) the joint-recovery floor sits well
+the scale of the $p=8$ planted-complex setting the joint-recovery floor sits well
 below the per-triangle Chernoff floor, while at $p=10^4$ it narrows the gap
 to a $\approx 2\times$ factor (the curves are not directly comparable in
 level: Fano is normalized at error $1/2$, the Chernoff floor at
@@ -374,8 +375,10 @@ $w_\tau=0$ for every $\tau$.
 \subsection{The excitation trichotomy (main Theorem 1)}
 
 With $\bm z=\bm Q^{\!\top}\bm f$ ($\bm Q$ an orthonormal basis of
-$\mathrm{im}\,\B_2$, $r=\rank\B_2$, $\bm U=\bm Q^{\!\top}\B_2$), the
-gradient/harmonic covariance terms are annihilated and
+$\mathrm{im}\,\B_2$, $r=\rank\B_2$, $\bm U=\bm Q^{\!\top}\B_2$), the gradient
+term is annihilated unconditionally ($\B_2^{\!\top}\B_1^{\!\top}=\bm0$) and
+the harmonic term by the candidate-orthogonality assumption
+$\bm h\in\ker\B_2^{\!\top}$, so
 $\bm\Sigma_z(\Scal,\Gam)=\sigma_n^2\bm I_r+\bm U_\Scal\Gam\bm U_\Scal^{\!\top}$;
 since $\bm b_\tau\in\mathrm{im}\,\B_2$, the compression loses nothing
 ($\bm u_\sigma^{\!\top}\bm u_\tau=G_{\sigma\tau}$).
@@ -393,22 +396,34 @@ trades off against the noise floor; this is verified numerically for
 $K_5$--$K_7$.
 \end{proposition}
 
-\begin{proposition}[(b) arbitrary PSD]\label{prop:psd}
+\begin{proposition}[(b) arbitrary PSD: only the realized range]\label{prop:psd}
+A single covariance $\bm\Sigma_z$ identifies exactly the realized range
+$\Rcal(\Scal,\Gam)=\mathrm{im}(\bm\Sigma_z-\sigma_n^2\bm I)
+=\mathrm{im}(\bm U_\Scal\Gam^{1/2})\subseteq\mathrm{im}\,\bm U_\Scal$, with
+equality $\Rcal=\mathrm{im}\,\bm U_\Scal$ iff $\Gam\succ0$. Consequences:
+\emph{(i)} a full-rank excitation identifies the curl image
+$\mathrm{im}\,\B_{2,\Scal}$; \emph{(ii)} a \emph{singular} $\Gam$ can conceal
+part of the image and even the support --- there exist $\Scal'\supsetneq\Scal$
+and a singular $\Gam'$ with $\bm\Sigma_z(\Scal',\Gam')=\bm\Sigma_z(\Scal,\Gam)$.
+The achievable family still obeys
 $\{\bm U_\Scal\Gam\bm U_\Scal^{\!\top}:\Gam\succeq0\}
-=\{\bm M\succeq0:\mathrm{im}\,\bm M\subseteq\mathrm{im}\,\bm U_\Scal\}$.
-Hence the achievable covariance \emph{family} determines, and is determined
-by, $\mathrm{im}\,\B_{2,\Scal}$: with unknown unrestricted $\Gam$, supports
-are distinguishable as composite hypotheses at most up to equal curl image,
-and nothing finer is identifiable. (Pointwise, the image is identified
-whenever $\Gam\succ0$; a singular excitation can conceal part of it --- at
-$\Gam=\bm0$ all supports coincide.)
+=\{\bm M\succeq0:\mathrm{im}\,\bm M\subseteq\mathrm{im}\,\bm U_\Scal\}$, but
+families of nested supports overlap, so this family identity is \emph{not}
+support identifiability.
 \end{proposition}
 \begin{proof}
-($\subseteq$) immediate. ($\supseteq$) For PSD $\bm M$ with
-$\mathrm{im}\,\bm M\subseteq\mathrm{im}\,\bm U_\Scal$, set
-$\Gam=\bm U_\Scal^{+}\bm M(\bm U_\Scal^{+})^{\!\top}\succeq0$; then
-$\bm U_\Scal\Gam\bm U_\Scal^{\!\top}
-=\bm P_{\im\bm U_\Scal}\bm M\bm P_{\im\bm U_\Scal}=\bm M$.
+$\bm\Sigma_z-\sigma_n^2\bm I=\bm U_\Scal\Gam\bm U_\Scal^{\!\top}$ has range
+$\mathrm{im}(\bm U_\Scal\Gam^{1/2})$; if $\Gam\succ0$ this is
+$\mathrm{im}\,\bm U_\Scal$, otherwise strictly smaller. Family identity:
+($\subseteq$) immediate; ($\supseteq$) for PSD $\bm M$ with
+$\mathrm{im}\,\bm M\subseteq\mathrm{im}\,\bm U_\Scal$ set
+$\Gam=\bm U_\Scal^{+}\bm M(\bm U_\Scal^{+})^{\!\top}\succeq0$, giving
+$\bm U_\Scal\Gam\bm U_\Scal^{\!\top}=\bm M$. Witness for (ii): on $K_4$ take
+$\Scal=\{\tau_1\}$, $\Scal'=\{\tau_1,\tau_2\}$, $\Gam=[1]$,
+$\Gam'=\mathrm{diag}(1,0)$; both give
+$\bm\Sigma_z=\sigma_n^2\bm I+\bm u_{\tau_1}\bm u_{\tau_1}^{\!\top}$ although
+$\dim\mathrm{im}\,\B_{2,\Scal}=1\ne2=\dim\mathrm{im}\,\B_{2,\Scal'}$
+(verified in \texttt{tests/test\_excitation.py}).
 \end{proof}
 
 \begin{proposition}[(c) projector excitation]\label{prop:proj}
@@ -467,19 +482,25 @@ essential.)
 exponent level]\label{prop:cg}
 Let $C_G$ be the Chernoff information between
 $\mathcal N(\bm 0,\bm\Sigma_z(\Scal))$ and
-$\mathcal N(\bm 0,\bm\Sigma_z(\Scal'))$. As $\rho_2\to0$,
+$\mathcal N(\bm 0,\bm\Sigma_z(\Scal'))$, and write the DIMENSIONLESS
+signature Gram $\bm D_\Scal=\sum_{\tau\in\Scal}\bm u_\tau\bm u_\tau^{\!\top}$
+(so $\bm M_\Scal=\sigma_c^2\bm D_\Scal$). As $\rho_2\to0$,
 \[
-C_G=\tfrac{1}{16}\,\rho_2^2\,\|\Delta\bm M\|_F^2\,(1+o(1))
+C_G=\tfrac{1}{16}\,\rho_2^2\,\|\Delta\bm D\|_F^2\,(1+o(1))
+=\tfrac{1}{16\sigma_n^4}\,\|\Delta\bm M\|_F^2\,(1+o(1))
 =\begin{cases}
 \rho_2^2\,(1+o(1)) & \text{swap (Lemma~\ref{lem:sep16})},\\[2pt]
 \tfrac9{16}\rho_2^2\,(1+o(1)) & \text{subset (Lemma~\ref{lem:sep9})},
 \end{cases}
 \]
+where the two forms coincide since $\Delta\bm M=\sigma_c^2\Delta\bm D$
+(do \emph{not} write $\rho_2^2\|\Delta\bm M\|_F^2$, which double-counts
+$\sigma_c^4$).
 the optimal error satisfies $P_{\rm err}\le e^{-N C_G}$ with matching
 exponent, and $N^\star(\delta)\sim\log(1/\delta)/C_G$. Moreover the
 subset exponent \emph{equals} the isolated-triangle detection exponent:
 $C(\rho)=\rho^2/16$ at $\rho=3\rho_2$ is $\tfrac9{16}\rho_2^2$
-(test-certified to $3\times10^{-5}$ relative at $\rho_2=10^{-5}$,
+(numerically checked to $3\times10^{-5}$ relative at $\rho_2=10^{-5}$,
 {\sloppy\texttt{test\_subset\_confuser\_}\allowbreak\texttt{exponent\_equals\_}\allowbreak\texttt{isolated\_}\allowbreak\texttt{triangle\_exponent}}).
 Hence the hardest equal-image decision costs, at the exponent level, exactly
 one isolated-triangle detection: geometric rank deficiency imposes no
@@ -619,7 +640,7 @@ isolated-triangle exponent to $3\times10^{-5}$ relative at
 $\rho_2=10^{-5}$, and the Monte-Carlo error of the optimal test within the
 $e^{-NC_G}$ envelope with empirical exponent decreasing onto $C_G$; (vi)
 exact greedy covariance-atom recovery on rank-deficient $K_5$.
-\texttt{tests/test\_excitation.py} additionally certifies every claim of the
+\texttt{tests/test\_excitation.py} additionally checks every claim of the
 trichotomy and estimator theory: weighted-diagonal identifiability and the
 $K_n$ unknown-noise ambiguity direction
 ($\sum_\tau\bm u_\tau\bm u_\tau^{\!\top}=n\bm I_r$); PSD matching for
@@ -711,8 +732,9 @@ All figures regenerate on CPU from fixed seeds via
   \texttt{run\_real\_cyclone.py} ($\approx$3\,min from the cached
   ERA5/IBTrACS files).
 \end{itemize}
-The test-suite (\texttt{pytest -q}, 46 tests) checks: the Fano bounds against
-the empirical recovery boundary of the main paper's Fig.~2 (a converse must
+The test-suite (\texttt{pytest -q}, 48 tests) checks: the Fano bounds against
+the empirical recovery boundary of the phase-transition experiment
+(\texttt{run\_phase\_transition.py}, repo/supplement; a converse must
 lower bound it), the closed form \eqref{eq:qform} against Monte-Carlo, the
 envelope of Lemma~\ref{lem:median}, the adaptive-vs-known recovery gap, every
 claim of Section~\ref{sec:dichotomy} (spark, exhaustive $K_4$ injectivity,

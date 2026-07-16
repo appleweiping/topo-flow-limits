@@ -110,12 +110,22 @@ def run_main_grid(rng: np.random.Generator) -> dict:
                 sc = float(np.sqrt(rho2)) * SIGMA_N
                 params = FlowParams(sigma_curl=sc, sigma_grad=1.0,
                                     sigma_harm=0.0, sigma_noise=SIGMA_N)
+                smin = np.linalg.svd(lifted_atom_matrix(U),
+                                     compute_uv=False)[-1]
                 for N in N_GRID:
                     hits = {"nnls": 0, "subspace": 0, "greedy": 0}
                     hits["nnls_gap"] = hits.get("nnls_gap", 0)
+                    bound_worst = 0.0   # worst-case bound over the trial supports
                     for _ in range(N_TRIALS):
                         active = np.zeros(p, bool)
                         active[rng.choice(p, k, replace=False)] = True
+                        # per-trial (per-support) bound; ||Sigma||_F^2 varies
+                        # with the support's share-edge count, so we report the
+                        # WORST case over supports, not one representative.
+                        Sig = excitation_covariance(
+                            U, active, rho2 * np.eye(k), SIGMA_N)
+                        b = nnls_recovery_bound(Sig, smin, rho2 * SIGMA_N**2, N)
+                        bound_worst = max(bound_worst, b)
                         F = sampler.sample(active, params, N, rng)
                         Z = Q.T @ F
                         sup, w_hat = nnls_lifted_support(
@@ -144,21 +154,10 @@ def run_main_grid(rng: np.random.Generator) -> dict:
                         lo, hi = wilson_ci(h, N_TRIALS)
                         cell[name] = {"p_exact": h / N_TRIALS,
                                       "ci95": [lo, hi]}
-                    # the derived bound at this cell, evaluated at a FIXED
-                    # representative support (the lexicographically first k
-                    # triangles). NOTE: only tr(Sigma) is support-invariant on
-                    # K_n; ||Sigma||_F^2 varies with the support's internal
-                    # share-an-edge count (effect ~1%), so this is a
-                    # representative value, and the bound remains a valid
-                    # per-support upper bound.
-                    active0 = np.zeros(p, bool)
-                    active0[:k] = True
-                    Sig = excitation_covariance(
-                        U, active0, rho2 * np.eye(k), SIGMA_N)
-                    smin = np.linalg.svd(lifted_atom_matrix(U),
-                                         compute_uv=False)[-1]
-                    cell["nnls_theory_bound"] = nnls_recovery_bound(
-                        Sig, smin, rho2 * SIGMA_N**2, N)
+                    # WORST-CASE derived bound over the trial supports: a valid
+                    # per-cell upper bound on every trial's failure probability
+                    # (not a single representative support).
+                    cell["nnls_theory_bound"] = bound_worst
                     graph["cells"].append(cell)
         graph["runtime_s"] = round(time.perf_counter() - t0, 1)
         out[f"K{n}"] = graph
@@ -224,9 +223,10 @@ def run_alpha_sweep(rng: np.random.Generator) -> dict:
 
 
 def _plot(grid: dict, alpha: dict) -> None:
-    plt.rcParams.update({"font.size": 12, "axes.titlesize": 12,
-                         "axes.labelsize": 12})
-    fig, axes = plt.subplots(1, 3, figsize=(12.5, 3.5))
+    plt.rcParams.update({"font.size": 14, "axes.titlesize": 14,
+                         "axes.labelsize": 14, "xtick.labelsize": 12,
+                         "ytick.labelsize": 12, "legend.fontsize": 9})
+    fig, axes = plt.subplots(1, 3, figsize=(13.5, 3.9))
 
     avail_N = sorted({c["N"] for g in grid.values() for c in g["cells"]})
     avail_r = sorted({c["rho2"] for g in grid.values() for c in g["cells"]})

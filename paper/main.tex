@@ -11,6 +11,7 @@
 \newtheorem{lemma}{Lemma}
 \newtheorem{corollary}{Corollary}
 \newtheorem{remark}{Remark}
+\newtheorem{definition}{Definition}
 
 \emergencystretch=1.5em
 % tighten float spacing (keeps the 4-page content budget with 2 wide floats)
@@ -27,6 +28,7 @@
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\Scal}{\mathcal{S}}
 \newcommand{\Tcal}{\mathcal{T}}
+\newcommand{\Rcal}{\mathcal{R}}
 \newcommand{\Gam}{\bm{\Gamma}}
 
 \title{Excitation-dependent identifiability of latent\\ higher-order structure from edge flows}
@@ -45,13 +47,15 @@ covariance $\Gam_\Scal$ of the triangle signals. Our main theorem is a
 trichotomy: for positive-diagonal $\Gam_\Scal$ (known or unknown), the
 weighted support is identifiable at \emph{any} rank deficiency of $\B_2$,
 because the lifted signatures $\{\bm b_\tau\bm b_\tau^{\!\top}\}$ are always
-linearly independent; for unknown arbitrary PSD $\Gam_\Scal$, the achievable covariance
-family determines exactly the curl subspace $\im\B_{2,\Scal}$ and nothing
-finer; and at the projector excitation
+linearly independent; for a \emph{full-rank} arbitrary $\Gam_\Scal$ the curl
+image $\im\B_{2,\Scal}$ is identified, but a rank-deficient $\Gam_\Scal$
+reveals only the realized range $\im(\bm U_\Scal\Gam_\Scal^{1/2})$ and can
+hide the support itself; and at the projector excitation
 $\Gam_\Scal=\sigma_c^2(\B_{2,\Scal}^{\!\top}\B_{2,\Scal})^{+}$ the covariance
 collapses to $\sigma_n^2\bm I+\sigma_c^2\bm P_{\im}$ exactly, so equal-image
 supports are indistinguishable at every SNR and sample size (noise level
-known throughout). In the diagonal
+known throughout). The projector case is exactly the Hodge-smoothness prior
+used in prior topology learning \cite{gurugubelli2024simplicial}. In the diagonal
 class we give a lifted-covariance non-negative least-squares estimator that
 is consistent with a fully explicit $O(1/N)$ failure bound, validated on
 $K_4$--$K_8$ against subspace and greedy baselines, including an excitation
@@ -59,7 +63,7 @@ interpolation under which equal-image distinguishability provably vanishes.
 On real data, the same curl statistic \emph{localizes} genuine unplanted
 rotational structure --- tropical cyclones in ERA5 winds --- against a
 same-field vorticity reference and the independent IBTrACS archive. Code,
-data, and a 46-test suite certifying every constant are released.
+data, and a 48-test suite numerically checking every constant are released.
 \end{abstract}
 
 \begin{keywords}
@@ -67,7 +71,7 @@ Topological signal processing, simplicial complexes, identifiability,
 Hodge decomposition, covariance estimation, edge flows.
 \end{keywords}
 
-\section{Introduction}
+\section{Introduction}\label{sec:intro}
 Edge flows --- currency exchange, traffic, ranking comparisons --- carry
 higher-order structure on the triangles of a simplicial complex
 \cite{barbarossa2020topological,schaub2021signal,lim2020hodge}. Topological
@@ -75,26 +79,36 @@ signal processing builds filters and detectors on the Hodge Laplacian
 \cite{yang2022simplicial,battiloro2023topological,calmon2023dirac,%
 marinucci2025topological,liu2024unrolling}, and a recurring primitive is that
 the set $\Scal$ of ``filled'' triangles is unknown. One line of work
-\emph{estimates} $\Scal$ algorithmically: MAP estimation
-\cite{gurugubelli2024simplicial}, greedy topology learning
-\cite{buciulea2025learning}, sparse cell-complex augmentation
-\cite{hoppe2023representing}. Another \emph{detects} whether a signal lies in
-a known Hodge subspace: matched topological subspace detectors
-\cite{liu2025matched} test deviation from, e.g., curl-free structure with the
-subspace given a priori. Between the two sits the question this paper
-answers: \emph{when is the latent structure that generates the subspace
-identifiable at all --- and what part of it?}
+\emph{estimates} $\Scal$ algorithmically: MAP estimation under a
+Hodge-smoothness prior \cite{gurugubelli2024simplicial}, greedy topology
+learning \cite{buciulea2025learning}, sparse cell-complex augmentation
+\cite{hoppe2023representing}; second-order precedent is older still ---
+Barbarossa and Sardellitti infer filled triangles from the sample covariance
+of edge flows by a PCA/total-variation criterion
+\cite[\S VII]{barbarossa2020topological}. A second line \emph{detects}
+whether a signal lies in a \emph{known} Hodge subspace: matched topological
+subspace detectors \cite{liu2025matched}. All of these fix a generative or
+observation model and give an algorithm; none states \emph{when} the latent
+structure is identifiable. That is the gap: \emph{when is the latent
+structure that generates the flows identifiable at all --- and what part of
+it?}
 
-The answer, it turns out, is not a property of the geometry alone: it
-depends on the \emph{excitation}. We model triangle signals as
+The answer is not a property of the geometry alone: it depends on the
+\emph{excitation}. We model triangle signals as
 $\bm y_\Scal\sim\mathcal N(\bm 0,\Gam_\Scal)$ with PSD excitation covariance
 $\Gam_\Scal$ and show that the identifiable object moves with the class of
-$\Gam_\Scal$ (Theorem~\ref{thm:tri}): from the full weighted support (positive
-diagonal, any rank deficiency), through exactly the curl subspace
-$\im\B_{2,\Scal}$ (unknown arbitrary PSD), to provable indistinguishability of
-equal-image supports (projector excitation). This corrects a folklore
-``rank obstruction'' --- and also bounds what image-level methods such as
-subspace detectors \cite{liu2025matched} can ever resolve. Our tools are
+$\Gam_\Scal$ (Theorem~\ref{thm:tri}): from the full weighted support
+(positive diagonal, any rank deficiency), through the curl image
+$\im\B_{2,\Scal}$ under a \emph{full-rank} excitation (a rank-deficient one
+identifies only the realized range and can hide the support), to provable
+indistinguishability of equal-image supports at the projector excitation. The
+last case is not a corner curiosity: the Hodge-smoothness prior of
+\cite{gurugubelli2024simplicial}, $\bm y_\Scal\sim\mathcal N(\bm 0,\bm L_2^{+})$
+with $\bm L_2=\B_2^{\!\top}\B_2$, \emph{is} this projector excitation ---
+so their model is second-order-unidentifiable and succeeds only through its
+sparsity prior. Our result thus both corrects a folklore ``rank
+obstruction'' and delimits what covariance- and image-level methods
+\cite{barbarossa2020topological,liu2025matched} can resolve. Our tools are
 classical --- detection theory and Fano arguments
 \cite{poor1994introduction,cover2006elements}, in the lineage of
 support-recovery and sparse-covariance limits
@@ -113,7 +127,7 @@ $\rho_2\to0$, whose worst case equals one isolated-triangle detection
 (Thm.~\ref{thm:price}).
 \item \emph{Achievability}: a lifted-covariance NNLS estimator for the
 diagonal class, consistent with a fully explicit $O(1/N)$ failure bound in
-which every constant is derived and test-certified
+which every constant is derived and numerically checked
 (Thm.~\ref{thm:nnls}); Monte-Carlo validation on $K_4$--$K_8$ with random
 supports against oracle-aided subspace and greedy baselines, and an
 excitation-interpolation experiment in which equal-image distinguishability
@@ -122,7 +136,7 @@ collapses as predicted (Fig.~\ref{fig:so}).
 localization} --- not topology recovery --- of unplanted tropical-cyclone
 circulation in ERA5 winds, validated against a same-field vorticity
 reference and the independent IBTrACS archive, with a classical baseline and
-window-bootstrap confidence intervals (Fig.~\ref{fig:cyclone}).
+moving-block bootstrap confidence intervals (Fig.~\ref{fig:cyclone}).
 \end{enumerate}
 
 \section{Model and curl reduction}
@@ -142,12 +156,15 @@ $\bm n_t\!\sim\!\mathcal N(\bm 0,\sigma_n^2\bm I)$, and triangle excitation
 \begin{equation}\label{eq:gamma}
 \bm y_t\sim\mathcal N(\bm 0,\ \Gam_\Scal),\qquad \Gam_\Scal\succeq0 ,
 \end{equation}
-generalizing the isotropic $\Gam_\Scal=\sigma_c^2\bm I$ that algorithmic
-formulations implicitly adopt (cf.~\cite{gurugubelli2024simplicial}); making
-$\Gam_\Scal$ explicit is the point of this paper. Curl annihilation
-($\B_2^{\!\top}\B_1^{\!\top}=\bm0$, $\B_2^{\!\top}\bm h=\bm 0$)
-\cite{jiang2011statistical} removes both nuisances exactly; in an
-orthonormal basis $\bm Q$ of $\im\B_2$ ($r=\rank\B_2$), the sufficient
+where $\Gam_\Scal\succeq0$ is the excitation covariance; making it explicit
+is the point of this paper (prior generative models are special cases of it,
+\S\ref{sec:intro}). We take the harmonic nuisance to be
+\emph{candidate-orthogonal}, $\bm h_t\in\ker\B_2^{\!\top}$ (orthogonal to the
+curl space of the \emph{full} candidate complex); the gradient part is
+annihilated unconditionally since $\B_2^{\!\top}\B_1^{\!\top}=\bm0$. Then
+curl projection removes both nuisances exactly
+\cite{jiang2011statistical}: in an orthonormal basis $\bm Q$ of $\im\B_2$
+($r=\rank\B_2$, $\B_2$ the full candidate incidence), the sufficient
 statistic $\bm z_t=\bm Q^{\!\top}\bm f_t$ is Gaussian with
 \begin{equation}\label{eq:sigz}
 \bm\Sigma_z(\Scal,\Gam_\Scal)=\sigma_n^2\bm I_r
@@ -161,6 +178,19 @@ problem with curl-SNR $\rho=3\sigma_c^2/\sigma_n^2$
 \cite{poor1994introduction} (supplement \S S1--S3 develops that line:
 detection thresholds, Fano converses, decorrelated detectors, plug-in
 estimation).
+
+\begin{definition}[Observational equivalence and identifiability]\label{def:id}
+Two pairs $(\Scal,\Gam_\Scal)$ and $(\Scal',\Gam_{\Scal'})$ are
+\emph{observationally equivalent} if
+$\bm\Sigma_z(\Scal,\Gam_\Scal)=\bm\Sigma_z(\Scal',\Gam_{\Scal'})$; a functional
+of $(\Scal,\Gam_\Scal)$ is \emph{identifiable} on an excitation class
+$\mathcal G$ if it is constant on each equivalence class with excitations in
+$\mathcal G$. The \emph{realized range} is
+$\Rcal(\Scal,\Gam_\Scal)=\im(\bm\Sigma_z-\sigma_n^2\bm I)
+=\im(\bm U_\Scal\Gam_\Scal^{1/2})\subseteq\im\bm U_\Scal$, always identifiable
+since it is a function of $\bm\Sigma_z$ alone; $\Rcal=\im\bm U_\Scal$ iff
+$\Gam_\Scal\succ0$.
+\end{definition}
 
 \section{Excitation-dependent identifiability}
 \begin{figure*}[!t]
@@ -196,14 +226,22 @@ $\bm M=\sum_{\tau\in\Scal}\gamma_\tau\bm u_\tau\bm u_\tau^{\!\top}$ and, by
 Lemma~\ref{lem:spark}, the map $(\Scal,\Gam_\Scal)\mapsto\bm\Sigma_z$ is
 injective: the weighted support is identifiable at \emph{any} rank deficiency
 of $\B_2$, including all $\binom n3$ triangles of $K_n$.
-\emph{(b) Arbitrary PSD.} If $\Gam_\Scal$ is unknown and unrestricted PSD,
-then $\{\bm M(\Scal,\Gam):\Gam\succeq0\}
-=\{\bm M\succeq0:\im\bm M\subseteq\im\bm U_\Scal\}$: the achievable
-covariance \emph{family} determines, and is determined by,
-$\im\B_{2,\Scal}$ --- so supports are distinguishable as composite
-hypotheses at most up to equal curl image, and nothing finer than the image
-is identifiable (pointwise, the image itself is identified when
-$\Gam_\Scal\succ0$; singular excitations can conceal part of it).
+\emph{(b) Arbitrary PSD.} A single covariance $\bm\Sigma_z$ identifies only
+the \emph{realized range}
+$\Rcal(\Scal,\Gam_\Scal)=\im(\bm U_\Scal\Gam_\Scal^{1/2})
+=\im(\bm\Sigma_z-\sigma_n^2\bm I)$, a subspace of $\im\bm U_\Scal$ with
+$\Rcal=\im\bm U_\Scal$ \emph{iff} $\Gam_\Scal\succ0$. Hence a full-rank
+excitation identifies the curl image $\im\B_{2,\Scal}$, but a rank-deficient
+$\Gam_\Scal$ can hide part of it --- and even the support: a strictly larger
+$\Scal'\supsetneq\Scal$ with a singular $\Gam'$ reproduces the same
+covariance. (On $K_4$, $\Scal=\{\tau_1\}$ and $\Scal'=\{\tau_1,\tau_2\}$ with
+$\Gam'=\mathrm{diag}(1,0)$ give identical $\bm\Sigma_z$ although
+$\dim\im\B_{2,\Scal}=1\ne2=\dim\im\B_{2,\Scal'}$.) So random signals alone
+recover neither the support nor the image; a full-rank excitation is needed
+for the image. The achievable family still satisfies
+$\{\bm M(\Scal,\Gam):\Gam\succeq0\}=\{\bm M\succeq0:\im\bm M\subseteq\im\bm U_\Scal\}$,
+but nested supports have overlapping families, so one observation does not
+pick out the support.
 \emph{(c) Projector excitation.} For
 $\Gam_\Scal=\sigma_c^2(\B_{2,\Scal}^{\!\top}\B_{2,\Scal})^{+}$,
 $\bm M=\sigma_c^2\bm P_{\im\bm U_\Scal}$ \emph{exactly}; supports with equal
@@ -223,8 +261,9 @@ numerical certificates: supplement \S S4, \texttt{tests/test\_excitation.py}.
 \end{proof}
 
 \begin{remark}[Scope]\label{rem:scope}
-(i) Deterministic unknown signals are the degenerate boundary of class (b):
-identifiability only modulo equal image. (ii) On $K_n$ with $\sigma_n$
+(i) Deterministic unknown signals are the rank-one degenerate boundary of
+class (b): the realized range is a single direction, so not even the image is
+seen. (ii) On $K_n$ with $\sigma_n$
 \emph{unknown}, class (a) retains exactly one ambiguous direction, since
 $\sum_{\tau\in\Tcal}\bm u_\tau\bm u_\tau^{\!\top}=n\bm I_r$: a uniform weight
 shift trades off against the noise floor. (iii) Class (b) delimits
@@ -234,19 +273,21 @@ $\im\B_{2,\Scal}$: without excitation structure, no method can do better.
 \end{remark}
 
 \begin{theorem}[The price in the isotropic class]\label{thm:price}
-Let $\Gam_\Scal=\sigma_c^2\bm I$, $\rho_2=\sigma_c^2/\sigma_n^2$. For
-\emph{any} clique complex: distinct binary supports with equal curl image
-satisfy $\|\bm M_\Scal-\bm M_{\Scal'}\|_F^2\ge 9\sigma_c^4$, with equality
-exactly for single-face differences (e.g.\ $\Scal'=\Scal\cup\{$fourth
-face$\}$), and $\ge16\sigma_c^4$ under equal cardinality (tetrahedral
-swaps). For fixed graph and support pair, as $\rho_2\to0$ the optimal-test
-Chernoff exponents are $\tfrac9{16}\rho_2^2(1+o(1))$ and
-$\rho_2^2(1+o(1))$ respectively --- and $\tfrac9{16}\rho_2^2$ \emph{equals}
-the isolated-triangle detection exponent $C(\rho)=\rho^2/16$ at
-$\rho=3\rho_2$: the hardest equal-image decision costs one isolated-triangle
-detection, so rank deficiency is free at the exponent level and only the
-Fano log-multiplicity of the $4\binom n4$ tetrad hypotheses
-($\asymp\log n$ on $K_n$) reflects the geometry.
+Let $\Gam_\Scal=\sigma_c^2\bm I$, $\rho_2=\sigma_c^2/\sigma_n^2$, and write the
+dimensionless signature Gram $\bm D_\Scal=\sum_{\tau\in\Scal}\bm u_\tau\bm u_\tau^{\!\top}$
+(so $\bm M_\Scal=\sigma_c^2\bm D_\Scal$). For \emph{any} clique complex:
+distinct binary supports with equal curl image satisfy
+$\|\bm D_\Scal-\bm D_{\Scal'}\|_F^2\ge 9$, with equality exactly for
+single-face differences (e.g.\ $\Scal'=\Scal\cup\{$fourth face$\}$), and
+$\ge16$ under equal cardinality (tetrahedral swaps). For fixed graph and
+support pair, as $\rho_2\to0$ the optimal-test Chernoff exponents are
+$C_G=\rho_2^2\|\Delta\bm D\|_F^2/16\,(1+o(1))$, i.e.\
+$\tfrac9{16}\rho_2^2(1+o(1))$ (subset) and $\rho_2^2(1+o(1))$ (swap) --- and
+$\tfrac9{16}\rho_2^2$ \emph{equals} the isolated-triangle detection exponent
+$C(\rho)=\rho^2/16$ at $\rho=3\rho_2$: the hardest equal-image decision costs
+one isolated-triangle detection, so rank deficiency is free at the exponent
+level and only the Fano log-multiplicity of the $4\binom n4$ tetrad
+hypotheses ($\asymp\log n$ on $K_n$) reflects the geometry.
 \end{theorem}
 \begin{proof}[Proof sketch]
 Separations: $\|\sum_\tau c_\tau\bm b_\tau\bm b_\tau^{\!\top}\|_F^2
@@ -254,12 +295,13 @@ Separations: $\|\sum_\tau c_\tau\bm b_\tau\bm b_\tau^{\!\top}\|_F^2
 share-an-edge adjacency --- an induced subgraph of the Johnson graph
 $J(n,3)$, so $\lambda_{\min}(\bm A)\ge-3$ by interlacing and
 $\mathrm{sep}\ge6\|\bm c\|^2$; enumerate $\|\bm c\|^2\in\{1,2\}$.
-Exponents: Bhattacharyya expansion
-$C_G=\tfrac1{16}\rho_2^2\|\Delta\bm M\|_F^2(1+o(1))$. Test-certified: swap
-$C_G/\rho_2^2$ within $6\times10^{-4}$ of $1$ and subset matching the
-single-triangle exponent to $3\times10^{-5}$ relative (at
-$\rho_2=10^{-4},10^{-5}$); separations exhaustive over all $2^{10}$
-supports of $K_5$. Proofs: supplement \S S4.
+Exponents: Bhattacharyya expansion gives
+$C_G=\rho_2^2\|\Delta\bm D\|_F^2/16\,(1+o(1))
+=\|\Delta\bm M\|_F^2/(16\sigma_n^4)\,(1+o(1))$ (the two forms coincide).
+Numerically checked: swap $C_G/\rho_2^2$ within $6\times10^{-4}$ of $1$ and
+subset matching the single-triangle exponent to $3\times10^{-5}$ relative (at
+$\rho_2=10^{-4},10^{-5}$); separations exhaustive over all $2^{10}$ supports
+of $K_5$. Proofs: supplement \S S4.
 \end{proof}
 
 \begin{proposition}[Edge-sharing marginal laws]\label{prop:gls}
@@ -277,37 +319,21 @@ so the joint law does not factorize; benchmarks, the naive-detector failure
 mode, and proofs are in supplement \S S1, S3.
 \end{proposition}
 
-\begin{figure}[!t]
-\centering
-\includegraphics[width=0.8\linewidth]{phase_transition.png}
-\caption{Recovery threshold in the isotropic class (edge-disjoint planted
-complex, gradient/harmonic nuisance present). Colour: empirical
-$P(\text{exact recovery})$; solid: the exact finite-sample product law of
-Prop.~\ref{prop:thresh}; dotted: the Bonferroni-corrected Chernoff floor
-($\delta\to\delta/p$), visibly the $1/\sqrt N$ law.}
-\label{fig:phase}
-\end{figure}
-
-\begin{proposition}[Detection thresholds through the reduction]\label{prop:thresh}
+\begin{proposition}[Detection and joint-recovery scalings]\label{prop:thresh}
 In the isotropic class, deciding one isolated triangle is the two-variance
 Gaussian test with variances $3\sigma_n^2$ vs.\
 $9\sigma_c^2+3\sigma_n^2$ \cite{poor1994introduction}: attaining error
 $\le\delta$ at the exponent level requires the curl-SNR scale
 $\rho\ge\rho^\star(N)=\Theta(\sqrt{\log(1/\delta)/N})$
-($C(\rho)=\rho^2/16+o(\rho^2)$ \cite{cover2006elements}). For pairwise
-edge-disjoint candidates the curl coordinates are independent and exact
-recovery obeys the \emph{exact} finite-sample product law
-$P(\hat\Scal=\Scal)=\prod_{\tau\in\Scal}(1-P_{\mathrm{miss}})
-\prod_{\tau\notin\Scal}(1-P_{\mathrm{fa}})$ with $\chi^2_N$ tails at the
-Bayes threshold --- its $50\%$ contour matches the empirical boundary to a
-median ratio $1.01$ (Fig.~\ref{fig:phase}). Recovering a uniformly random
-size-$k$ support among $p$ such candidates with error $\le\epsilon$ requires
+($C(\rho)=\rho^2/16+o(\rho^2)$ \cite{cover2006elements}). Recovering a
+uniformly random size-$k$ support among $p$ edge-disjoint candidates with
+error $\le\epsilon$ requires
 $N\ge[(1-\epsilon)\log\binom pk-\log2]/(k\,\mathrm{KL}_1)$,
 $\mathrm{KL}_1=(\rho-\log(1+\rho))/2$ (Fano): joint recovery pays a
-$\log\binom pk$ factor. Signal-agnostic and sub-Gaussian variants, partial
-edge observation ($q^{3k}$ laws), and plug-in calibration are developed and
-validated in supplement \S S1--S3; these scalings are classical
-\cite{wainwright2009information} --- what is problem-specific is the
+$\log\binom pk$ factor. Signal-agnostic and sub-Gaussian variants, the exact
+edge-disjoint product law, partial edge observation ($q^{3k}$ laws), and
+plug-in calibration are developed in supplement \S S1--S3; these scalings are
+classical \cite{wainwright2009information} --- what is problem-specific is the
 reduction that produces $\rho$ and the constants $(3,9)$.
 \end{proposition}
 
@@ -333,7 +359,7 @@ $\hat{\bm w}\to\bm w$ almost surely, and for every $N$,
 \end{equation}
 \end{theorem}
 \begin{proof}[Proof sketch]
-Three derived steps, each test-certified: (i) cone-constrained
+Three derived steps, each numerically checked: (i) cone-constrained
 least squares obeys the deterministic bound
 $\|\hat{\bm w}-\bm w\|_2\le
 2\|\hat{\bm\Sigma}_z-\bm\Sigma_z\|_F/\sigma_{\min}(\bm A)$
@@ -357,11 +383,14 @@ Wilson intervals (\texttt{run\_second\_order.py}; every cell, including the
 derived bound~\eqref{eq:bound} evaluated at that cell, is in the released
 JSON). Protocol notes: the headline threshold is the theorem's rule $w_{\min}/2$
 (planted weights known by design); an oracle-free \emph{largest-gap} rule is
-run alongside and logged per cell in the released JSON; the full edge-domain
-pipeline is used, so the gradient nuisance is present and annihilated by the
-projection; both baselines receive \emph{oracle} side information --- the
-subspace method the true $k$ and the true $\dim\im\B_{2,\Scal}$, the greedy
-fitter the true $\sigma_n$.
+run alongside and logged per cell --- it is \emph{worse} than the theorem's
+rule (grid-mean exact-recovery $0.63$ vs.\ $0.69$, ahead in only $18$ of
+$260$ cells), reported for completeness, not as an improvement. The full
+edge-domain pipeline is used, so the gradient nuisance is present and
+annihilated by the projection; the greedy comparator is a generic
+covariance-atom heuristic (not a tuned literature method), and both baselines
+receive \emph{oracle} side information --- the subspace method the true $k$
+and the true $\dim\im\B_{2,\Scal}$, the greedy fitter the true $\sigma_n$.
 
 (A)~NNLS is the only estimator attaining exact recovery in \emph{every}
 regime --- including maximal rank deficiency, e.g.\
@@ -423,10 +452,10 @@ triangle-widths per 4-day window; centering removes the window-mean flow, so
 the statistic responds to the time-varying circulation a moving vortex
 deposits. Validation (Fig.~\ref{fig:cyclone}B) against a \emph{same-field
 consistency reference} (finite-difference vorticity on the $3\times$-finer
-source grid) gives AUC $0.914$ (window-bootstrap $95\%$ CI
-$[0.895,0.933]$), and against the \emph{genuinely independent} IBTrACS
+source grid) gives AUC $0.914$ (moving-block bootstrap $95\%$ CI
+$[0.894,0.936]$), and against the \emph{genuinely independent} IBTrACS
 archive \cite{knapp2010ibtracs} --- $13$ storms, $726$ fixes --- AUC
-$0.920$ $[0.873,0.955]$, PR-AUC $0.494$ $[0.316,0.634]$ at prevalence
+$0.920$ $[0.879,0.951]$, PR-AUC $0.494$ $[0.273,0.666]$ at prevalence
 $1.8\%$, and P@$k=0.483$. Against a classical pointwise-vorticity baseline
 at the same information budget (mesh-node winds), the edge-flow statistic
 is better on \emph{all three} independent external metrics (baseline: AUC
@@ -439,7 +468,7 @@ supplement, not claimed as recovery evidence.
 
 \smallskip\noindent\emph{Limitations.} The i.i.d.-Gaussian snapshot model is
 an idealization of windowed weather; evaluation is therefore threshold-free
-ranking rather than support recovery, cluster (window) bootstrap intervals
+ranking rather than support recovery, moving-block bootstrap intervals
 quantify pooling uncertainty, and the internal reference is a same-field
 consistency check --- only IBTrACS is independent. The vorticity-threshold
 sensitivity of the internal AUC ($0.876$--$0.959$ over
@@ -483,13 +512,17 @@ exchange rates.
 
 \smallskip
 \noindent\textbf{Use of AI tools (disclosure per IEEE/SPS policy).}
-Substantial portions of the manuscript text, the source code, and the
-figures were generated with the assistance of an AI system (Claude,
-Anthropic), operating under the author's direction across iterative
-adversarial-review cycles. All mathematical statements were additionally
-verified by the released test suite (46 tests, including exhaustive and
-Monte-Carlo certificates for every quoted constant), and the full revision
-history is preserved unaltered in the public repository. The author takes
-full responsibility for the content.
+This preprint is an AI-assisted \emph{draft}: substantial portions of the
+manuscript text, the source code, and the figures were generated with the
+assistance of an AI system (Claude, Anthropic) under the author's direction
+across iterative adversarial-review cycles. Because IEEE/SPS policy does not
+permit AI-generated manuscript \emph{text}, the author will independently
+rewrite the manuscript before any formal submission and then disclose only
+the permitted uses (editing, code, visualization, and review feedback). All
+mathematical statements are checked by the released test suite (48 tests,
+including exhaustive and Monte-Carlo checks for every quoted constant), and
+the full revision history is preserved unaltered in the public repository ---
+git history is deliberately \emph{not} rewritten to obscure AI use. The
+author takes full responsibility for the content.
 
 \end{document}

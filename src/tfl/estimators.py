@@ -4,9 +4,11 @@ Mechanism (the reduction everything rests on; the identity itself is
 elementary — the detection-theoretic USE of HodgeRank's curl-as-inconsistency
 observation)
 -------------------------------------------
-Take the curl of the observed flow, ``c_t = B2.T f_t``. Because ``B2.T B1.T = 0``
-and the harmonic space is both curl- and divergence-free, the **gradient and
-harmonic nuisances are annihilated**:
+Take the curl of the observed flow, ``c_t = B2.T f_t``. The **gradient
+nuisance is annihilated unconditionally** (``B2.T B1.T = 0``); the **harmonic
+nuisance is annihilated when it is candidate-orthogonal** (``h in ker B2.T``,
+the standing model assumption -- a latent-complex harmonic not orthogonal to
+the full candidate curl space would leak):
 
     c_t = B2.T f_t = (B2.T B2_S) y_t + B2.T n_t .
 

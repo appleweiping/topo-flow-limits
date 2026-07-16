@@ -17,9 +17,9 @@
   "statistic": "temporally centered curl energy, area^2-normalized (vorticity scale); decorrelated (GLS, main Prop.1) variant reported for comparison",
   "internal_validation": {
     "auc": 0.9144878957030386,
-    "auc_ci95_window_bootstrap": [
-      0.8952854446321932,
-      0.9327830020043971
+    "auc_ci95_block_bootstrap": [
+      0.8940348585965328,
+      0.9358580459803882
     ],
     "vort_thresh_per_s": 3e-05,
     "n_positive": 711,
@@ -28,14 +28,14 @@
   },
   "external_validation": {
     "auc": 0.919632714361431,
-    "auc_ci95_window_bootstrap": [
-      0.8732705466077083,
-      0.9545624311467862
+    "auc_ci95_block_bootstrap": [
+      0.8791034355095659,
+      0.951260034433967
     ],
     "pr_auc": 0.4942804150706731,
-    "pr_auc_ci95_window_bootstrap": [
-      0.31586295753701654,
-      0.6337311432191783
+    "pr_auc_ci95_block_bootstrap": [
+      0.272859121790053,
+      0.666445640832643
     ],
     "n_cyclone_triangle_windows": 414,
     "precision_at_k": 0.4830917874396135,
@@ -51,9 +51,9 @@
   "baseline_coarse_fd_vorticity": {
     "auc_internal": 0.9476412862946713,
     "auc_external": 0.8976570596893494,
-    "auc_external_ci95_window_bootstrap": [
-      0.8366056916623392,
-      0.9432192111004828
+    "auc_external_ci95_block_bootstrap": [
+      0.8372778864327536,
+      0.9465063963151318
     ],
     "pr_auc_external": 0.3600813731599066,
     "precision_at_k_external": 0.3888888888888889,

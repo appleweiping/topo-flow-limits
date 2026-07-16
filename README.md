@@ -19,9 +19,11 @@ by the test suite before it is allowed into the manuscript.
 > support is identifiable at **any** rank deficiency of `B₂` — because the
 > lifted signatures `{b_τ b_τᵀ}` are *always* linearly independent (spark
 > lemma: two edges lie in at most one triangle);
-> **(b)** for unknown **arbitrary PSD** `Γ_S`, exactly the curl subspace
-> `im B₂,S` is identifiable and nothing finer — random signals per se do
-> **not** remove the rank obstruction;
+> **(b)** for **arbitrary PSD** `Γ_S`, a single covariance identifies only the
+> realized range `R = im(U_S Γ_S^½) ⊆ im B₂,S`, with `R = im B₂,S` **iff
+> `Γ_S ≻ 0`**: a *full-rank* excitation gives the curl image, but a *singular*
+> one hides part of it and even the support (K4 witness) — random signals per
+> se remove neither the support nor the image;
 > **(c)** at the **projector excitation** `Γ_S = σ_c²(B₂,Sᵀ B₂,S)⁺` the
 > covariance equals `σ_n²I + σ_c²P_im` **exactly**, so equal-image supports
 > are indistinguishable at every SNR and N.
@@ -35,7 +37,7 @@ by the test suite before it is allowed into the manuscript.
 > vanishes. On real data the same curl statistic **localizes genuine,
 > unplanted vortices** (ERA5 tropical cyclones; positioned as *vortex
 > localization*, not topology recovery), beating a classical baseline on all
-> three independent external metrics, with window-bootstrap CIs.
+> three independent external metrics, with moving-block bootstrap CIs.
 
 ---
 
@@ -141,11 +143,17 @@ with $a_t \sim \mathcal N(0,\sigma_g^2 I)$, triangle excitation
 $y_t \sim \mathcal N(0,\Gamma_S)$ (one coordinate per *active* triangle;
 the isotropic case $\Gamma_S=\sigma_c^2 I$ is trichotomy class (a)),
 harmonic $h_t$, and $n_t \sim \mathcal N(0,\sigma_n^2 I)$. Only the
-snapshots $f_t$ are observed; the task is to recover $S$. The isotropic
-special case is the model that algorithmic formulations implicitly adopt
-(e.g. Gurugubelli & Chepuri, EUSIPCO 2024) — the trichotomy characterizes
-when their task is solvable and when it provably is not (honesty note 10). Implementation: `src/tfl/generative.py` (`sample_flows`, `FlowParams`,
-planted-complex builders).
+snapshots $f_t$ are observed; the task is to recover $S$. Prior generative
+models are special cases of this general `Γ_S`: e.g. Gurugubelli & Chepuri
+(EUSIPCO 2024) draw the triangle signal *smooth w.r.t. the Hodge Laplacian*,
+`y ~ N(0, L₂⁺)` with `L₂ = B₂ᵀB₂` — which is exactly the **projector
+excitation** (trichotomy case (c)), the second-order-**unidentifiable** case;
+their MAP works only through its sparsity prior. The trichotomy says when the
+latent structure is recoverable at all. The harmonic nuisance `h_t` is taken
+**candidate-orthogonal**, `h_t ∈ ker B₂ᵀ` (so it is annihilated by the curl
+projection; the gradient part is annihilated unconditionally since
+`B₂ᵀB₁ᵀ = 0`). Implementation: `src/tfl/generative.py` (`sample_flows`,
+`FlowParams`, planted-complex builders).
 
 The single most important structural fact (the curl-annihilation identity,
 main paper §2):
@@ -260,8 +268,9 @@ verified in `tests/test_excitation.py`):
 | Excitation class | Identifiable object | Mechanism |
 |---|---|---|
 | `Γ_S` positive **diagonal** (known or unknown) | the **weighted support** `(S, γ)` — at any rank deficiency | lifted spark: atoms `{b_τ b_τᵀ}` always LI; weights read off the covariance. On `K_n` with σ_n *unknown*: exactly one ambiguous direction, since `Σ_τ u_τu_τᵀ = n·I_r` |
-| `Γ_S` unknown **arbitrary PSD** | exactly `im B₂,S` — nothing finer | `{U_S Γ U_Sᵀ : Γ⪰0} = {M⪰0 : im M ⊆ im U_S}`; an equal-image `S'` matches ANY covariance of `S` with a PSD `Γ'` |
-| `Γ_S = σ_c²(B₂,Sᵀ B₂,S)⁺` (**projector**) | equal-image supports **indistinguishable** at every SNR/N | `B_S G_S⁺ B_Sᵀ = P_im` exactly ⇒ identical covariances |
+| `Γ_S` **full-rank** arbitrary PSD (`Γ_S ≻ 0`) | the curl **image** `im B₂,S` | realized range `R = im(U_S Γ_S^½) = im U_S` when `Γ_S ≻ 0` |
+| `Γ_S` **singular** arbitrary PSD | only the **realized range** `R = im(U_S Γ_S^½) ⊊ im U_S` — *not the support* | a larger `S' ⊋ S` with a rank-deficient `Γ'` reproduces the same covariance. K4 witness: `S={τ1}`, `S'={τ1,τ2}`, `Γ'=diag(1,0)` give identical `Σ_z` yet `dim im B₂,S = 1 ≠ 2`. So random signals alone recover *neither* support nor image |
+| `Γ_S = σ_c²(B₂,Sᵀ B₂,S)⁺` (**projector**) | equal-image supports **indistinguishable** at every SNR/N | `B_S G_S⁺ B_Sᵀ = P_im` exactly ⇒ identical covariances. **This is exactly the Hodge-smoothness prior `Γ=L₂⁺` used by prior topology learning (Gurugubelli–Chepuri 2024)** — second-order-unidentifiable; it works only via their sparsity prior |
 
 The α-interpolation `Γ_α = (1−α)I + α(B_SᵀB_S)⁺` connects (a) to (c)
 continuously: the equal-image covariance gap shrinks to zero as α→1, and
@@ -276,12 +285,15 @@ no method can identify `S`.
 threshold `w_min/2`. Consistent, with the fully explicit failure bound
 `P(Ŝ≠S) ≤ 16[(trΣ)² + ‖Σ‖_F²]/(N σ_min(A)² w_min²)` — every constant
 derived (cone-LS perturbation + exact Wishart moment + Markov) and
-test-certified; conservative by design (Markov), the empirical transition is
-~an order of magnitude earlier. Validated on K4–K8, random supports, full
+numerically checked; conservative by design (Markov), the empirical
+transition is ~an order of magnitude earlier. The per-cell bound is the
+**worst case over the trial supports** (not one representative), so it upper-bounds
+every trial. Validated on K4–K8, random supports, full
 (N, ρ₂) grid, 200 trials/cell, 95% Wilson CIs, vs an *oracle-aided*
 matched-subspace baseline (population scores tie on dependent candidates —
 its finite-N tie-breaking rides on eigen-anisotropy and dies under projector
-excitation) and the greedy atom fitter (stalls where atoms overlap: 0.43 on
+excitation) and a *generic* greedy atom-fitting heuristic (not a tuned
+literature baseline; stalls where atoms overlap: 0.43 on
 K5 at N=400 vs NNLS 1.00). See `results/second_order.json`.
 
 #### The price within class (a) — corrected constants (formerly "R5")
@@ -309,9 +321,9 @@ the boundary-of-(b) and class-(a) cases:
   $\{b_\tau b_\tau^\top\}$ are *always* linearly independent — the covariance
   map $S \mapsto \Sigma(S)$ is **injective**, and every support is identifiable
   from i.i.d. snapshots **at any rank deficiency** (exhaustively verified over
-  all $2^4$ supports of $K_4$; the second-order greedy/lasso estimators
-  `greedy_support` / `sparse_curl_covariance_support` are the achievers, and
-  recover exact supports on rank-deficient $K_5$ — `test_second_order_recovery_succeeds_in_rank_deficient_regime`).
+  all $2^4$ supports of $K_4$; the achiever is the lifted-covariance
+  **NNLS** estimator `nnls_lifted_support`, which recovers exact supports on
+  rank-deficient $K_5$–$K_8$).
 - **The price (sample complexity).** Telling a confuser pair apart costs
   $N^\star \sim \log(1/\delta)/C_G$ snapshots, $C_G$ = the Gaussian Chernoff
   information between the two curl-domain covariances. The tetrahedron hosts
@@ -323,12 +335,16 @@ the boundary-of-(b) and class-(a) cases:
   $|S|$, and the hosting tetrahedron), and the **subset** confuser $S$ vs
   $S\cup\{\text{4th face}\}$ with $\|u_4 u_4^\top\|_F^2 = 9$ — the
   **unrestricted minimum** (an earlier revision wrongly claimed 16 here; see
-  honesty note 7). The Bhattacharyya expansion
-  $C_G = (\rho_2^2/16)\|\Delta M\|_F^2\,(1+o(1))$ gives exponents $\rho_2^2$
-  (swap; test-certified within $6\times10^{-4}$ of 1 at $\rho_2=10^{-4}$)
+  honesty note 7). With the **dimensionless** signature Gram
+  $D_S=\sum_{\tau\in S} u_\tau u_\tau^\top$ (so $M_S=\sigma_c^2 D_S$), the
+  Bhattacharyya expansion
+  $C_G = (\rho_2^2/16)\|\Delta D\|_F^2\,(1+o(1)) = \|\Delta M\|_F^2/(16\sigma_n^4)\,(1+o(1))$
+  (the two coincide; do **not** write $\rho_2^2\|\Delta M\|^2$, which
+  double-counts $\sigma_c^4$) gives exponents $\rho_2^2$
+  (swap; numerically checked within $6\times10^{-4}$ of 1 at $\rho_2=10^{-4}$)
   and $(9/16)\rho_2^2$ (subset) — and
   $(9/16)\rho_2^2$ **equals the isolated-triangle detection exponent**
-  $C(\rho)=\rho^2/16$ at $\rho=3\rho_2$ (test-certified to $3\times10^{-5}$
+  $C(\rho)=\rho^2/16$ at $\rho=3\rho_2$ (numerically checked to $3\times10^{-5}$
   relative at $\rho_2=10^{-5}$ —
   `test_subset_confuser_exponent_equals_isolated_triangle_exponent`).
   So the hardest equal-image decision costs, at the exponent level, exactly
@@ -349,7 +365,7 @@ over $\ker B_2$ remain open (paper §6, open problems).
 
 ### R6 — Curl-based vortex localization on real data (cyclones), plus real-geometry checks
 
-**The flagship real-data result (Figure 3): curl-based vortex localization** ---
+**The flagship real-data result (Figure 2): curl-based vortex localization** ---
 a genuine, unplanted higher-order signal localized in nature (a
 localization/ranking task, deliberately *not* claimed as filled-triangle
 topology recovery). ERA5 10m winds over the Western North Pacific
@@ -363,7 +379,7 @@ vorticity, a different functional of the same winds (internal, quantitative:
 **AUC 0.914**, Spearman 0.77) — and the **genuinely independent** IBTrACS
 best-track cyclone archive (external, agency-verified:
 **AUC 0.920**, PR-AUC 0.494 at 1.8 % prevalence, precision@k 0.48, with
-storm/window cluster-bootstrap 95 % CIs in the figure and JSON). The mesh is simply connected, so $B_2$ has
+moving-block bootstrap 95 % CIs in the figure and JSON). The mesh is simply connected, so $B_2$ has
 full column rank by Euler's formula — the class-(a) favorable-geometry
 regime of the excitation trichotomy, with no confusers. Detection degrades as the snapshot budget
 shrinks (uniformly centered statistic, $N \ge 3$); the budget panel carries no
@@ -391,10 +407,12 @@ the geometry-aware marginal laws of R4 on real geometry).
 All are regenerated by `experiments/run_all.py` (~30–45 min for all 9
 figures, CPU) into `results/figures/`; the copies in `paper/figures/` used by
 the manuscript are a manual copy of these outputs (kept in sync whenever
-figures change). **Paper figures**: Fig. 1 = `second_order.png`, Fig. 2 =
-`phase_transition.png`, Fig. 3 = `real_cyclone.png`. The confusability,
-traffic, and FX figures are repo-only (the supplement's own figures are
-the Fano, partial-sampling, and plug-in panels).
+figures change). **Paper figures** (2, both full-width): Fig. 1 = `second_order.png`,
+Fig. 2 = `real_cyclone.png`. The phase-transition, confusability, traffic, and
+FX figures are repo-only (the supplement's own figures are the Fano,
+partial-sampling, and plug-in panels); the old phase-transition main-text
+branch was cut in the 2026-07 method revision to make room for rigorous
+definitions.
 
 ### Paper Figure 1 — `second_order.png` (achievability + α-interpolation)
 
@@ -414,7 +432,7 @@ made visible. Produced by
 `experiments/run_second_order.py`, all cells (with the derived bound) in
 `results/second_order.json`.
 
-### Paper Figure 2 — `phase_transition.png` (recovery threshold)
+### Repo figure — `phase_transition.png` (recovery threshold; not in the 4-page paper)
 
 Heatmap of the empirical probability of *exact* filled-triangle recovery on an
 edge-disjoint planted complex (8 candidates, 4 active, gradient+harmonic nuisance
@@ -440,7 +458,7 @@ union bound (dotted) lower-bounds it, conservatively in the transition region.
 Produced by `experiments/run_confusability.py`, metrics in
 `results/confusability.json`.
 
-### Paper Figure 3 — `real_cyclone.png` (curl-based VORTEX LOCALIZATION)
+### Paper Figure 2 — `real_cyclone.png` (curl-based VORTEX LOCALIZATION)
 
 **Task framing (2026-07 revision): this is curl-based *vortex
 localization*, not filled-triangle topology recovery** — the mesh has no
@@ -454,8 +472,8 @@ Euler) for one 4-day window, with independent IBTrACS fixes circled in red.
 **(B)** ROC pooled over all 15 windows against two references — internal
 *same-field consistency* (finite-difference vorticity, a different
 functional of the same winds at 3× finer resolution): **AUC 0.914**
-[window-bootstrap 95% CI 0.895–0.933]; external, genuinely independent
-IBTrACS: **AUC 0.920** [0.873–0.955], **PR-AUC 0.494** [0.316–0.634] at
+[moving-block bootstrap 95% CI 0.894–0.936]; external, genuinely independent
+IBTrACS: **AUC 0.920** [0.879–0.951], **PR-AUC 0.494** [0.273–0.666] at
 prevalence 1.8%, P@k 0.483, Spearman(score, |ζ|) = 0.77. Baseline (coarse
 pointwise vorticity, same information budget): external AUC 0.898, PR-AUC
 0.360, P@k 0.389 — **ours wins on all three independent external metrics**;
@@ -481,7 +499,7 @@ edge-disjoint product law (R3) on real-derived geometry — the real
 constant-background equilibrium flow is removed *exactly* by centering
 (df $N-1$) and the gradient/harmonic nuisances are annihilated by the curl
 map, so the surviving statistical problem is synthetic. The genuine real-data
-recovery evidence is Figure 3.
+recovery evidence is Figure 2.
 **(C)** Planted recovery on EMA — the panel that actually exercises R4's
 geometry-aware machinery on real geometry: 10 edge-sharing pairs make $G$
 non-diagonal and the per-triangle laws heterogeneous
@@ -578,7 +596,8 @@ topo-flow-limits/
 │   ├── run_second_order.py       PAPER FIG 1: NNLS achievability grid
 │   │                         (K4-K8, random supports, Wilson CIs) + alpha
 │   │                         sweep + second_order.json (~15-25 min)
-│   ├── run_phase_transition.py   paper Fig 2 + phase_transition.json
+│   ├── run_phase_transition.py   repo figure + phase_transition.json (out of
+│   │                             the 4-page paper; supplement S1 references it)
 │   ├── run_confusability.py      repo figure + confusability.json (confuser
 │   │                             exponents; quoted as text in the paper)
 │   ├── run_real_cyclone.py       PAPER FIG 3: curl-based vortex localization
@@ -593,7 +612,7 @@ topo-flow-limits/
 │   ├── run_plugin.py             supplement S3 figure + plugin.json
 │   └── run_all.py                one-click: all of the above from fixed seeds
 │
-├── tests/                    46 tests — the theorems' guardrails (see §8)
+├── tests/                    48 tests — the theorems' guardrails (see §8)
 │   ├── test_hodge.py
 │   ├── test_theory_vs_sim.py
 │   ├── test_excitation.py    the trichotomy + NNLS guardrails (10 tests:
@@ -626,10 +645,10 @@ topo-flow-limits/
 │   └── fetch_ibtracs.py      refetch from NOAA NCEI (v04r01)
 │
 ├── results/                  regenerated by run_all.py
-│   ├── figures/              9 PNGs: 3 main-paper (second_order, phase_transition,
+│   ├── figures/              9 PNGs: 2 main-paper (second_order,
 │   │                         real_cyclone) + 3 supplement (fano_bounds,
-│   │                         partial_sampling, plugin) + 3 repo-only
-│   │                         (confusability, real_traffic, real_fx)
+│   │                         partial_sampling, plugin) + 4 repo-only
+│   │                         (phase_transition, confusability, real_traffic, real_fx)
 │   └── *.json                all numbers quoted in the paper + supplement
 │
 └── paper/
@@ -658,7 +677,7 @@ cd topo-flow-limits
 uv venv --python 3.11 .venv
 uv pip install --python .venv\Scripts\python.exe numpy scipy networkx cvxpy matplotlib pandas pytest
 
-# 1) validate all theory against Monte-Carlo (46 tests; ~3-5 min)
+# 1) validate all theory against Monte-Carlo (48 tests; ~3-5 min)
 .\.venv\Scripts\python.exe -m pytest -q
 
 # 2) regenerate every figure and metric (~30-45 min, 8 experiments)
@@ -745,7 +764,9 @@ Expected `run_all.py` output (seeds are fixed; numbers reproduce exactly):
 | `test_rho2_definition_links_first_and_second_order_snr` | $\rho_2 = \sigma_c^2/\sigma_n^2$ bookkeeping ($\rho = 3\rho_2$) |
 | `test_diagonal_excitation_weighted_support_identifiable` | Trichotomy (a): weights read off the covariance exactly (atoms full rank) |
 | `test_kn_unknown_noise_ambiguity_direction` | Trichotomy (a) caveat: $\sum_\tau u_\tau u_\tau^\top = n I_r$ on $K_5$–$K_7$ |
-| `test_arbitrary_psd_excitation_only_image_identifiable` | Trichotomy (b): equal-image $S'$ matches any $S$-covariance with a PSD $\Gamma'$ |
+| `test_arbitrary_psd_equal_image_families_overlap` | Trichotomy (b): equal-image $S'$ matches any $S$-covariance with a PSD $\Gamma'$ (family overlap) |
+| `test_singular_gamma_hides_image_and_support` | Trichotomy (b): singular $\Gamma'$ makes a *larger* $S'$ reproduce $S$'s covariance (K4); realized range, not image/support, is identified |
+| `test_full_rank_gamma_identifies_image` | Trichotomy (b): $\Gamma \succ 0 \Rightarrow$ realized range $=$ full curl image |
 | `test_projector_excitation_equal_image_indistinguishable` | Trichotomy (c): $B_S G_S^+ B_S^\top = P_{\rm im}$ exactly; identical covariances |
 | `test_separation_identity_and_johnson_eigenvalue_bound` | sep $= c^\top(9I{+}A)c$; $\lambda_{\min}(A) \ge -3$ on $K_4$–$K_7$ + random complexes |
 | `test_nnls_consistency_and_recovery_bound_components` | NNLS theorem steps: exact Wishart moment (±6%), cone-LS bound (0 violations in 220 trials), contraction |
@@ -771,7 +792,7 @@ must beat a Monte-Carlo cross-examination before it is cited in the manuscript.
   `amount`/`start_date`/`end_date` bookkeeping keys. The shipped file starts with a
   UTF-8 BOM (it was cached via PowerShell), which is why the loaders read it with
   the `utf-8-sig` codec — plain `json.load(open(...))` would choke on the BOM.
-**ERA5 winds + IBTrACS cyclones (Figure 3 — the vortex-localization study):**
+**ERA5 winds + IBTrACS cyclones (Figure 2 — the vortex-localization study):**
 
 - **Winds**: ERA5 reanalysis (Hersbach et al. 2020), 10m u/v components, from
   the public [ARCO-ERA5](https://github.com/google-research/arco-era5) archive
@@ -830,8 +851,9 @@ predicted budget.
 
 | Work | What it does | What it does *not* do |
 |---|---|---|
-| Barbarossa & Sardellitti 2020; Yang et al. 2022 (TSP filters); Schaub et al. 2020 | Builds the Hodge-Laplacian signal-processing toolbox | Assumes the filled-triangle set is **known** |
-| Gurugubelli & Chepuri, EUSIPCO 2024 (sparse clique sampling, MAP); greedy topology learning (arXiv 2502.20159); sparse cell complexes (arXiv 2309.01632) | **Algorithms** that estimate the filled set from flows | No identifiability conditions, no sample-complexity or SNR thresholds, no converse |
+| Barbarossa & Sardellitti 2020 (TSP), §VII PCA-BFMTV | **Covariance/PCA precedent**: infers filled triangles from the *sample covariance* of edge flows (eigendecomposition + total-variation) | An *algorithm*, no identifiability conditions — no statement of *when* the covariance determines the support, no sample-complexity/SNR threshold, no converse |
+| Yang et al. 2022 (TSP filters); Schaub et al. 2020 | Builds the Hodge-Laplacian signal-processing toolbox | Assumes the filled-triangle set is **known** |
+| Gurugubelli & Chepuri, EUSIPCO 2024 (sparse clique sampling, MAP); greedy topology learning (arXiv 2502.20159); sparse cell complexes (arXiv 2309.01632) | **Algorithms** that estimate the filled set from flows | No identifiability conditions, no sample-complexity/SNR thresholds, no converse. G–C's generative model `y~N(0,L₂⁺)` is precisely the **projector excitation** our trichotomy proves second-order-**unidentifiable** — recoverable only via their sparsity prior |
 | Marinucci et al. 2025 (topological adaptive LMS) | Online estimation over simplicial complexes, edge-sampling design | Complex structure assumed known; lists structure-discovery as future work |
 | Hypergraph/simplicial SBM detectability (e.g. arXiv 2312.00708, 2108.06547) | Phase transitions for community detection when the **structure itself is observed** | Different observation model: our structure is *latent* and observed only through flow curls |
 | High-dimensional support-recovery / sparse-covariance detection limits (Wainwright 2009; Amini & Wainwright 2009; Berthet & Rigollet 2013; Cai-Zhang-Zhou 2010) | The generic information-theoretic machinery (Fano log-factors, variance-detection scalings) we **specialize** — cited as such in the paper | No simplicial/curl geometry: nothing about $B_2$, Gram leakage, $\ker B_2$ confusers, or the lifted-atom spark that drives our trichotomy's class-(a) identifiability |
@@ -914,15 +936,46 @@ Stated plainly, because reviewers (and users) deserve to know:
 10. **The 2026-07 method-level revision.** An earlier revision claimed that
    "random signals" per se make every support identifiable at any rank
    deficiency. That is true only for *structured* excitations: the claim was
-   implicitly scoped to isotropic `Γ_S = σ_c²I` and is **false for general
-   PSD excitation** (case (b): only `im B₂,S` is identifiable; case (c):
-   projector excitation makes equal-image supports exactly
-   indistinguishable). The main theorem is now the excitation trichotomy,
-   with the earlier isotropic results retained as the diagonal class. The
-   revision also removed the "same generative family as prior work" claim
-   (prior work is the isotropic special case), retitled the paper
-   accordingly, renamed the cyclone study to vortex localization, and
-   removed an arbitrary-units theory-floor overlay from its budget panel.
+   implicitly scoped to isotropic `Γ_S = σ_c²I`. The main theorem is now the
+   excitation trichotomy, with the earlier isotropic results retained as the
+   diagonal class. The revision retitled the paper, renamed the cyclone study
+   to vortex localization, and removed an arbitrary-units theory-floor overlay
+   from its budget panel.
+11. **The 2026-07 second correction (this revision).** A subsequent hostile
+   read caught five further errors, all fixed here — again visible, not
+   silently patched:
+   - **Case (b) was still wrong.** We had claimed arbitrary PSD `Γ_S`
+     identifies "exactly `im B₂,S`". False for **singular** `Γ_S`: one
+     covariance identifies only the *realized range* `R = im(U_S Γ_S^½) ⊆ im
+     U_S`, with `R = im U_S` **iff `Γ_S ≻ 0`**. A rank-deficient `Γ_S` hides
+     part of the image and even the support — K4 witness `S={τ1}` vs
+     `S'={τ1,τ2}`, `Γ'=diag(1,0)`, identical `Σ_z`, different image dim
+     (`test_singular_gamma_hides_image_and_support`). So only a *full-rank*
+     excitation gives the image; random signals alone give neither.
+   - **Prior work mis-cast.** Gurugubelli–Chepuri (EUSIPCO 2024) do **not**
+     use isotropic excitation — their generative model is `y ~ N(0, L₂⁺)`,
+     `L₂ = B₂ᵀB₂`, i.e. the **projector excitation** (case (c), the
+     unidentifiable one). The "prior work is the isotropic special case" claim
+     was removed. Barbarossa–Sardellitti 2020 §VII (PCA-BFMTV) is a genuine
+     covariance/PCA precedent for filled-triangle inference and is now cited
+     as such.
+   - **Chernoff dimension.** The exponent was written `C_G =
+     (ρ₂²/16)‖ΔM‖_F²`, double-counting `σ_c⁴`. Correct: `C_G =
+     (ρ₂²/16)‖ΔD‖_F² = ‖ΔM‖_F²/(16σ_n⁴)` with the dimensionless
+     `D_S = Σ u_τu_τᵀ`.
+   - **Harmonic assumption.** Curl annihilation kills the harmonic nuisance
+     only for `h ∈ ker B₂ᵀ`; the model now states this candidate-orthogonal
+     assumption explicitly (the gradient part is killed unconditionally).
+   - **largest-gap ≠ better.** The oracle-free largest-gap threshold is
+     *worse* than the theorem's `w_min/2` rule (grid-mean 0.63 vs 0.69, ahead
+     in only 18/260 cells); an earlier note claiming it beat the oracle was
+     wrong and is retracted. The per-cell failure bound is now the
+     **worst-case over the trial supports**, not one representative.
+   - Also: the sample-complexity gap over the single-triangle budget is a
+     **constant** factor (both `Θ(1/ρ₂²)` at low SNR), not `1/ρ₂`; the old
+     phase-transition main-text branch was cut; and "test-certified"/
+     "certifying every constant" language was replaced with "numerically
+     checked".
 
 ---
 
@@ -1044,7 +1097,7 @@ pdflatex supplement && pdflatex supplement
       projector), a lifted-covariance **NNLS estimator** with consistency +
       explicit $O(1/N)$ failure bound on a K4–K8 random-support grid, the
       cyclone study repositioned as **vortex localization** (PR-AUC, baselines,
-      cluster-bootstrap CIs), and the page-5 compliance statements.
+      moving-block bootstrap CIs), and the page-5 compliance statements.
       **Done: main Thm. 1–3 / `tests/test_excitation.py` / `run_second_order.py`.**
 
 Remaining open problems (deliberately left for a journal version): sharp
@@ -1081,18 +1134,23 @@ curl detectors (supplement Rem. S2.3), and temporal dependence
    （所以不叫"白化"），联合恢复概率一般**不**分解——严格保证由 union bound
    给出，乘积式只是独立近似（与蒙特卡洛全程相差 ≤0.03）；
 4. **主定理——激励依赖的可辨识性三分**（2026-07 方法级修订；修正了早期
-   版本"随机信号自动消除秩障碍"的过强结论，见诚实注记 7、10）。设三角
+   版本"随机信号自动消除秩障碍"的过强结论，见诚实注记 7、10、11）。设三角
    激励 $y_S\sim N(0,\Gamma_S)$，$\Gamma_S$ 半正定：
    - **(a) 正对角 $\Gamma_S$（已知或未知）**：**带权支持集在任意秩亏下
      可辨识**。**提升火花引理**：一对不同的边至多属于一个公共三角形，故
      原子 $\{b_\tau b_\tau^\top\}$ **永远线性无关** ⇒ 权重可从协方差直接
      读出（$K_n$ 上若 $\sigma_n$ 未知恰有一维歧义：
      $\sum_\tau u_\tau u_\tau^\top=nI_r$）。配套估计器：**提升协方差
-     NNLS**（一致 + 全显式 $O(1/N)$ 失败界，常数全部推导并测试认证）；
-   - **(b) 未知任意 PSD $\Gamma_S$**：只有旋度子空间 $\mathrm{im}\,B_{2,S}$
-     可辨识——**随机性本身并不消除秩障碍**；等像 $S'$ 总能用某个 PSD
-     $\Gamma'$ 精确匹配 $S$ 的任何协方差；
-   - **(c) 投影激励 $\Gamma_S=\sigma_c^2(B_{2,S}^\top B_{2,S})^+$**：协方差
+     NNLS**（一致 + 全显式 $O(1/N)$ 失败界，常数全部推导并数值核验）；
+   - **(b) 任意 PSD $\Gamma_S$**：单个协方差只能辨识**实现秩空间**
+     $R=\mathrm{im}(U_S\Gamma_S^{1/2})\subseteq\mathrm{im}\,U_S$，且
+     $R=\mathrm{im}\,U_S$ **当且仅当 $\Gamma_S\succ0$**。故**满秩**激励可辨识
+     旋度像 $\mathrm{im}\,B_{2,S}$；但**奇异** $\Gamma_S$ 连支持集都藏得住：
+     更大的 $S'\supsetneq S$ 配奇异 $\Gamma'$ 可复现同一协方差（$K_4$ 反例
+     $S=\{\tau_1\}$、$S'=\{\tau_1,\tau_2\}$、$\Gamma'=\mathrm{diag}(1,0)$，
+     协方差相同而像维数 $1\ne2$）——**随机性本身既不给支持集也不给像**；
+   - **(c) 投影激励 $\Gamma_S=\sigma_c^2(B_{2,S}^\top B_{2,S})^+$**（正是
+     Gurugubelli–Chepuri 2024 用的 Hodge 光滑先验 $\Gamma=L_2^+$）：协方差
      恰为 $\sigma_n^2 I+\sigma_c^2 P_{\mathrm{im}}$，等像支持集在任何
      SNR、任何 $N$ 下**完全不可分**。$\alpha$-插值实验
      （$\Gamma_\alpha=(1-\alpha)I+\alpha(B_S^\top B_S)^+$）中解析间隙连续
@@ -1139,7 +1197,7 @@ $q^{3k}$ 因子极其残酷（Anaheim 上 $q=0.9$ 即摧毁恢复），且瓶颈
 全分辨率有限差分涡度（内部定量：**AUC 0.914**，Spearman 0.77）与 IBTrACS
 台风最佳路径档案（外部、机构核验、与再分析完全独立；覆盖 Bavi、Maysak、
 Haishen 等 13 个风暴：**AUC 0.920**，PR-AUC 0.494（阳性率 1.8%），
-precision@k 0.48，附风暴/窗口聚类 bootstrap 95% CI）。网格单连通 ⇒
+precision@k 0.48，附时序 moving-block bootstrap 95% CI（块长 3 窗口，尊重风暴尺度序列相关）。网格单连通 ⇒
 $B_2$ 满列秩（Euler 公式）⇒ 激励三分定理 (a) 类的有利几何侧，无混淆对。降采样快照
 预算后检测质量随之下降（统一使用中心化统计量、$N\ge3$；面板不再叠加
 任意单位的理论下限曲线——2026-07 修订中已删除，不宣称定量跟踪
@@ -1158,7 +1216,7 @@ $28/84=1/3$ 落在 $3/n$ 曲线上（这一半是真实的几何测量）。
 （$G$ 非对角、10 对共边三角形——真正让几何感知边际律干活的面板）。
 种植实验的真实成分是几何；真正未种植的恢复证据见 ①。
 
-**复现**：`pytest -q`（46 个测试，约 3–5 分钟，每条定理都对照蒙特卡洛验证）；
+**复现**：`pytest -q`（48 个测试，约 3–5 分钟，每条定理都对照蒙特卡洛验证）；
 `python experiments/run_all.py`（约 30–45 分钟重生成全部 9 张图）；
 论文在 `paper/main.pdf`（ICASSP 官方 spconf 格式，4 页正文 + 第 5 页参考
 文献与合规声明），补充材料在 `paper/supplement.pdf`（11 页）。全程只需 CPU。

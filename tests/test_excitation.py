@@ -24,7 +24,9 @@ from tfl.limits import (
     lifted_atom_matrix,
     nnls_recovery_bound,
     projector_excitation_gamma,
+    realized_range_dim,
     share_edge_adjacency,
+    singular_gamma_equal_covariance_witness,
 )
 
 
@@ -78,10 +80,11 @@ def test_kn_unknown_noise_ambiguity_direction():
         assert np.allclose(total, n * np.eye(U.shape[0]), atol=1e-9)
 
 
-def test_arbitrary_psd_excitation_only_image_identifiable():
+def test_arbitrary_psd_equal_image_families_overlap():
     """(b) unknown arbitrary PSD Γ: an equal-image support S' can match ANY
-    covariance produced by S, with a PSD Γ' — so nothing finer than
-    im B_{2,S} is identifiable in this class."""
+    covariance produced by S, with a PSD Γ' — so the achievable covariance
+    families overlap and equal-image supports are indistinguishable. (This
+    does NOT say the image is identifiable; see the singular-Γ test below.)"""
     cx = complete_complex(5)
     _, B2 = build_incidences(cx)
     s3, s4 = tetra_confuser_supports(cx, B2)
@@ -95,6 +98,45 @@ def test_arbitrary_psd_excitation_only_image_identifiable():
     Gam_p = B4p @ M @ B4p.T             # candidate matching excitation for S4
     assert np.linalg.norm(B4 @ Gam_p @ B4.T - M) < 1e-9
     assert np.min(np.linalg.eigvalsh(Gam_p)) > -1e-10   # PSD
+
+
+def test_singular_gamma_hides_image_and_support():
+    """(b) SINGULAR Γ: a single covariance identifies only the realized range
+    R = im(U_S Γ^{1/2}), NOT the candidate image im B_{2,S}. On K4, S={τ1}
+    and S'={τ1,τ2} with Γ'=diag(1,0) give IDENTICAL covariances although the
+    candidate-image dimensions differ (1 vs 2) — so neither the image nor the
+    support is identifiable without a full-rank excitation."""
+    cx = complete_complex(4)
+    _, B2 = build_incidences(cx)
+    U = curl_domain_signatures(B2)
+    Sig_S, Sig_Sp, sS, sSp = singular_gamma_equal_covariance_witness(
+        U, tau_in=0, tau_extra=1, sigma_noise=1.0)
+    # identical covariances ...
+    assert np.linalg.norm(Sig_S - Sig_Sp) < 1e-12
+    # ... but different candidate images
+    assert np.linalg.matrix_rank(B2[:, sS]) == 1
+    assert np.linalg.matrix_rank(B2[:, sSp]) == 2
+    # the realized range is what is actually seen: rank 1 for both
+    assert realized_range_dim(U, sS, np.array([[1.0]])) == 1
+    assert realized_range_dim(U, sSp, np.diag([1.0, 0.0])) == 1
+
+
+def test_full_rank_gamma_identifies_image():
+    """(b) NONSINGULAR Γ: the realized range equals the full candidate image,
+    R = im U_S, so a positive-definite arbitrary excitation DOES identify
+    im B_{2,S} (equality R = im U_S holds iff Γ ≻ 0)."""
+    cx = complete_complex(5)
+    _, B2 = build_incidences(cx)
+    U = curl_domain_signatures(B2)
+    s3, _ = tetra_confuser_supports(cx, B2)
+    k = int(s3.sum())
+    rng = np.random.default_rng(3)
+    X = rng.standard_normal((k, k))
+    Gam_pd = X @ X.T + 0.5 * np.eye(k)          # Γ ≻ 0
+    assert realized_range_dim(U, s3, Gam_pd) == np.linalg.matrix_rank(B2[:, s3])
+    # a rank-deficient Γ drops the realized dimension below the image
+    Gam_sing = np.diag([1.0] * (k - 1) + [0.0])
+    assert realized_range_dim(U, s3, Gam_sing) < np.linalg.matrix_rank(B2[:, s3])
 
 
 def test_projector_excitation_equal_image_indistinguishable():

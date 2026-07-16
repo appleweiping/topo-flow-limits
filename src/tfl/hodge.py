@@ -130,7 +130,8 @@ def curl_subspace_basis(B2: np.ndarray, rcond: float = 1e-10) -> np.ndarray:
     """Orthonormal basis ``Q`` (columns) of the curl subspace ``im(B2)``.
 
     ``Q`` has shape ``(n_edges, r)`` with ``r = rank(B2)``. Projecting flows to
-    ``z = Q.T f`` annihilates the gradient and harmonic components exactly and
+    ``z = Q.T f`` annihilates the gradient component exactly (``B2.T B1.T=0``)
+    and the candidate-orthogonal harmonic component (``h in ker B2.T``), and
     yields the minimal full-rank coordinate in which the second-order
     identifiability theory (limits.py, "first- vs second-order" section) lives.
     """
