@@ -29,6 +29,7 @@
 \newcommand{\Scal}{\mathcal{S}}
 \newcommand{\Tcal}{\mathcal{T}}
 \newcommand{\Rcal}{\mathcal{R}}
+\newcommand{\Ccal}{\mathcal{C}}
 \newcommand{\Gam}{\bm{\Gamma}}
 
 \title{Excitation-dependent identifiability of latent\\ higher-order structure from edge flows}
@@ -43,27 +44,29 @@
 Which triangles of a network carry higher-order interactions? Edge flows
 reveal the latent filled-triangle set $\Scal$ only through their curl, and
 we show that \emph{what} is identifiable is governed by the excitation
-covariance $\Gam_\Scal$ of the triangle signals. Our main theorem is a
-trichotomy: for positive-diagonal $\Gam_\Scal$ (known or unknown), the
-weighted support is identifiable at \emph{any} rank deficiency of $\B_2$,
-because the lifted signatures $\{\bm b_\tau\bm b_\tau^{\!\top}\}$ are always
-linearly independent; for a \emph{full-rank} arbitrary $\Gam_\Scal$ the curl
-image $\im\B_{2,\Scal}$ is identified, but a rank-deficient $\Gam_\Scal$
-reveals only the realized range $\im(\bm U_\Scal\Gam_\Scal^{1/2})$ and can
-hide the support itself; and at the projector excitation
+covariance $\Gam_\Scal$ of the triangle signals, through three regimes. For
+positive-diagonal $\Gam_\Scal$ (known or unknown), the weighted support is
+identifiable at \emph{any} rank deficiency of $\B_2$, because the lifted
+signatures $\{\bm b_\tau\bm b_\tau^{\!\top}\}$ are always linearly
+independent. For unrestricted PSD $\Gam_\Scal$, the population curl covariance
+$\bm\Sigma_z$ determines only the achievable set
+$\Ccal_\Scal=\{\bm M\!\succeq\!0:\im\bm M\subseteq\im\bm U_\Scal\}$, hence the
+support solely up to $\{\Scal:\im\bm M\subseteq\im\bm U_\Scal\}$; a strictly
+positive-\emph{diagonal} but correlated $\Gam_\Scal$ already defeats
+identification (a rank-one witness on $K_4$). At the projector excitation
 $\Gam_\Scal=\sigma_c^2(\B_{2,\Scal}^{\!\top}\B_{2,\Scal})^{+}$ the covariance
 collapses to $\sigma_n^2\bm I+\sigma_c^2\bm P_{\im}$ exactly, so equal-image
 supports are indistinguishable at every SNR and sample size (noise level
-known throughout). The projector case is exactly the Hodge-smoothness prior
+known throughout). This projector is exactly the Hodge-smoothness prior
 used in prior topology learning \cite{gurugubelli2024simplicial}. In the diagonal
-class we give a lifted-covariance non-negative least-squares estimator that
+regime we give a lifted-covariance non-negative least-squares estimator that
 is consistent with a fully explicit $O(1/N)$ failure bound, validated on
 $K_4$--$K_8$ against subspace and greedy baselines, including an excitation
 interpolation under which equal-image distinguishability provably vanishes.
 On real data, the same curl statistic \emph{localizes} genuine unplanted
 rotational structure --- tropical cyclones in ERA5 winds --- against a
 same-field vorticity reference and the independent IBTrACS archive. Code,
-data, and a 49-test suite numerically checking every constant are released.
+data, and a 51-test suite numerically checking every constant are released.
 \end{abstract}
 
 \begin{keywords}
@@ -96,11 +99,12 @@ it?}
 The answer is not a property of the geometry alone: it depends on the
 \emph{excitation}. We model triangle signals as
 $\bm y_\Scal\sim\mathcal N(\bm 0,\Gam_\Scal)$ with PSD excitation covariance
-$\Gam_\Scal$ and show that the identifiable object moves with the class of
+$\Gam_\Scal$ and show that the identifiable object moves with the regime of
 $\Gam_\Scal$ (Theorem~\ref{thm:tri}): from the full weighted support
-(positive diagonal, any rank deficiency), through the curl image
-$\im\B_{2,\Scal}$ under a \emph{full-rank} excitation (a rank-deficient one
-identifies only the realized range and can hide the support), to provable
+(positive diagonal, any rank deficiency), to only the achievable-covariance
+set $\Ccal_\Scal$ --- so the support merely up to
+$\{\Scal:\im\bm M\subseteq\im\bm U_\Scal\}$ --- under unrestricted PSD
+excitation, to provable
 indistinguishability of equal-image supports at the projector excitation. The
 last case is not a corner curiosity: the Hodge-smoothness prior of
 \cite{gurugubelli2024simplicial}, $\bm y_\Scal\sim\mathcal N(\bm 0,\bm L_2^{+})$
@@ -117,8 +121,8 @@ support-recovery and sparse-covariance limits
 curl-as-inconsistency reading \cite{jiang2011statistical}) that makes them
 bite. Contributions:
 \begin{enumerate}\itemsep2pt\parskip0pt\topsep2pt
-\item \emph{Theory}: the excitation trichotomy (Thm.~\ref{thm:tri}), with
-global analytic separation constants for the isotropic class --- equal-image
+\item \emph{Theory}: the three excitation regimes (Thm.~\ref{thm:tri}), with
+global analytic separation constants for the isotropic regime --- equal-image
 binary supports are separated by at least $9$ (attained by adding a
 tetrahedron's fourth face) and equal-cardinality supports by $16$ (swaps),
 proved for \emph{every} clique complex via a Johnson-graph eigenvalue
@@ -180,8 +184,10 @@ detection thresholds, Fano converses, decorrelated detectors, plug-in
 estimation).
 
 \begin{definition}[Observational equivalence and identifiability]\label{def:id}
-Two pairs $(\Scal,\Gam_\Scal)$ and $(\Scal',\Gam_{\Scal'})$ are
-\emph{observationally equivalent} if
+All statements are about the \emph{population} covariance $\bm\Sigma_z$ (the
+$N\!\to\!\infty$ limit of $\hat{\bm\Sigma}_z$); finite-$N$ estimation is
+\S\ref{sec:nnls}. Two pairs $(\Scal,\Gam_\Scal)$ and $(\Scal',\Gam_{\Scal'})$
+are \emph{observationally equivalent} if
 $\bm\Sigma_z(\Scal,\Gam_\Scal)=\bm\Sigma_z(\Scal',\Gam_{\Scal'})$; a functional
 of $(\Scal,\Gam_\Scal)$ is \emph{identifiable} on an excitation class
 $\mathcal G$ if it is constant on each equivalence class with excitations in
@@ -218,32 +224,33 @@ $\sum_\sigma w_\sigma\bm b_\sigma\bm b_\sigma^{\!\top}$ equals $\pm w_\tau$:
 every coefficient is read off a distinct matrix entry.
 \end{proof}
 
-\begin{theorem}[Excitation trichotomy]\label{thm:tri}
-Let $\sigma_n^2$ be known and write $\bm M(\Scal,\Gam)=
-\bm U_\Scal\Gam\bm U_\Scal^{\!\top}$ in \eqref{eq:sigz}.
+\begin{theorem}[Three excitation regimes]\label{thm:tri}
+Let $\sigma_n^2$ be known and write $\bm M=\bm M(\Scal,\Gam)=
+\bm U_\Scal\Gam\bm U_\Scal^{\!\top}=\bm\Sigma_z-\sigma_n^2\bm I$ in
+\eqref{eq:sigz}. The regimes below are overlapping constraints on
+$\Gam_\Scal$, not a partition (e.g.\ $\sigma_c^2\bm I$ is both diagonal (a) and
+a special full-rank PSD (b)).
 \emph{(a) Positive diagonal.} If $\Gam_\Scal=\mathrm{diag}(\gamma_\tau)_{\tau\in\Scal}$
 with $\gamma_\tau>0$ (known or unknown), then
 $\bm M=\sum_{\tau\in\Scal}\gamma_\tau\bm u_\tau\bm u_\tau^{\!\top}$ and, by
 Lemma~\ref{lem:spark}, the map $(\Scal,\Gam_\Scal)\mapsto\bm\Sigma_z$ is
 injective: the weighted support is identifiable at \emph{any} rank deficiency
 of $\B_2$, including all $\binom n3$ triangles of $K_n$.
-\emph{(b) Arbitrary PSD.} A single covariance $\bm\Sigma_z$ identifies only
-the \emph{realized range}
-$\Rcal(\Scal,\Gam_\Scal)=\im(\bm U_\Scal\Gam_\Scal^{1/2})
-=\im(\bm\Sigma_z-\sigma_n^2\bm I)\subseteq\im\bm U_\Scal$, with
-$\Rcal=\im\bm U_\Scal$ whenever $\Gam_\Scal\succ0$ (and, for full-column-rank
-$\B_{2,\Scal}$, only then). Hence a full-rank
-excitation identifies the curl image $\im\B_{2,\Scal}$, but a rank-deficient
-$\Gam_\Scal$ can hide part of it --- and even the support: a strictly larger
-$\Scal'\supsetneq\Scal$ with a singular $\Gam'$ reproduces the same
-covariance. (On $K_4$, $\Scal=\{\tau_1\}$ and $\Scal'=\{\tau_1,\tau_2\}$ with
-$\Gam'=\mathrm{diag}(1,0)$ give identical $\bm\Sigma_z$ although
-$\dim\im\B_{2,\Scal}=1\ne2=\dim\im\B_{2,\Scal'}$.) So random signals alone
-recover neither the support nor the image; a full-rank excitation is needed
-for the image. The achievable family still satisfies
-$\{\bm M(\Scal,\Gam):\Gam\succeq0\}=\{\bm M\succeq0:\im\bm M\subseteq\im\bm U_\Scal\}$,
-but nested supports have overlapping families, so one observation does not
-pick out the support.
+\emph{(b) Arbitrary PSD.} The achievable set
+$\Ccal_\Scal=\{\bm U_\Scal\Gam\bm U_\Scal^{\!\top}:\Gam\succeq0\}
+=\{\bm M\succeq0:\im\bm M\subseteq\im\bm U_\Scal\}$, so the \emph{population}
+covariance determines $\bm M$ in full but pins the support only to
+$\{\Scal:\im\bm M\subseteq\im\bm U_\Scal\}$: the realized range
+$\Rcal=\im\bm M\subseteq\im\bm U_\Scal$ is always readable, yet the candidate
+image $\im\B_{2,\Scal}$ is not (a larger-image $\Scal'$ with a suitable $\Gam$
+gives the same $\bm M$; $\Gam_\Scal\succ0$ does recover $\Rcal=\im\bm U_\Scal$).
+The obstruction is \emph{correlation}, not zero variance: on $K_4$ (all four
+faces) with $\bm c\in\ker\bm U_\Scal$ and
+$\bm v=\bm e_1-\tfrac14\bm c=(.75,.25,-.25,.25)^{\!\top}$, the
+strictly-positive-diagonal $\Gam'=\bm v\bm v^{\!\top}$ gives
+$\bm U_\Scal\Gam'\bm U_\Scal^{\!\top}=\bm u_1\bm u_1^{\!\top}$ --- identical to
+the singleton $\{\tau_1\}$ though the images are $3$- vs.\ $1$-dimensional.
+Regime (a) additionally requires $\Gam$ \emph{diagonal}.
 \emph{(c) Projector excitation.} For
 $\Gam_\Scal=\sigma_c^2(\B_{2,\Scal}^{\!\top}\B_{2,\Scal})^{+}$,
 $\bm M=\sigma_c^2\bm P_{\im\bm U_\Scal}$ \emph{exactly}; supports with equal
@@ -264,14 +271,15 @@ numerical certificates: supplement \S S4, \texttt{tests/test\_excitation.py}.
 
 \begin{remark}[Scope]\label{rem:scope}
 (i) Deterministic unknown signals are the rank-one degenerate boundary of
-class (b): the realized range is a single direction, so not even the image is
+regime (b): the realized range is a single direction, so not even the image is
 seen. (ii) On $K_n$ with $\sigma_n$
-\emph{unknown}, class (a) retains exactly one ambiguous direction, since
+\emph{unknown}, regime (a) retains exactly one ambiguous direction, since
 $\sum_{\tau\in\Tcal}\bm u_\tau\bm u_\tau^{\!\top}=n\bm I_r$: a uniform weight
-shift trades off against the noise floor. (iii) Class (b) delimits
+shift trades off against the noise floor. (iii) Regime (b) delimits
 image-level methods --- e.g.\ matched subspace detectors
-\cite{liu2025matched} --- whose population statistics see only
-$\im\B_{2,\Scal}$: without excitation structure, no method can do better.
+\cite{liu2025matched} --- whose population statistics see only the realized
+range $\im\bm M\subseteq\im\B_{2,\Scal}$: without excitation structure, no
+method can do better.
 \end{remark}
 
 \begin{theorem}[The price in the isotropic class]\label{thm:price}
@@ -339,7 +347,7 @@ classical \cite{wainwright2009information} --- what is problem-specific is the
 reduction that produces $\rho$ and the constants $(3,9)$.
 \end{proposition}
 
-\section{Achievability: lifted-covariance NNLS}
+\section{Achievability: lifted-covariance NNLS}\label{sec:nnls}
 In class (a) the theory says the weighted support is identifiable; the
 matching estimator is non-negative least squares on the lifted dictionary
 $\bm A=[\mathrm{vec}(\bm u_\tau\bm u_\tau^{\!\top})]_\tau$:
@@ -481,11 +489,14 @@ paper's sufficient statistic on genuinely unplanted structure.
 \section{Conclusion}
 Identifiability of latent higher-order structure from edge flows is
 excitation-dependent: fully identifiable under diagonal excitation at any
-rank deficiency, image-only under unrestricted PSD excitation, and provably
-ambiguous at the projector excitation --- with global analytic separation
-constants, a worst-case exponent equal to one isolated-triangle detection,
-and a consistent NNLS estimator carrying a fully explicit $O(1/N)$ bound.
-The trichotomy delimits both algorithmic structure learning
+rank deficiency; under unrestricted PSD excitation the population covariance
+pins down only the achievable-covariance set $\Ccal_\Scal$, so the support is
+determined merely up to $\{\Scal:\im\bm M\subseteq\im\bm U_\Scal\}$ (not even
+the candidate image in general); and provably ambiguous at the projector
+excitation --- with global analytic separation constants, a worst-case
+exponent equal to one isolated-triangle detection, and a consistent NNLS
+estimator carrying a fully explicit $O(1/N)$ bound.
+The three regimes delimit both algorithmic structure learning
 \cite{gurugubelli2024simplicial,buciulea2025learning,hoppe2023representing}
 and subspace detection \cite{liu2025matched}; on real data the same
 statistic localizes unplanted cyclone circulation. Open problems:
@@ -521,7 +532,7 @@ across iterative adversarial-review cycles. Because IEEE/SPS policy does not
 permit AI-generated manuscript \emph{text}, the author will independently
 rewrite the manuscript before any formal submission and then disclose only
 the permitted uses (editing, code, visualization, and review feedback). All
-mathematical statements are checked by the released test suite (49 tests,
+mathematical statements are checked by the released test suite (51 tests,
 including exhaustive and Monte-Carlo checks for every quoted constant), and
 the full revision history is preserved unaltered in the public repository ---
 git history is deliberately \emph{not} rewritten to obscure AI use. The

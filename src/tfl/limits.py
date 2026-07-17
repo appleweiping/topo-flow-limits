@@ -382,7 +382,7 @@ def fano_rho_floor(p: int, k: int, N: int, err: float = 0.5) -> float:
 # ---------------------------------------------------------------------------
 #
 # SCOPE NOTE: the statements in this section live inside the DIAGONAL /
-# isotropic excitation class of the trichotomy above. What the excitation
+# isotropic excitation regime (a) of the hierarchy above. What the excitation
 # section makes precise is that "random signals" per se do NOT remove the
 # rank obstruction — only excitation STRUCTURE does:
 #
@@ -391,7 +391,7 @@ def fano_rho_floor(p: int, k: int, N: int, err: float = 0.5) -> float:
 #   indistinguishable — identifiable only modulo ker B2. On K_n the curl
 #   subspace has dim C(n-1, 2) against C(n, 3) candidates: the 3/n DoF ratio.
 #
-#   ISOTROPIC/DIAGONAL EXCITATION (trichotomy case (a)): the flow covariance
+#   ISOTROPIC/DIAGONAL EXCITATION (regime (a)): the flow covariance
 #   carries sigma_c^2 * sum_{tau in S} b_tau b_tau^T, strictly finer than the
 #   column space; the lifted atoms are always linearly independent (see
 #   `lifted_atoms_linearly_independent`), so S -> Sigma(S) is injective and
@@ -424,49 +424,58 @@ def fano_rho_floor(p: int, k: int, N: int, err: float = 0.5) -> float:
 
 
 # ---------------------------------------------------------------------------
-# Excitation-dependent identifiability (the corrected core theory)
+# Excitation-dependent identifiability: three excitation regimes (the core
+# theory). The regimes are nested/overlapping constraints on Gamma_S, not a
+# partition -- e.g. sigma_c^2 I is both diagonal (regime a) and a special
+# full-rank PSD (regime b).
 # ---------------------------------------------------------------------------
 #
-# Triangle excitation is y_S ~ N(0, Gamma_S) with Gamma_S PSD. The curl-
-# coordinate snapshot covariance is
-#     Sigma_z(S, Gamma_S) = sigma_n^2 I_r + U_S Gamma_S U_S^T,
-# with U = Q^T B2. WHAT is identifiable depends on the excitation class:
+# Triangle excitation is y_S ~ N(0, Gamma_S) with Gamma_S PSD. The POPULATION
+# curl covariance is
+#     Sigma_z(S, Gamma_S) = sigma_n^2 I_r + M,   M = U_S Gamma_S U_S^T,
+# with U = Q^T B2 (sigma_n known throughout). The population covariance
+# determines M EXACTLY (M = Sigma_z - sigma_n^2 I); the question is what M
+# then reveals about (S, Gamma_S). This depends on the regime:
 #
 #  (a) Gamma_S POSITIVE DIAGONAL (known or unknown): the weighted support
 #      (S, diag weights) is identifiable at ANY rank deficiency, because the
 #      lifted atoms {u_tau u_tau^T} are always linearly independent (spark
-#      lemma) and Sigma - sigma_n^2 I = sum_tau w_tau u_tau u_tau^T with
-#      w_tau = gamma_tau 1{tau in S}. (On K_n with sigma_n UNKNOWN there is
-#      exactly one ambiguous direction: sum_ALL u_tau u_tau^T = n I_r, so a
-#      uniform weight shift trades off against the noise floor.)
-#  (b) Gamma_S ARBITRARY PSD. What a SINGLE observed covariance reveals is only
-#      the REALIZED RANGE
-#          R(S, Gamma_S) = im(U_S Gamma_S^{1/2}) = im(Sigma_z - sigma_n^2 I),
-#      a subspace of im U_S. R = im U_S WHENEVER Gamma_S > 0 (always); the
-#      converse (R = im U_S => Gamma_S > 0) holds only when B_{2,S} has full
-#      column rank so U_S is injective -- if U_S has a kernel, a singular
-#      Gamma_S whose image complements ker U_S can still attain im U_S.
+#      lemma) and M = sum_tau w_tau u_tau u_tau^T with w_tau = gamma_tau
+#      1{tau in S}. (On K_n with sigma_n UNKNOWN there is exactly one ambiguous
+#      direction: sum_ALL u_tau u_tau^T = n I_r, so a uniform weight shift
+#      trades off against the noise floor.)
+#  (b) Gamma_S ARBITRARY PSD. STRUCTURAL CHARACTERIZATION: the achievable-
+#      covariance set of a support is
+#          C_S = {U_S Gamma U_S^T : Gamma PSD} = {M PSD : im M ⊆ im U_S},
+#      so, given the population covariance (equivalently M), the set of
+#      supports that can have produced it is exactly
+#          {S : im M ⊆ im U_S}.
 #      Consequences:
-#        * Gamma_S > 0 (full-rank arbitrary): the full curl image
-#          im U_S = im B_{2,S} IS identifiable (R = im U_S).
-#        * Gamma_S SINGULAR: only R is identifiable, and R can be strictly
-#          smaller than im U_S. In particular the support itself is NOT
-#          identifiable: a LARGER support S' > S with a rank-deficient Gamma'
-#          can reproduce exactly the same covariance. Witness on K4:
-#          S={tau1}, S'={tau1,tau2}, Gamma_S=[1], Gamma_{S'}=diag(1,0) give
-#          identical Sigma_z although dim im B_{2,S}=1 != 2=dim im B_{2,S'}
-#          (see tests/test_excitation.py). So "random signals" do NOT by
-#          themselves recover even the image; a full-rank excitation does.
-#      The set identity {U_S Gamma U_S^T : Gamma PSD} = {M PSD : im M ⊆ im U_S}
-#      still holds, but it describes the achievable FAMILY, not what one
-#      observation identifies: the families of nested supports overlap, so a
-#      single covariance does not determine which support produced it.
+#        * The REALIZED RANGE R = im M = im(U_S Gamma_S^{1/2}) ⊆ im U_S is
+#          always readable from the population covariance. It need NOT equal
+#          the candidate image im U_S: arbitrary PSD does NOT determine
+#          im B_{2,S}. A support with a LARGER candidate image and a suitable
+#          Gamma can reproduce the same M, so the support is not identified.
+#        * If Gamma_S > 0 then R = im U_S (full-rank excitation reveals the
+#          image). The converse holds only when B_{2,S} has full column rank
+#          (U_S injective); if U_S has a kernel, some singular Gamma_S still
+#          attain im U_S. So R = im U_S is NOT equivalent to Gamma_S > 0 in
+#          general.
+#        * STRONG COUNTEREXAMPLE (strict-positive-diagonal, on K4 all 4 faces):
+#          c = (1,-1,1,-1) in ker U; v = e1 - 0.25 c = (.75,.25,-.25,.25) has
+#          all entries nonzero; Gamma' = v v^T has POSITIVE DIAGONAL and rank 1,
+#          and U Gamma' U^T = (Uv)(Uv)^T = u0 u0^T (since Uc=0). So S'=all 4
+#          faces with Gamma' gives the SAME M as S={face0} with Gamma=[1], yet
+#          dim im B_{2,S}=1 != 3=dim im B_{2,S'}. Positive per-triangle variance
+#          is NOT enough; what regime (a) additionally requires is that Gamma be
+#          DIAGONAL (uncorrelated). Gamma' is correlated (off-diagonal ~0.19),
+#          which is exactly what breaks identifiability here.
 #  (c) Gamma_S = sigma_c^2 (B_{2,S}^T B_{2,S})^+ (projector excitation): a
 #      SPECIFIC full-rank-on-its-own-image excitation for which
 #      U_S Gamma_S U_S^T = sigma_c^2 P_im(U_S) EXACTLY, so DISTINCT supports
-#      with the SAME image induce IDENTICAL covariances at every SNR and N.
-#      (Here R = im U_S, but two equal-image supports collapse to one
-#      covariance — the sharp equal-image indistinguishability.)
+#      with the SAME image induce IDENTICAL population covariances at every SNR
+#      and N -- the sharp equal-image indistinguishability. (This is the
+#      Hodge-smoothness prior Gamma = L_2^+ used by prior topology learning.)
 #
 # All statements are verified numerically in tests/test_excitation.py.
 
@@ -484,11 +493,13 @@ def excitation_covariance(
 
 def realized_range_dim(U: np.ndarray, support: np.ndarray,
                        Gamma: np.ndarray, tol: float = 1e-9) -> int:
-    """Dimension of the REALIZED RANGE ``R = im(U_S Gamma^{1/2})
-    = im(Sigma_z - sigma_n^2 I)`` — the object a single arbitrary-PSD
-    covariance actually identifies. Equals ``dim im U_S`` iff ``Gamma`` is
-    nonsingular; a singular ``Gamma`` yields a strictly smaller range and
-    hides part of the image (trichotomy case (b))."""
+    """Dimension of the REALIZED RANGE ``R = im(U_S Gamma U_S^T)
+    = im(Sigma_z - sigma_n^2 I)`` -- the subspace the population covariance
+    always reveals (regime (b)). ``R ⊆ im U_S`` always; ``Gamma > 0`` gives
+    ``R = im U_S``. The converse (``R = im U_S => Gamma > 0``) holds only when
+    ``U_S`` is injective (``B_{2,S}`` full column rank); if ``U_S`` has a
+    kernel, some singular ``Gamma`` still attain ``im U_S``, so a singular
+    ``Gamma`` does NOT always shrink the range."""
     support = np.asarray(support, bool)
     Us = U[:, support]
     M = Us @ Gamma @ Us.T
@@ -496,15 +507,88 @@ def realized_range_dim(U: np.ndarray, support: np.ndarray,
     return int((s > tol * max(1.0, s[0])).sum())
 
 
+def feasible_supports(U: np.ndarray, M: np.ndarray,
+                      candidate_supports, tol: float = 1e-8) -> list:
+    """Regime (b) structural characterization: the supports whose achievable-
+    covariance set ``C_S = {M PSD : im M ⊆ im U_S}`` contains a given population
+    covariance-signal ``M = Sigma_z - sigma_n^2 I`` are exactly
+    ``{S : im M ⊆ im U_S}``. Returns the sublist of ``candidate_supports`` (each
+    a boolean mask) that could have produced ``M``. When this set has more than
+    one element the support is NOT identified by the population covariance."""
+    if M.shape[0] == 0 or np.linalg.norm(M) < tol:
+        imM = np.zeros((U.shape[0], 0))
+    else:
+        Uu, s, _ = np.linalg.svd(M, full_matrices=False)
+        imM = Uu[:, s > tol * max(1.0, s[0])]
+    out = []
+    for S in candidate_supports:
+        S = np.asarray(S, bool)
+        Us = U[:, S]
+        if Us.shape[1] == 0:
+            if imM.shape[1] == 0:
+                out.append(S)
+            continue
+        P = Us @ np.linalg.pinv(Us)
+        if imM.shape[1] == 0 or np.linalg.norm(imM - P @ imM) < tol * max(1.0, np.linalg.norm(imM)):
+            out.append(S)
+    return out
+
+
+def strict_positive_diagonal_witness(
+    U: np.ndarray, tau_keep: int, kernel_support: np.ndarray,
+    sigma_noise: float = 1.0
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Regime-(b) STRONG witness (strictly positive diagonal excitation).
+
+    On a support ``kernel_support`` whose signatures ``U_S`` have a nontrivial
+    kernel (e.g. all four faces of a K4 tetrahedron), pick ``c in ker U_S`` and
+    ``v = e_j + t c`` (``j`` = local index of ``tau_keep``) with ``t`` chosen so
+    every entry of ``v`` is nonzero. Then ``Gamma' = v v^T`` has POSITIVE
+    DIAGONAL and rank 1, and ``U_S Gamma' U_S^T = (U_S v)(U_S v)^T =
+    u_{tau_keep} u_{tau_keep}^T`` (since ``U_S c = 0``). So the large support
+    ``kernel_support`` with the strictly-positive-diagonal (but CORRELATED)
+    ``Gamma'`` gives the same population covariance as the singleton
+    ``{tau_keep}`` with unit variance -- positive per-triangle variance does
+    NOT identify the support; regime (a) additionally needs ``Gamma`` DIAGONAL.
+
+    Returns ``(Sigma_big, Sigma_single, support_big, support_single)``.
+    """
+    S = np.asarray(kernel_support, bool)
+    idx = np.where(S)[0]
+    j = int(np.where(idx == tau_keep)[0][0])   # local index of tau_keep in S
+    Us = U[:, S]
+    # kernel direction of U_S: trailing right-singular vectors past the rank
+    _, sv, Vt = np.linalg.svd(Us, full_matrices=True)   # Vt is (k, k)
+    rank = int((sv > 1e-9 * max(1.0, sv[0])).sum())
+    if rank >= Vt.shape[0]:
+        raise ValueError("kernel_support must have a rank-deficient U_S (nontrivial kernel)")
+    c = Vt[rank]
+    e = np.zeros(len(idx)); e[j] = 1.0
+    # choose t so that v = e + t c has all-nonzero entries; scan a few values
+    for t in (-e[j] / c[j] * 0.25 if abs(c[j]) > 1e-12 else 0.25, 0.3, -0.3, 0.5, -0.5, 0.7):
+        v = e + t * c
+        if np.all(np.abs(v) > 1e-9):
+            break
+    else:
+        raise ValueError("could not find t with all-nonzero v")
+    Gam = np.outer(v, v)
+    Sig_big = excitation_covariance(U, S, Gam, sigma_noise)
+    Ssingle = np.zeros(U.shape[1], bool); Ssingle[tau_keep] = True
+    Sig_single = excitation_covariance(U, Ssingle, np.array([[1.0]]), sigma_noise)
+    return Sig_big, Sig_single, S, Ssingle
+
+
 def singular_gamma_equal_covariance_witness(
     U: np.ndarray, tau_in: int, tau_extra: int, sigma_noise: float = 1.0
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Construct the case-(b) witness: supports ``S={tau_in}`` and
-    ``S'={tau_in, tau_extra}`` with excitations ``Gamma_S=[[1]]`` and
-    ``Gamma_S'=diag(1,0)`` produce IDENTICAL curl covariances even though
-    ``dim im B_{2,S'} > dim im B_{2,S}``. Returns
-    ``(Sigma_S, Sigma_Sp, support_S, support_Sp)`` so a caller can check the
-    covariances coincide while the supports (and their images) differ."""
+    """Simple DEGENERATE regime-(b) example (a zero-variance triangle): supports
+    ``S={tau_in}`` and ``S'={tau_in, tau_extra}`` with ``Gamma_S=[[1]]`` and
+    ``Gamma_S'=diag(1,0)`` give IDENTICAL curl covariances although
+    ``dim im B_{2,S'} > dim im B_{2,S}``. This is the easy case (one triangle
+    inactive); the STRONG statement -- that even a strictly-positive-diagonal
+    (but correlated) excitation fails -- is
+    :func:`strict_positive_diagonal_witness`. Returns
+    ``(Sigma_S, Sigma_Sp, support_S, support_Sp)``."""
     p = U.shape[1]
     sS = np.zeros(p, bool); sS[tau_in] = True
     sSp = np.zeros(p, bool); sSp[tau_in] = True; sSp[tau_extra] = True

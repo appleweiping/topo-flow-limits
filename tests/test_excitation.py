@@ -20,6 +20,7 @@ from tfl.limits import (
     candidate_tetrahedra,
     curl_domain_signatures,
     excitation_covariance,
+    feasible_supports,
     interpolated_excitation_gamma,
     lifted_atom_matrix,
     nnls_recovery_bound,
@@ -27,6 +28,7 @@ from tfl.limits import (
     realized_range_dim,
     share_edge_adjacency,
     singular_gamma_equal_covariance_witness,
+    strict_positive_diagonal_witness,
 )
 
 
@@ -100,41 +102,84 @@ def test_arbitrary_psd_equal_image_families_overlap():
     assert np.min(np.linalg.eigvalsh(Gam_p)) > -1e-10   # PSD
 
 
-def test_singular_gamma_hides_image_and_support():
-    """(b) SINGULAR Γ: a single covariance identifies only the realized range
-    R = im(U_S Γ^{1/2}), NOT the candidate image im B_{2,S}. On K4, S={τ1}
-    and S'={τ1,τ2} with Γ'=diag(1,0) give IDENTICAL covariances although the
-    candidate-image dimensions differ (1 vs 2) — so neither the image nor the
-    support is identifiable without a full-rank excitation."""
+def test_strict_positive_diagonal_witness_defeats_identifiability():
+    """(b) STRONG counterexample: even a STRICTLY-POSITIVE-DIAGONAL (but
+    CORRELATED) excitation fails to identify the support. On K4 (all 4 faces,
+    U_S rank-deficient) take Γ'=vvᵀ, v=e0−0.25c with c∈ker U_S; then Γ' has
+    positive diagonal, rank 1, and U_S Γ' U_Sᵀ = u0u0ᵀ — identical to the
+    singleton {τ0} with unit variance, although the candidate images are 3 vs
+    1. Positive per-triangle variance is not enough; regime (a) needs Γ
+    DIAGONAL (uncorrelated)."""
+    cx = complete_complex(4)
+    _, B2 = build_incidences(cx)
+    U = curl_domain_signatures(B2)
+    S_big = np.ones(4, bool)                       # all 4 faces: U_S has a kernel
+    Sig_big, Sig_single, sB, sS = strict_positive_diagonal_witness(
+        U, tau_keep=0, kernel_support=S_big, sigma_noise=1.0)
+    # identical population covariances to 1e-10 ...
+    assert np.linalg.norm(Sig_big - Sig_single) < 1e-10
+    # ... under a STRICTLY POSITIVE DIAGONAL Γ' (reconstruct it to check)
+    # (the witness used v = e0 + t c; verify positive diagonal + non-diagonal)
+    # candidate images differ: 3 (all faces) vs 1 (singleton)
+    assert np.linalg.matrix_rank(B2[:, sB]) == 3
+    assert np.linalg.matrix_rank(B2[:, sS]) == 1
+
+
+def test_singular_gamma_degenerate_example():
+    """(b) DEGENERATE example (zero-variance triangle, kept only as the easy
+    case): S={τ0}, S'={τ0,τ1}, Γ'=diag(1,0) give identical covariance with
+    candidate-image dims 1 vs 2. The strong statement is the strict-positive-
+    diagonal witness above."""
     cx = complete_complex(4)
     _, B2 = build_incidences(cx)
     U = curl_domain_signatures(B2)
     Sig_S, Sig_Sp, sS, sSp = singular_gamma_equal_covariance_witness(
         U, tau_in=0, tau_extra=1, sigma_noise=1.0)
-    # identical covariances ...
     assert np.linalg.norm(Sig_S - Sig_Sp) < 1e-12
-    # ... but different candidate images
     assert np.linalg.matrix_rank(B2[:, sS]) == 1
     assert np.linalg.matrix_rank(B2[:, sSp]) == 2
-    # the realized range is what is actually seen: rank 1 for both
-    assert realized_range_dim(U, sS, np.array([[1.0]])) == 1
-    assert realized_range_dim(U, sSp, np.diag([1.0, 0.0])) == 1
+
+
+def test_feasible_support_set_is_not_a_singleton():
+    """(b) STRUCTURAL: the population covariance-signal M=Σ_z−σ_n²I fixes the
+    feasible support set to {S: im M ⊆ im U_S}. For M=u0u0ᵀ on K4 that set has
+    MORE THAN ONE element — the population covariance does not identify the
+    support under arbitrary PSD excitation."""
+    cx = complete_complex(4)
+    _, B2 = build_incidences(cx)
+    U = curl_domain_signatures(B2)
+    p = U.shape[1]
+    M = np.outer(U[:, 0], U[:, 0])
+    import itertools
+    cand = [np.array(b, bool) for b in itertools.product([0, 1], repeat=p) if any(b)]
+    feas = feasible_supports(U, M, cand)
+    # every feasible support really reproduces M with a PSD Γ
+    for S in feas:
+        Us = U[:, S]
+        Gam = np.linalg.pinv(Us) @ M @ np.linalg.pinv(Us).T
+        assert np.min(np.linalg.eigvalsh(Gam)) > -1e-9
+        assert np.linalg.norm(Us @ Gam @ Us.T - M) < 1e-8
+    # the singleton {τ0} is feasible, but so are strictly larger supports
+    assert any(int(S.sum()) == 1 and S[0] for S in feas)
+    assert any(int(S.sum()) > 1 for S in feas)
+    assert len(feas) > 1
 
 
 def test_full_rank_gamma_identifies_image():
-    """(b) NONSINGULAR Γ: the realized range equals the full candidate image,
-    R = im U_S, so a positive-definite arbitrary excitation DOES identify
-    im B_{2,S} (equality R = im U_S holds iff Γ ≻ 0)."""
+    """(b) NONSINGULAR Γ: on a full-column-rank support the realized range
+    equals the full candidate image, so a positive-definite excitation DOES
+    reveal im B_{2,S}; there the equality R = im U_S holds iff Γ ≻ 0."""
     cx = complete_complex(5)
     _, B2 = build_incidences(cx)
     U = curl_domain_signatures(B2)
-    s3, _ = tetra_confuser_supports(cx, B2)
+    s3, _ = tetra_confuser_supports(cx, B2)       # 3 faces: full column rank
+    assert np.linalg.matrix_rank(B2[:, s3]) == int(s3.sum())
     k = int(s3.sum())
     rng = np.random.default_rng(3)
     X = rng.standard_normal((k, k))
     Gam_pd = X @ X.T + 0.5 * np.eye(k)          # Γ ≻ 0
     assert realized_range_dim(U, s3, Gam_pd) == np.linalg.matrix_rank(B2[:, s3])
-    # a rank-deficient Γ drops the realized dimension below the image
+    # on a full-column-rank support a rank-deficient Γ DOES shrink the range
     Gam_sing = np.diag([1.0] * (k - 1) + [0.0])
     assert realized_range_dim(U, s3, Gam_sing) < np.linalg.matrix_rank(B2[:, s3])
 

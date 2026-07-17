@@ -24,6 +24,7 @@
 \newcommand{\Scal}{\mathcal{S}}
 \newcommand{\Tcal}{\mathcal{T}}
 \newcommand{\Rcal}{\mathcal{R}}
+\newcommand{\Ccal}{\mathcal{C}}
 \newcommand{\KL}{\mathrm{KL}}
 \newcommand{\Gam}{\bm{\Gamma}}
 \DeclareMathOperator{\im}{im}
@@ -44,7 +45,7 @@ signal-distribution-agnostic bound and a sub-Gaussian achievability
 counterpart); \textbf{S2} identifiability under \emph{partial edge
 observation}; \textbf{S3} \emph{plug-in} estimation of the variance parameters
 and a fully adaptive detector; \textbf{S4} full proofs of the main paper's
-lifted-spark lemma, excitation trichotomy, separation/exponent theorem, and
+lifted-spark lemma, the three excitation regimes, separation/exponent theorem, and
 NNLS consistency/failure bound, with exhaustive numerical verification;
 \textbf{S5} construction details of
 the cyclone vortex-localization study. All statements are validated numerically by the
@@ -347,7 +348,7 @@ Script: \texttt{experiments/run\_plugin.py}.}
 \section{Excitation-dependent identifiability: proofs}\label{sec:dichotomy}
 
 This section proves the main paper's Lemma~1 (lifted spark), Theorem~1
-(excitation trichotomy), Theorem~2 (separations and exponents), and
+(three excitation regimes), Theorem~2 (separations and exponents), and
 Theorem~3 (NNLS consistency and failure bound), and records the exhaustive
 numerical verifications.
 Here the candidate set is arbitrary (edge-sharing allowed, $\B_2$ possibly
@@ -372,7 +373,7 @@ other candidate contributes. $\bm A(\bm w)=\bm 0$ therefore forces
 $w_\tau=0$ for every $\tau$.
 \end{proof}
 
-\subsection{The excitation trichotomy (main Theorem 1)}
+\subsection{The three excitation regimes (main Theorem 1)}
 
 With $\bm z=\bm Q^{\!\top}\bm f$ ($\bm Q$ an orthonormal basis of
 $\mathrm{im}\,\B_2$, $r=\rank\B_2$, $\bm U=\bm Q^{\!\top}\B_2$), the gradient
@@ -396,41 +397,49 @@ trades off against the noise floor; this is verified numerically for
 $K_5$--$K_7$.
 \end{proposition}
 
-\begin{proposition}[(b) arbitrary PSD: only the realized range]\label{prop:psd}
-A single covariance $\bm\Sigma_z$ identifies exactly the realized range
-$\Rcal(\Scal,\Gam)=\mathrm{im}(\bm\Sigma_z-\sigma_n^2\bm I)
-=\mathrm{im}(\bm U_\Scal\Gam^{1/2})\subseteq\mathrm{im}\,\bm U_\Scal$, with
-equality $\Rcal=\mathrm{im}\,\bm U_\Scal$ whenever $\Gam\succ0$ (and, when
-$\B_{2,\Scal}$ has full column rank so $\bm U_\Scal$ is injective, only then).
-Consequences:
-\emph{(i)} a full-rank excitation identifies the curl image
-$\mathrm{im}\,\B_{2,\Scal}$; \emph{(ii)} a \emph{singular} $\Gam$ can conceal
-part of the image and even the support --- there exist $\Scal'\supsetneq\Scal$
-and a singular $\Gam'$ with $\bm\Sigma_z(\Scal',\Gam')=\bm\Sigma_z(\Scal,\Gam)$.
-The achievable family still obeys
-$\{\bm U_\Scal\Gam\bm U_\Scal^{\!\top}:\Gam\succeq0\}
-=\{\bm M\succeq0:\mathrm{im}\,\bm M\subseteq\mathrm{im}\,\bm U_\Scal\}$, but
-families of nested supports overlap, so this family identity is \emph{not}
-support identifiability.
+\begin{proposition}[(b) arbitrary PSD: structural characterization]\label{prop:psd}
+For each support the achievable-covariance set is
+\[
+\Ccal_\Scal=\{\bm U_\Scal\Gam\bm U_\Scal^{\!\top}:\Gam\succeq0\}
+=\{\bm M\succeq0:\mathrm{im}\,\bm M\subseteq\mathrm{im}\,\bm U_\Scal\}.
+\]
+Consequently, given the \emph{population} covariance $\bm\Sigma_z$
+(equivalently $\bm M=\bm\Sigma_z-\sigma_n^2\bm I$), the set of supports
+consistent with it is exactly $\{\Scal:\mathrm{im}\,\bm M\subseteq\mathrm{im}\,\bm U_\Scal\}$.
+Hence: \emph{(i)} the realized range $\Rcal=\mathrm{im}\,\bm M
+=\mathrm{im}(\bm U_\Scal\Gam^{1/2})\subseteq\mathrm{im}\,\bm U_\Scal$ is always
+identifiable; \emph{(ii)} the candidate image $\mathrm{im}\,\B_{2,\Scal}$ is
+\emph{not} --- any support with a larger image and a suitable $\Gam$ realizes
+the same $\bm M$; \emph{(iii)} a full-rank $\Gam\succ0$ gives $\Rcal=\mathrm{im}\,\bm U_\Scal$
+(the converse only when $\bm U_\Scal$ is injective).
 \end{proposition}
 \begin{proof}
-$\bm\Sigma_z-\sigma_n^2\bm I=\bm U_\Scal\Gam\bm U_\Scal^{\!\top}$ has range
-$\mathrm{im}(\bm U_\Scal\Gam^{1/2})$; if $\Gam\succ0$ this is
-$\mathrm{im}\,\bm U_\Scal$ (since $\Gam^{1/2}$ is invertible). If
-$\bm U_\Scal$ is injective the range has dimension $\rank\Gam$, so equality
-forces $\Gam\succ0$; if $\bm U_\Scal$ has a kernel a singular $\Gam$ whose
-image complements $\ker\bm U_\Scal$ can still attain $\mathrm{im}\,\bm
-U_\Scal$. Family identity:
-($\subseteq$) immediate; ($\supseteq$) for PSD $\bm M$ with
+Set identity: ($\subseteq$) $\bm U_\Scal\Gam\bm U_\Scal^{\!\top}\succeq0$ has
+range in $\mathrm{im}\,\bm U_\Scal$; ($\supseteq$) for PSD $\bm M$ with
 $\mathrm{im}\,\bm M\subseteq\mathrm{im}\,\bm U_\Scal$ set
 $\Gam=\bm U_\Scal^{+}\bm M(\bm U_\Scal^{+})^{\!\top}\succeq0$, giving
-$\bm U_\Scal\Gam\bm U_\Scal^{\!\top}=\bm M$. Witness for (ii): on $K_4$ take
-$\Scal=\{\tau_1\}$, $\Scal'=\{\tau_1,\tau_2\}$, $\Gam=[1]$,
-$\Gam'=\mathrm{diag}(1,0)$; both give
-$\bm\Sigma_z=\sigma_n^2\bm I+\bm u_{\tau_1}\bm u_{\tau_1}^{\!\top}$ although
-$\dim\mathrm{im}\,\B_{2,\Scal}=1\ne2=\dim\mathrm{im}\,\B_{2,\Scal'}$
-(verified in \texttt{tests/test\_excitation.py}).
+$\bm U_\Scal\Gam\bm U_\Scal^{\!\top}=\bm P_{\mathrm{im}\,\bm U_\Scal}\bm M\bm P_{\mathrm{im}\,\bm U_\Scal}=\bm M$.
+The support statement is immediate since $\bm M\in\Ccal_\Scal\Leftrightarrow
+\mathrm{im}\,\bm M\subseteq\mathrm{im}\,\bm U_\Scal$. Range: $\Gam\succ0\Rightarrow\Gam^{1/2}$
+invertible $\Rightarrow\Rcal=\mathrm{im}\,\bm U_\Scal$; if $\bm U_\Scal$ is
+injective, $\dim\Rcal=\rank\Gam$, so equality forces $\Gam\succ0$.
 \end{proof}
+
+\begin{remark}[Strong witness: strictly positive diagonal is not enough]\label{rem:strongwit}
+Positive per-triangle variance does not rescue identifiability; regime (a)
+needs $\Gam$ \emph{diagonal}. On $K_4$ with all four faces, $\bm U_\Scal$ has a
+one-dimensional kernel spanned by $\bm c=(1,-1,1,-1)^{\!\top}$ (the tetrahedral
+relation). Take $\bm v=\bm e_1-\tfrac14\bm c=(.75,.25,-.25,.25)^{\!\top}$
+(all entries nonzero) and $\Gam'=\bm v\bm v^{\!\top}$: then $\Gam'$ has
+\emph{strictly positive diagonal}, rank $1$, and
+$\bm U_\Scal\Gam'\bm U_\Scal^{\!\top}=(\bm U_\Scal\bm v)(\bm U_\Scal\bm v)^{\!\top}
+=\bm u_1\bm u_1^{\!\top}$ (since $\bm U_\Scal\bm c=\bm 0$) --- identical to the
+singleton $\{\tau_1\}$ with unit variance, although $\dim\mathrm{im}\,\B_{2,\Scal}=3\ne1$.
+The obstruction is the off-diagonal \emph{correlation} of $\Gam'$
+($\approx0.19$), not any zero variance (the degenerate $\Gam=\mathrm{diag}(1,0)$
+example needs an inactive triangle; this one does not). Verified in
+\texttt{tests/test\_excitation.py}.
+\end{remark}
 
 \begin{proposition}[(c) projector excitation]\label{prop:proj}
 For $\Gam_\Scal=\sigma_c^2(\B_{2,\Scal}^{\!\top}\B_{2,\Scal})^{+}$,
@@ -441,7 +450,7 @@ distributions --- indistinguishable at every SNR and $N$.
 \end{proposition}
 
 \begin{remark}[Deterministic boundary]
-Unknown deterministic signals are the degenerate boundary of class (b): for
+Unknown deterministic signals are the rank-one degenerate boundary of regime (b): for
 equal-image supports the mean families
 $\{\B_{2,\Scal}\bm y\}=\{\B_{2,\Scal'}\bm y'\}$ coincide per snapshot, so no
 test distinguishes them at any SNR and any $N$. Tetrahedral confusers realize
@@ -647,7 +656,7 @@ $\rho_2=10^{-5}$, and the Monte-Carlo error of the optimal test within the
 $e^{-NC_G}$ envelope with empirical exponent decreasing onto $C_G$; (vi)
 exact greedy covariance-atom recovery on rank-deficient $K_5$.
 \texttt{tests/test\_excitation.py} additionally checks every claim of the
-trichotomy and estimator theory: weighted-diagonal identifiability and the
+regime and estimator theory: weighted-diagonal identifiability and the
 $K_n$ unknown-noise ambiguity direction
 ($\sum_\tau\bm u_\tau\bm u_\tau^{\!\top}=n\bm I_r$); PSD matching for
 equal-image supports (Prop.~\ref{prop:psd}, residual $<10^{-9}$, matched
@@ -680,7 +689,7 @@ $\tfrac12(\bm V_i+\bm V_j)\!\cdot\!(\Delta x,\Delta y)$ in the local
 equirectangular metric ($\Delta x = R\cos(\bar\phi)\Delta\lambda$). The mesh
 is simply connected, so $\#\text{triangles}=|\mathcal E|-|\mathcal V|+1
 =\dim\ker\B_1$ and $\B_2$ has full column rank (verified: $1554/1554$) --- the
-favorable-geometry regime of the excitation trichotomy (class-(a) geometry),
+favorable-geometry regime (a) of the excitation hierarchy,
 with no equal-image confusers.
 By Stokes' theorem the curl statistic of a triangle approximates its
 circulation, i.e.\ area-integrated relative vorticity; a sign convention
@@ -738,7 +747,7 @@ All figures regenerate on CPU from fixed seeds via
   \texttt{run\_real\_cyclone.py} ($\approx$3\,min from the cached
   ERA5/IBTrACS files).
 \end{itemize}
-The test-suite (\texttt{pytest -q}, 49 tests) checks: the Fano bounds against
+The test-suite (\texttt{pytest -q}, 51 tests) checks: the Fano bounds against
 the empirical recovery boundary of the phase-transition experiment
 (\texttt{run\_phase\_transition.py}, repo/supplement; a converse must
 lower bound it), the closed form \eqref{eq:qform} against Monte-Carlo, the
