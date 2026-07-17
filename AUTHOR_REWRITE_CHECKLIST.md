@@ -92,7 +92,7 @@ resources unavailable in the drafting environment.
 
 - Environment: `requirements.lock`; provenance: `results/manifest.json`
   (regenerate with `python experiments/make_manifest.py`).
-- Tests: `pytest -q` (51 tests). These are **guardrails, not proofs** — the
+- Tests: `pytest -q` (52 tests). These are **guardrails, not proofs** — the
   identifiability claims are proven in `paper/supplement.tex` §S4 and
   independently re-derived in the commit history.
 - Every quoted number lives in `results/*.json`.

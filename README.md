@@ -617,7 +617,7 @@ topo-flow-limits/
 │   ├── run_plugin.py             supplement S3 figure + plugin.json
 │   └── run_all.py                one-click: all of the above from fixed seeds
 │
-├── tests/                    51 tests — the theorems' guardrails (see §8)
+├── tests/                    52 tests — the theorems' guardrails (see §8)
 │   ├── test_hodge.py
 │   ├── test_theory_vs_sim.py
 │   ├── test_excitation.py    the three excitation regimes + NNLS guardrails (15 tests:
@@ -682,7 +682,7 @@ cd topo-flow-limits
 uv venv --python 3.11 .venv
 uv pip install --python .venv\Scripts\python.exe numpy scipy networkx cvxpy matplotlib pandas pytest
 
-# 1) validate all theory against Monte-Carlo (51 tests; ~3-5 min)
+# 1) validate all theory against Monte-Carlo (52 tests; ~3-5 min)
 .\.venv\Scripts\python.exe -m pytest -q
 
 # 2) regenerate every figure and metric (~30-45 min, 8 experiments)
@@ -1250,7 +1250,7 @@ $28/84=1/3$ 落在 $3/n$ 曲线上（这一半是真实的几何测量）。
 （$G$ 非对角、10 对共边三角形——真正让几何感知边际律干活的面板）。
 种植实验的真实成分是几何；真正未种植的恢复证据见 ①。
 
-**复现**：`pytest -q`（51 个测试，约 3–5 分钟，每条定理都对照蒙特卡洛验证）；
+**复现**：`pytest -q`（52 个测试，约 3–5 分钟，每条定理都对照蒙特卡洛验证）；
 `python experiments/run_all.py`（约 30–45 分钟重生成全部 9 张图）；
 论文在 `paper/main.pdf`（ICASSP 官方 spconf 格式，4 页正文 + 第 5 页参考
 文献与合规声明），补充材料在 `paper/supplement.pdf`（11 页）。全程只需 CPU。
