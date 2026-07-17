@@ -1,0 +1,14 @@
+# Pinned runtime dependencies for topo-flow-limits (the versions the released
+# JSON/figures/tests were produced with; Python 3.14 on the manifest machine).
+# Core (needed for src/, tests/, and all experiments/run_*.py):
+numpy==2.4.6
+scipy==1.17.1
+matplotlib==3.10.9
+pytest==9.0.3
+
+# Optional (only for RE-FETCHING the raw data; the repo ships cached copies,
+# so these are NOT needed to reproduce any result from the shipped data):
+#   xarray, zarr, gcsfs, numcodecs   (data/fetch_era5*.py)
+#   pandas                           (IBTrACS/traffic parsing helpers)
+# Pin these to your environment if you refetch; they do not affect reproduction
+# from the cached data/*.npz, data/*.csv, data/*.json.

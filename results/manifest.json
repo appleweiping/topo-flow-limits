@@ -1,0 +1,176 @@
+{
+  "commit": "67423e8d887e65026f0b003a0eab0042a4941042",
+  "commit_dirty": true,
+  "generated_by": "experiments/make_manifest.py",
+  "environment": {
+    "python": "3.14.5",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "matplotlib": "3.10.9",
+    "blas": {
+      "name": "scipy-openblas",
+      "version": "0.3.31.188.0",
+      "openblas configuration": "OpenBLAS 0.3.31.188.0  USE64BITINT DYNAMIC_ARCH NO_AFFINITY SkylakeX MAX_THREADS=24"
+    }
+  },
+  "hardware": {
+    "note": "LOCAL machine this manifest was generated on (not a server).",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "machine": "AMD64",
+    "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "logical_cpus": 16,
+    "blas_threads_env": "(default)"
+  },
+  "data": {
+    "data/fx_rates.json": {
+      "sha256_16": "daaed4da675022b2",
+      "bytes": 130735
+    },
+    "data/era5_wnp_2020.npz": {
+      "sha256_16": "93aa4a77902e46b6",
+      "bytes": 13180432
+    },
+    "data/ibtracs_wp_2020.csv": {
+      "sha256_16": "cba33c22562aa51d",
+      "bytes": 40618
+    }
+  },
+  "experiments": [
+    {
+      "script": "experiments/run_second_order.py",
+      "seed": 42,
+      "command": "python experiments/run_second_order.py",
+      "artifacts": {
+        "results/second_order.json": {
+          "sha256_16": "2be140f2a977ea0b",
+          "bytes": 219523
+        },
+        "results/figures/second_order.png": {
+          "sha256_16": "8eb972fd0b51ca64",
+          "bytes": 255066
+        }
+      }
+    },
+    {
+      "script": "experiments/run_real_cyclone.py",
+      "seed": 7,
+      "command": "python experiments/run_real_cyclone.py",
+      "artifacts": {
+        "results/real_cyclone.json": {
+          "sha256_16": "b37ac356f3b4aabf",
+          "bytes": 5398
+        },
+        "results/figures/real_cyclone.png": {
+          "sha256_16": "c5c68c4206293c01",
+          "bytes": 357391
+        }
+      }
+    },
+    {
+      "script": "experiments/run_phase_transition.py",
+      "seed": 0,
+      "command": "python experiments/run_phase_transition.py",
+      "artifacts": {
+        "results/phase_transition.json": {
+          "sha256_16": "91e1194909b837c7",
+          "bytes": 3634
+        },
+        "results/figures/phase_transition.png": {
+          "sha256_16": "6d683c4fa89c4648",
+          "bytes": 62299
+        }
+      }
+    },
+    {
+      "script": "experiments/run_confusability.py",
+      "seed": 0,
+      "command": "python experiments/run_confusability.py",
+      "artifacts": {
+        "results/confusability.json": {
+          "sha256_16": "0c3418f1bde8777b",
+          "bytes": 2030
+        },
+        "results/figures/confusability.png": {
+          "sha256_16": "b1a80d9b1378154a",
+          "bytes": 97611
+        }
+      }
+    },
+    {
+      "script": "experiments/run_fano.py",
+      "seed": 0,
+      "command": "python experiments/run_fano.py",
+      "artifacts": {
+        "results/fano.json": {
+          "sha256_16": "97fce8a0c1923bbb",
+          "bytes": 5963
+        },
+        "results/figures/fano_bounds.png": {
+          "sha256_16": "ca7ceb338cc61929",
+          "bytes": 106340
+        }
+      }
+    },
+    {
+      "script": "experiments/run_partial_sampling.py",
+      "seed": 0,
+      "command": "python experiments/run_partial_sampling.py",
+      "artifacts": {
+        "results/partial_sampling.json": {
+          "sha256_16": "43e9f7aeeb27ef33",
+          "bytes": 1450
+        },
+        "results/figures/partial_sampling.png": {
+          "sha256_16": "6984330996190b68",
+          "bytes": 88770
+        }
+      }
+    },
+    {
+      "script": "experiments/run_plugin.py",
+      "seed": 0,
+      "command": "python experiments/run_plugin.py",
+      "artifacts": {
+        "results/plugin.json": {
+          "sha256_16": "2285f6906b5d5b0a",
+          "bytes": 1358
+        },
+        "results/figures/plugin.png": {
+          "sha256_16": "565ef36ed2926f87",
+          "bytes": 87799
+        }
+      }
+    },
+    {
+      "script": "experiments/run_real_traffic.py",
+      "seed": 0,
+      "command": "python experiments/run_real_traffic.py",
+      "artifacts": {
+        "results/real_traffic.json": {
+          "sha256_16": "17e6a536a5a023f4",
+          "bytes": 3326
+        },
+        "results/figures/real_traffic.png": {
+          "sha256_16": "6cc1a8d7e5242808",
+          "bytes": 122597
+        }
+      }
+    },
+    {
+      "script": "experiments/run_real_fx.py",
+      "seed": 0,
+      "command": "python experiments/run_real_fx.py",
+      "artifacts": {
+        "results/real_fx.json": {
+          "sha256_16": "07e23c1bdf691fb4",
+          "bytes": 840
+        },
+        "results/figures/real_fx.png": {
+          "sha256_16": "a67debd75fce6dcf",
+          "bytes": 101688
+        }
+      }
+    }
+  ],
+  "wall_time_and_peak_rss": "not captured here; run each script with /usr/bin/time -v (Linux) or a psutil wrapper to record per-experiment wall time and peak RSS on your machine."
+}

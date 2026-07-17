@@ -65,8 +65,8 @@ $K_4$--$K_8$ against subspace and greedy baselines, including an excitation
 interpolation under which equal-image distinguishability provably vanishes.
 On real data, the same curl statistic \emph{localizes} genuine unplanted
 rotational structure --- tropical cyclones in ERA5 winds --- against a
-same-field vorticity reference and the independent IBTrACS archive. Code,
-data, and a 51-test suite numerically checking every constant are released.
+same-field vorticity reference and an external IBTrACS archive. Code,
+data, and a 51-test guardrail suite (the quoted constants checked against Monte-Carlo) are released.
 \end{abstract}
 
 \begin{keywords}
@@ -129,8 +129,8 @@ argument --- and Chernoff exponents, for fixed graph and support as
 $\rho_2\to0$, whose worst case equals one isolated-triangle detection
 (Thm.~\ref{thm:price}).
 \item \emph{Achievability}: a lifted-covariance NNLS estimator for the
-diagonal regime, consistent with a fully explicit $O(1/N)$ failure bound in
-which every constant is derived and numerically checked
+diagonal regime, consistent with a fully explicit $O(1/N)$ failure bound
+in which the constants are derived and numerically spot-checked
 (Thm.~\ref{thm:nnls}); Monte-Carlo validation on $K_4$--$K_8$ with random
 supports against oracle-aided subspace and greedy baselines, and an
 excitation-interpolation experiment in which equal-image distinguishability
@@ -434,11 +434,13 @@ alone.
 \centering
 \includegraphics[width=0.94\textwidth]{real_cyclone.png}
 \caption{Curl-based vortex localization on real data. (A)~Centered
-curl-energy scores (vorticity scale) for one 4-day window; red circles:
-independent IBTrACS fixes. (B)~ROC pooled over all windows: same-field
-vorticity reference, independent IBTrACS labels (with PR-AUC), and the
-classical coarse-vorticity baseline. (C)~Budget degradation (mean $\pm$ sd
-over 12 subsample draws; uniform centered statistic, $N\ge3$).}
+curl-energy scores (vorticity scale) for the single most-active $4$-day window
+(argmax IBTrACS-positive triangles; illustrative only --- all metrics pool
+every window); red circles: \emph{IBTrACS-positive triangle centroids} (not raw
+fix positions). (B)~ROC pooled over all $15$ windows: same-field vorticity
+reference, external IBTrACS labels (with PR-AUC), and the classical
+coarse-vorticity baseline. (C)~Budget degradation (mean $\pm$ sd over $12$
+subsample draws; uniform centered statistic, $N\ge3$).}
 \label{fig:cyclone}
 \end{figure*}
 We position the real-data study precisely: it is \emph{vortex localization},
@@ -462,10 +464,11 @@ the statistic responds to the time-varying circulation a moving vortex
 deposits. Validation (Fig.~\ref{fig:cyclone}B) against a \emph{same-field
 consistency reference} (finite-difference vorticity on the $3\times$-finer
 source grid) gives AUC $0.914$ (moving-block bootstrap $95\%$ CI
-$[0.894,0.936]$), and against the \emph{genuinely independent} IBTrACS
-archive \cite{knapp2010ibtracs} --- $13$ storms, $726$ fixes --- AUC
-$0.920$ $[0.879,0.951]$, PR-AUC $0.494$ $[0.273,0.666]$ at prevalence
-$1.8\%$, and P@$k=0.483$. Against a classical pointwise-vorticity baseline
+$[0.894,0.936]$), and against the \emph{external, separately curated} IBTrACS
+archive \cite{knapp2010ibtracs} (raw: $726$ fixes over $13$ storms; entering
+the metric: $414$ IBTrACS-positive of $23{,}310$ triangle-windows, prevalence
+$1.8\%$) AUC $0.920$ $[0.879,0.951]$, PR-AUC $0.494$ $[0.273,0.666]$, and
+P@$k=0.483$. Against a classical pointwise-vorticity baseline
 at the same information budget (mesh-node winds), the edge-flow statistic
 is better on \emph{all three} independent external metrics (baseline: AUC
 $0.898$, PR-AUC $0.360$, P@$k=0.389$) and slightly lower on the internal

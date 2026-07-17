@@ -330,9 +330,14 @@ def main() -> None:
     cen_lon = np.array([np.mean([mesh.node_lon[t] for t in tri]) for tri in mesh.cx.triangles])
     im = ax.scatter(cen_lon, cen_lat, c=np.log10(sc + 1e-12), s=12, cmap="viridis")
     fx_w = all_ext_gt[wi_show]
+    # red circles are TRIANGLE CENTROIDS labeled positive by IBTrACS (a fix
+    # within 1.5 deg), NOT the raw IBTrACS fix lat/lon.
     ax.scatter(cen_lon[fx_w], cen_lat[fx_w], facecolors="none", edgecolors="red",
-               s=60, linewidths=1.2, label="IBTrACS cyclone")
-    ax.set_title(f"(A) curl-energy score, {per_window[wi_show]['t0']}")
+               s=60, linewidths=1.2, label="IBTrACS-positive triangle centroids")
+    # DISCLOSED: this panel shows the single most active window
+    # (argmax of n_ext_pos) for illustration; ALL metrics pool every window.
+    ax.set_title(f"(A) curl-energy score, {per_window[wi_show]['t0']}\n"
+                 f"(most-active window, illustrative)")
     ax.set_xlabel("lon")
     ax.set_ylabel("lat")
     ax.legend(loc="lower right", fontsize=8)

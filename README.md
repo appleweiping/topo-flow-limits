@@ -381,7 +381,7 @@ atmospheric vortices. The centered curl-energy detector — no oracle
 parameters, nothing planted — is validated against **two references**: a
 *same-field consistency reference* — full-resolution finite-difference
 vorticity, a different functional of the same winds (internal, quantitative:
-**AUC 0.914**, Spearman 0.77) — and the **genuinely independent** IBTrACS
+**AUC 0.914**, Spearman 0.77) — and the **external, separately curated** IBTrACS
 best-track cyclone archive (external, agency-verified:
 **AUC 0.920**, PR-AUC 0.494 at 1.8 % prevalence, precision@k 0.48, with
 moving-block bootstrap 95 % CIs in the figure and JSON). The mesh is simply connected, so $B_2$ has
@@ -477,7 +477,7 @@ Euler) for one 4-day window, with independent IBTrACS fixes circled in red.
 **(B)** ROC pooled over all 15 windows against two references — internal
 *same-field consistency* (finite-difference vorticity, a different
 functional of the same winds at 3× finer resolution): **AUC 0.914**
-[moving-block bootstrap 95% CI 0.894–0.936]; external, genuinely independent
+[moving-block bootstrap 95% CI 0.894–0.936]; external, separately curated
 IBTrACS: **AUC 0.920** [0.879–0.951], **PR-AUC 0.494** [0.273–0.666] at
 prevalence 1.8%, P@k 0.483, Spearman(score, |ζ|) = 0.77. Baseline (coarse
 pointwise vorticity, same information budget): external AUC 0.898, PR-AUC
@@ -823,7 +823,7 @@ must beat a Monte-Carlo cross-examination before it is cited in the manuscript.
   mesh curl is physically the circulation (Stokes), so "filled triangles" have
   unambiguous meaning; and there are two complementary references — a
   same-field consistency reference (full-resolution vorticity of the same
-  winds: internal, quantitative) and the genuinely independent IBTrACS
+  winds: internal, quantitative) and the external, separately curated IBTrACS
   positions (external, semantic).
 
 **Road networks (repo figure `real_traffic.png`; outside the 4-page paper):**
@@ -1227,9 +1227,9 @@ $q^{3k}$ 因子极其残酷（Anaheim 上 $q=0.9$ 即摧毁恢复），且瓶颈
 由 Stokes 定理，三角形的旋度就是环流（面积分涡度），所以"高旋度三角形"
 就是真实的大气涡旋。检测器用时间中心化的旋度能量统计量（面积²归一到
 涡度尺度），无 oracle 参数，**什么都没有种植**；用**两个参考**验证
-（一个同场一致性参考 + 一个真正独立的 IBTrACS 档案）：
+（一个同场一致性参考 + 一个外部、独立整编的 IBTrACS 档案）：
 全分辨率有限差分涡度（内部定量：**AUC 0.914**，Spearman 0.77）与 IBTrACS
-台风最佳路径档案（外部、机构核验、与再分析完全独立；覆盖 Bavi、Maysak、
+台风最佳路径档案（外部、机构独立整编；注意 IBTrACS 综合多机构记录，与再分析并非严格数据独立；覆盖 Bavi、Maysak、
 Haishen 等 13 个风暴：**AUC 0.920**，PR-AUC 0.494（阳性率 1.8%），
 precision@k 0.48，附时序 moving-block bootstrap 95% CI（块长 3 窗口，尊重风暴尺度序列相关）。网格单连通 ⇒
 $B_2$ 满列秩（Euler 公式）⇒ 激励三分定理 (a) 类的有利几何侧，无混淆对。降采样快照

@@ -48,8 +48,8 @@ and a fully adaptive detector; \textbf{S4} full proofs of the main paper's
 lifted-spark lemma, the three excitation regimes, separation/exponent theorem, and
 NNLS consistency/failure bound, with exhaustive numerical verification;
 \textbf{S5} construction details of
-the cyclone vortex-localization study. All statements are validated numerically by the
-released test-suite; Section~\ref{sec:repro} maps every figure to its script.
+the cyclone vortex-localization study. The released test-suite provides numerical guardrails (not proofs) for the
+quoted constants; Section~\ref{sec:repro} maps every figure to its script.
 Notation follows the main paper: $N$ snapshots, candidate set $\Tcal$ with
 $p=|\Tcal|$, latent support $\Scal$ with $|\Scal|=k$, curl-SNR
 $\rho=3\sigma_c^2/\sigma_n^2$, per-coordinate null/alternative variances
@@ -396,7 +396,7 @@ trades off against the noise floor; this is verified numerically for
 $K_5$--$K_7$.
 \end{proposition}
 
-\begin{proposition}[(b) arbitrary PSD: structural characterization]\label{prop:psd}
+\begin{proposition}[(b) Arbitrary PSD]\label{prop:psd}
 For each support the achievable-covariance set is
 \[
 \Ccal_\Scal=\{\bm U_\Scal\Gam\bm U_\Scal^{\!\top}:\Gam\succeq0\}
@@ -503,13 +503,13 @@ signature Gram $\bm D_\Scal=\sum_{\tau\in\Scal}\bm u_\tau\bm u_\tau^{\!\top}$
 C_G=\tfrac{1}{16}\,\rho_2^2\,\|\Delta\bm D\|_F^2\,(1+o(1))
 =\tfrac{1}{16\sigma_n^4}\,\|\Delta\bm M\|_F^2\,(1+o(1))
 =\begin{cases}
-\rho_2^2\,(1+o(1)) & \text{swap (Lemma~\ref{lem:sep16})},\\[2pt]
-\tfrac9{16}\rho_2^2\,(1+o(1)) & \text{subset (Lemma~\ref{lem:sep9})},
+\rho_2^2(1+o(1)) & \text{swap},\\[2pt]
+\tfrac9{16}\rho_2^2(1+o(1)) & \text{subset},
 \end{cases}
 \]
-where the two forms coincide since $\Delta\bm M=\sigma_c^2\Delta\bm D$
-(do \emph{not} write $\rho_2^2\|\Delta\bm M\|_F^2$, which double-counts
-$\sigma_c^4$).
+by Lemmas~\ref{lem:sep16}--\ref{lem:sep9}; the two forms coincide since
+$\Delta\bm M=\sigma_c^2\Delta\bm D$ (do \emph{not} write
+$\rho_2^2\|\Delta\bm M\|_F^2$, which double-counts $\sigma_c^4$).
 the optimal error satisfies $P_{\rm err}\le e^{-N C_G}$ with matching
 exponent, and $N^\star(\delta)\sim\log(1/\delta)/C_G$. Moreover the
 subset exponent \emph{equals} the isolated-triangle detection exponent:
