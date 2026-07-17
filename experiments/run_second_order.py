@@ -217,9 +217,12 @@ def run_alpha_sweep(rng: np.random.Generator) -> dict:
             "N": ALPHA_N, "rho2": rho2, "n_trials": ALPHA_TRIALS,
             "note": "S = 3 faces of a K5 tetrahedron; equal-image "
                     "alternative = S + fourth face; Gamma_alpha = rho2 "
-                    "[(1-alpha) I + alpha (B_S^T B_S)^+]; at alpha=1 the "
-                    "covariances coincide exactly and recovery of the "
-                    "specific S is impossible beyond chance"}
+                    "[(1-alpha) I + alpha (B_S^T B_S)^+]; at alpha=1 the m=4 "
+                    "equal-image supports (3-subsets of the tetra faces) have "
+                    "identical distributions, so under a uniform prior no "
+                    "estimator exceeds chance 1/m=1/4; the plotted value is "
+                    "recovery of the SPECIFIC planted S (the thresholded NNLS "
+                    "returns the wrong cardinality, giving 0), which is <= 1/m"}
 
 
 def _plot(grid: dict, alpha: dict) -> None:

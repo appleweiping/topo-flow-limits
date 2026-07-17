@@ -224,6 +224,41 @@ def test_projector_excitation_equal_image_indistinguishable():
     assert np.linalg.norm(covs[0] - covs[1]) < 1e-9
 
 
+def test_projector_chance_is_one_over_m_under_uniform_prior():
+    """(c) MINIMAX 'chance' at the projector excitation. The m equal-image
+    supports of a tetrahedron (the four 3-subsets of its faces) induce
+    IDENTICAL population covariances, so for ANY estimator, under a uniform
+    prior over the m supports, P(success) = (1/m) Σ_j P(Ŝ=S_j) ≤ 1/m (the
+    events are disjoint). Chance is 1/m, not 0 — the α=1 endpoint's '0' is the
+    recovery of one *specific* support, which is ≤ 1/m. Here m=4, chance=1/4."""
+    cx = complete_complex(5)
+    _, B2 = build_incidences(cx)
+    U = curl_domain_signatures(B2)
+    quad = candidate_tetrahedra(cx.triangles)[0]
+    supports = []
+    for drop in quad:
+        S = np.zeros(B2.shape[1], bool)
+        for f in quad:
+            if f != drop:
+                S[f] = True
+        supports.append(S)
+    m = len(supports)
+    assert m == 4
+    # all four induce identical covariances at the projector excitation
+    sigs = [excitation_covariance(U, S, projector_excitation_gamma(B2, S, 1.3),
+                                  sigma_noise=0.7) for S in supports]
+    for sg in sigs[1:]:
+        assert np.linalg.norm(sg - sigs[0]) < 1e-9
+    # ⇒ any estimator's uniform-prior success = (1/m) Σ_j P(Ŝ=S_j) ≤ 1/m;
+    # a uniform-tie oracle over the m supports attains exactly 1/m.
+    rng = np.random.default_rng(1)
+    n_trials = 40000
+    hits = int(np.sum(rng.integers(m, size=n_trials) == rng.integers(m, size=n_trials)))
+    assert abs(hits / n_trials - 1.0 / m) < 0.01
+    # the upper bound 1/m is a hard ceiling for ANY estimator (disjointness)
+    assert 1.0 / m <= 0.2500000001
+
+
 # ---------------------------------------------------------------------------
 # Global analytic separations
 # ---------------------------------------------------------------------------

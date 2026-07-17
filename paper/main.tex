@@ -81,20 +81,18 @@ higher-order structure on the triangles of a simplicial complex
 signal processing builds filters and detectors on the Hodge Laplacian
 \cite{yang2022simplicial,battiloro2023topological,calmon2023dirac,%
 marinucci2025topological,liu2024unrolling}, and a recurring primitive is that
-the set $\Scal$ of ``filled'' triangles is unknown. One line of work
-\emph{estimates} $\Scal$ algorithmically: MAP estimation under a
-Hodge-smoothness prior \cite{gurugubelli2024simplicial}, greedy topology
-learning \cite{buciulea2025learning}, sparse cell-complex augmentation
-\cite{hoppe2023representing}; second-order precedent is older still ---
-Barbarossa and Sardellitti infer filled triangles from the sample covariance
-of edge flows by a PCA/total-variation criterion
-\cite[\S VII]{barbarossa2020topological}. A second line \emph{detects}
-whether a signal lies in a \emph{known} Hodge subspace: matched topological
-subspace detectors \cite{liu2025matched}. All of these fix a generative or
-observation model and give an algorithm; none states \emph{when} the latent
-structure is identifiable. That is the gap: \emph{when is the latent
-structure that generates the flows identifiable at all --- and what part of
-it?}
+the set $\Scal$ of ``filled'' triangles is unknown. One line \emph{estimates}
+$\Scal$ algorithmically (MAP under a Hodge-smoothness prior
+\cite{gurugubelli2024simplicial}, greedy learning \cite{buciulea2025learning},
+sparse cell-complex augmentation \cite{hoppe2023representing}); a second-order
+line models the edge covariance (PCA/total-variation on the sample covariance
+\cite[\S VII]{barbarossa2020topological}, ML fitting of a Hodge-structured
+simplicial Gaussian model \cite{marinucci2025simplicial}); a third
+\emph{detects} signals in a \emph{known} Hodge subspace \cite{liu2025matched}.
+Each fixes a model and gives an algorithm; to our knowledge none characterizes,
+as a function of the excitation class, \emph{when} the filled-triangle
+structure is identifiable from the edge covariance --- the gap this paper
+fills: \emph{what part of the latent structure is identifiable, and when?}
 
 The answer is not a property of the geometry alone: it depends on the
 \emph{excitation}. We model triangle signals as
@@ -107,12 +105,13 @@ $\{\Scal:\im\bm M\subseteq\im\bm U_\Scal\}$ --- under unrestricted PSD
 excitation, to provable
 indistinguishability of equal-image supports at the projector excitation. The
 last case is not a corner curiosity: the Hodge-smoothness prior of
-\cite{gurugubelli2024simplicial}, $\bm y_\Scal\sim\mathcal N(\bm 0,\bm L_2^{+})$
-with $\bm L_2=\B_2^{\!\top}\B_2$, \emph{is} this projector excitation ---
-so their model is second-order-unidentifiable and succeeds only through its
-sparsity prior. Our result thus both corrects a folklore ``rank
-obstruction'' and delimits what covariance- and image-level methods
-\cite{barbarossa2020topological,liu2025matched} can resolve. Our tools are
+\cite{gurugubelli2024simplicial}, $\bm y_\Scal\sim\mathcal N(\bm 0,\bm L_2^{+})$,
+$\bm L_2=\B_2^{\!\top}\B_2$, \emph{is} this projector excitation --- equal-image
+supports then have identical marginalized covariance likelihood, so any choice
+between them comes from the prior, not the data. We thus correct a folklore
+``rank obstruction'' and delimit what covariance- and image-level methods
+\cite{barbarossa2020topological,marinucci2025simplicial,liu2025matched} can
+resolve. Our tools are
 classical --- detection theory and Fano arguments
 \cite{poor1994introduction,cover2006elements}, in the lineage of
 support-recovery and sparse-covariance limits
@@ -130,7 +129,7 @@ argument --- and Chernoff exponents, for fixed graph and support as
 $\rho_2\to0$, whose worst case equals one isolated-triangle detection
 (Thm.~\ref{thm:price}).
 \item \emph{Achievability}: a lifted-covariance NNLS estimator for the
-diagonal class, consistent with a fully explicit $O(1/N)$ failure bound in
+diagonal regime, consistent with a fully explicit $O(1/N)$ failure bound in
 which every constant is derived and numerically checked
 (Thm.~\ref{thm:nnls}); Monte-Carlo validation on $K_4$--$K_8$ with random
 supports against oracle-aided subspace and greedy baselines, and an
@@ -184,9 +183,9 @@ detection thresholds, Fano converses, decorrelated detectors, plug-in
 estimation).
 
 \begin{definition}[Observational equivalence and identifiability]\label{def:id}
-All statements are about the \emph{population} covariance $\bm\Sigma_z$ (the
-$N\!\to\!\infty$ limit of $\hat{\bm\Sigma}_z$); finite-$N$ estimation is
-\S\ref{sec:nnls}. Two pairs $(\Scal,\Gam_\Scal)$ and $(\Scal',\Gam_{\Scal'})$
+All statements here are about the \emph{population} $\bm\Sigma_z$ (finite-$N$
+estimation is \S\ref{sec:nnls}). Two pairs $(\Scal,\Gam_\Scal)$ and
+$(\Scal',\Gam_{\Scal'})$
 are \emph{observationally equivalent} if
 $\bm\Sigma_z(\Scal,\Gam_\Scal)=\bm\Sigma_z(\Scal',\Gam_{\Scal'})$; a functional
 of $(\Scal,\Gam_\Scal)$ is \emph{identifiable} on an excitation class
@@ -295,8 +294,9 @@ $C_G=\rho_2^2\|\Delta\bm D\|_F^2/16\,(1+o(1))$, i.e.\
 $\tfrac9{16}\rho_2^2(1+o(1))$ (subset) and $\rho_2^2(1+o(1))$ (swap) --- and
 $\tfrac9{16}\rho_2^2$ \emph{equals} the isolated-triangle detection exponent
 $C(\rho)=\rho^2/16$ at $\rho=3\rho_2$: the hardest equal-image decision costs
-one isolated-triangle detection, so rank deficiency is free at the exponent
-level and only the Fano log-multiplicity of the $4\binom n4$ tetrad
+one isolated-triangle detection. Hence \emph{in this scope} (fixed pair,
+isotropic excitation, leading low-SNR exponent) rank deficiency is free at the
+exponent level, and only the Fano log-multiplicity of the $4\binom n4$ tetrad
 hypotheses ($\asymp\log n$ on $K_n$) reflects the geometry.
 \end{theorem}
 \begin{proof}[Proof sketch]
@@ -391,22 +391,19 @@ $(N,\rho_2)$ grid with $N\in\{25,\dots,400\}$ and
 $\rho_2\in\{0.25,\dots,2\}$, $200$ Monte-Carlo trials per cell, and $95\%$
 Wilson intervals (\texttt{run\_second\_order.py}; every cell, including the
 derived bound~\eqref{eq:bound} evaluated at that cell, is in the released
-JSON). Protocol notes: the headline threshold is the theorem's rule $w_{\min}/2$
-(planted weights known by design); an oracle-free \emph{largest-gap} rule is
-run alongside and logged per cell --- it is \emph{worse} than the theorem's
-rule (grid-mean exact-recovery $0.63$ vs.\ $0.69$, ahead in only $18$ of
-$260$ cells), reported for completeness, not as an improvement. The full
-edge-domain pipeline is used, so the gradient nuisance is present and
-annihilated by the projection; the greedy comparator is a generic
-covariance-atom heuristic (not a tuned literature method), and both baselines
-receive \emph{oracle} side information --- the subspace method the true $k$
-and the true $\dim\im\B_{2,\Scal}$, the greedy fitter the true $\sigma_n$.
+JSON). Protocol: the headline threshold is the theorem's $w_{\min}/2$ (planted
+weights known); an oracle-free largest-gap rule is logged alongside but is
+\emph{worse} (grid-mean $0.63$ vs.\ $0.69$, ahead in $18/260$ cells). The full
+edge-domain pipeline is used; the greedy comparator is a generic
+covariance-atom heuristic, and both baselines get \emph{oracle} side
+information (subspace: true $k$ and $\dim\im\B_{2,\Scal}$; greedy: true
+$\sigma_n$).
 
-(A)~NNLS is the only estimator attaining exact recovery in \emph{every}
-regime --- including maximal rank deficiency, e.g.\
-$\rank\B_2/p=21/56$ on $K_8$ --- reaching probability~$1$ at the plotted
-mid-$k$ cells by $N{=}400$, $\rho_2{=}1$ ($0.99$ at the densest $K_8$ cell,
-$k{=}28$). The oracle-$k$ subspace baseline can lead at small $N$ but
+(A)~Among these three implementations (not tuned literature methods), NNLS is
+the only one with exact recovery in \emph{every} cell --- incl.\ maximal rank
+deficiency ($\rank\B_2/p=21/56$ on $K_8$) --- reaching $1$ at mid-$k$ by
+$N{=}400$, $\rho_2{=}1$ ($0.99$ at the densest $K_8$ cell, $k{=}28$). The
+oracle-$k$ subspace baseline can lead at small $N$ but
 collapses on dependent candidates ($0.00$ at $K_8$, $k{=}28$): its
 \emph{population} scores tie there (Remark~\ref{rem:scope}(iii)), and its
 finite-$N$ tie-breaking rides on sample eigen-anisotropy, a side channel the
@@ -416,18 +413,20 @@ monotonically in $\rho_2$ uniformly across rank deficiency --- the empirical
 face of Theorem~\ref{thm:tri}(a). The bound~\eqref{eq:bound} upper-bounds
 every cell; being a Markov bound it is conservative by one to three orders
 of magnitude (the empirical failure decays exponentially, the bound as
-$1/N$), and it is certified non-vacuously at every informative cell ---
-down to $0.42$ on the released grid, ${\sim}0.75$ at the dedicated test
-cells, with zero observed failures at all of them. (C)~Under
+$1/N$). It is non-vacuous (clipped value $<1$) at only $7$ of the $260$ grid
+cells --- the small-$w_{\min}$, small-$N$ corner, where it falls as low as
+$0.42$ (and to ${\sim}0.75$ at dedicated test cells) with zero observed
+failures; elsewhere the $O(1/N)$ rate is the guarantee. (C)~Under
 $\Gam_\alpha=\rho_2[(1-\alpha)\bm I+\alpha(\B_{2,\Scal}^{\!\top}\B_{2,\Scal})^{+}]$
 on the $K_5$ tetrad, with the same $w_{\min}/2$ rule (the diagonal model is
 deliberately misspecified for $\alpha>0$ --- that is the point), the
 analytic equal-image gap shrinks continuously and the empirical NNLS
 recovery of the specific $\Scal$ collapses \emph{before} the gap reaches
 zero --- thresholded estimation dies earlier than distinguishability ---
-with the threshold-free endpoint at $\alpha=1$ exactly on
-Theorem~\ref{thm:tri}(c): identical covariances, no method can identify
-$\Scal$. Identifiability is a property of the excitation, not the geometry
+with the threshold-free endpoint at $\alpha=1$ on Theorem~\ref{thm:tri}(c):
+the $m{=}4$ equal-image supports have identical distributions, so no estimator
+beats chance $1/m$; the plotted $0$ is \emph{specific}-$\Scal$ recovery, itself
+$\le1/m$. Identifiability is a property of the excitation, not the geometry
 alone.
 
 \section{Real data: curl-based vortex localization}

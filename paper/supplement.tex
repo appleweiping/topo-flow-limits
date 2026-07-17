@@ -312,27 +312,26 @@ converts these fractions into population $\chi^2_d$ quantiles up to
 $\epsilon_p$, with probability $1-\delta$.
 \end{proof}
 
-\begin{proposition}[Plug-in perturbation]\label{prop:plugin}
-Let the plug-in variances satisfy $\hat v_{i,\tau}=(1+e_{i,\tau})v_{i,\tau}$
-with $|e_{i,\tau}|\le\epsilon<1/2$. Then each per-triangle error probability
-of the adaptive detector exceeds its known-parameter counterpart by at most
-$L_d\,\epsilon$, where $L_d<\infty$ is a Lipschitz constant of the
-$\chi^2_d$ CDFs at the optimal threshold, and the exact-recovery probability
-drops by at most $p\,L_d\,\epsilon$ (union bound).
-\end{proposition}
-\begin{proof}[Proof sketch]
-The Bayes threshold $\gamma(v_0,v_1)$ of the two-variance test is a smooth
-function of $(v_0,v_1)$ (main paper, Prop.~2), so
-$|\hat\gamma-\gamma|\lesssim\epsilon\gamma$; the error probabilities are
-integrals of bounded $\chi^2_d$ densities over the threshold shift.
-\end{proof}
+\begin{remark}[Plug-in perturbation --- empirical observation]\label{prop:plugin}
+We do \emph{not} prove a uniform explicit-constant bound on the adaptive
+detector's excess error. Heuristically, with plug-in variances
+$\hat v_{i,\tau}=(1+e_{i,\tau})v_{i,\tau}$, $|e_{i,\tau}|\le\epsilon<1/2$, the
+Bayes threshold $\gamma(v_0,v_1)$ is smooth (main paper, Prop.~2) so a
+first-order expansion suggests each per-triangle error probability changes by
+$O(\epsilon)$ and the exact-recovery probability by $O(p\epsilon)$ (union
+bound); but the constant depends on the $\chi^2_d$ density at the (shifting)
+threshold and on the $\hat v$ concentration, and we have not established a
+\emph{uniform} Lipschitz constant over the operating range. We therefore
+report the effect empirically only. Establishing a non-asymptotic joint
+selection-plus-estimation bound with explicit constants is left open.
+\end{remark}
 
-Empirically (Fig.~\ref{fig:plugin}) both estimates contract at the
+Empirically (Fig.~\ref{fig:plugin}) both variance estimates contract at the
 $1/\sqrt N$ rate and the fully adaptive detector's recovery curve is
 indistinguishable from the known-parameter detector for $N\gtrsim 30$ on the
 confusable strip benchmark; the residual gap at $N\le 20$ (at most $0.06$
 after refinement) is the price of estimating a variance from nine
-medians.
+medians. These are measurements, not a theorem.
 
 \begin{figure}[t]
 \centering

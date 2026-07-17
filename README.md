@@ -283,7 +283,7 @@ thresholded NNLS recovery of the specific `S` (declared `ρ₂/2` rule — the
 diagonal model is deliberately misspecified for α>0) collapses **before**
 the gap does (`run_second_order.py`, panel C: 1.00 → 0.82 → 0.00 by
 α=0.75); only the α=1 endpoint is threshold-free — identical covariances,
-no method can identify `S`.
+no estimator beats chance `1/m` (m equal-image supports, identical distributions under a uniform prior; the plotted 0 is recovery of the *specific* S, itself ≤ 1/m).
 
 **Achievability (class (a)): the lifted-covariance NNLS estimator**
 (`nnls_lifted_support`): `ŵ = argmin_{w≥0} ‖Σ̂_z − σ_n²I − Σ w_τ u_τu_τᵀ‖_F²`,
@@ -424,7 +424,7 @@ definitions.
 **(A)** Exact-recovery vs $N$ on $K_4$–$K_8$ with per-trial *random*
 supports at $\rho_2=1$: the lifted-covariance **NNLS** estimator (solid,
 95% Wilson bands) reaches probability 1 by $N=400$ at *every* rank
-deficiency (incl. $21/56$ on $K_8$) — the only estimator to do so: the
+deficiency (incl. $21/56$ on $K_8$) — the only one of the **three evaluated implementations** to do so (not tuned literature methods): the
 *oracle-aided* matched-subspace baseline (dashed) can lead at small $N$
 but collapses on dependent candidates ($0.00$ at $K_8$), and the greedy
 atom fitter (dotted) stalls at 0.43 on $K_5$. **(B)** NNLS vs $\rho_2$ at $N=200$ across rank
@@ -780,7 +780,8 @@ Expected `run_all.py` output (seeds are fixed; numbers reproduce exactly):
 | `test_nnls_consistency_and_recovery_bound_components` | NNLS theorem steps: exact Wishart moment (±6%), cone-LS bound (0 violations in 220 trials), contraction |
 | `test_nnls_recovery_bound_upper_bounds_empirical_failure` | the explicit $O(1/N)$ failure bound holds across an $(N,\rho_2)$ grid |
 | `test_nnls_recovery_bound_nonvacuous_cells` | the bound is informative ($\approx0.73$–$0.75<1$) at dedicated cells and still upper-bounds the observed failures (zero) |
-| `test_subspace_baseline_population_tie_and_projector_collapse` | subspace scores tie at 1 in population; both methods → chance under projector excitation |
+| `test_subspace_baseline_population_tie_and_projector_collapse` | subspace scores tie at 1 in population; specific-S recovery → 0 under projector excitation |
+| `test_projector_chance_is_one_over_m_under_uniform_prior` | minimax: m equal-image supports identical ⇒ no estimator > 1/m under a uniform prior (m=4, chance=1/4) |
 | `test_alpha_interpolation_kills_equal_image_distinguishability` | equal-image gap monotone → exactly 0 at $\alpha=1$ |
 | `test_geo.py` (4 tests) | wind→edge-flow bridge: Euler full rank; Rankine vortex localizes with correct sign; vorticity ranking |
 
@@ -863,6 +864,7 @@ predicted budget.
 | Yang et al. 2022 (TSP filters); Schaub et al. 2020 | Builds the Hodge-Laplacian signal-processing toolbox | Assumes the filled-triangle set is **known** |
 | Gurugubelli & Chepuri, EUSIPCO 2024 (sparse clique sampling, MAP); greedy topology learning (arXiv 2502.20159); sparse cell complexes (arXiv 2309.01632) | **Algorithms** that estimate the filled set from flows | No identifiability conditions, no sample-complexity/SNR thresholds, no converse. G–C's generative model `y~N(0,L₂⁺)` is precisely the **projector excitation** our regime (c) proves second-order-**unidentifiable** — recoverable only via their sparsity prior |
 | Marinucci et al. 2025 (topological adaptive LMS) | Online estimation over simplicial complexes, edge-sampling design | Complex structure assumed known; lists structure-discovery as future work |
+| Marinucci, D'Acunto, Di Lorenzo & Barbarossa 2025, *Simplicial Gaussian Models* (arXiv:2510.12983) | **Closest second-order model**: a Hodge-structured Gaussian over nodes/edges/triangles, fit by **maximum likelihood** to recover parameters + conditional-dependence structure (edge-marginal, node/triangle latent) | Estimates continuous parameters of an assumed model; to our knowledge gives **no excitation-class-dependent identifiability characterization** — i.e. no statement of *when* the filled-triangle structure is recoverable from the edge covariance vs. only up to `{S : im M ⊆ im U_S}` (our regime (b)) |
 | Hypergraph/simplicial SBM detectability (e.g. arXiv 2312.00708, 2108.06547) | Phase transitions for community detection when the **structure itself is observed** | Different observation model: our structure is *latent* and observed only through flow curls |
 | High-dimensional support-recovery / sparse-covariance detection limits (Wainwright 2009; Amini & Wainwright 2009; Berthet & Rigollet 2013; Cai-Zhang-Zhou 2010) | The generic information-theoretic machinery (Fano log-factors, variance-detection scalings) we **specialize** — cited as such in the paper | No simplicial/curl geometry: nothing about $B_2$, Gram leakage, $\ker B_2$ confusers, or the lifted-atom spark that drives our regime-(a) identifiability |
 | Liu, Tenorio, Marques & Isufi 2025 (matched topological subspace detectors, arXiv:2504.05892) | **Detection** of signals lying in a *known* Hodge/topological subspace | The subspace is an input, not an estimand; population statistics see only $\mathrm{im}\,B_{2,S}$ — our regime (b) delimits exactly what such image-level methods can resolve |
@@ -885,7 +887,7 @@ Stated plainly, because reviewers (and users) deserve to know:
    sub-Gaussian *converse with matching constants* remains open.
 2. **Known second-order parameters.** The paper's detectors take
    $(\sigma_c, \sigma_n)$ as inputs; supplement §S3 provides consistent plug-in
-   estimators, a first-order perturbation bound (Prop. S3.2), and the fully
+   estimators and a fully
    adaptive detector. The remaining gap is a non-asymptotic *joint* analysis of
    selection and estimation (the refinement pass is conditionally biased at
    small $N$; see §12/S3).
@@ -1078,8 +1080,9 @@ screen), plus one refinement pass (`adaptive_whitened_detector_support`,
 `refine=True`): re-fit $\sigma_n$ on the detected off-support, $\sigma_c$ on
 the on-support excess, re-run once. Supplement Lemma S3.1 gives an **explicit,
 numerically computable envelope** for the median estimate (DKW + $\chi^2$
-quantiles — no hidden constants); Prop. S3.2 bounds the recovery-probability
-cost of plug-in thresholds to first order. Empirically both estimates contract
+quantiles — no hidden constants); the plug-in threshold's effect on
+recovery is reported **empirically only** (demoted from a proposition to an
+empirical observation — no proven uniform-constant bound). Empirically both estimates contract
 at the $1/\sqrt N$ rate and the adaptive detector matches the known-parameter
 detector within 0.06 everywhere (below 0.01 for $N \ge 30$, exactly zero for
 $N \ge 45$) on the strip benchmark.
