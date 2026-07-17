@@ -1,6 +1,6 @@
 {
-  "commit": "046536ded4c7993dbd47678fdc55e8b39703d8a6",
-  "commit_dirty": true,
+  "commit": "1d2ea88acf4a2c63dd0c925ca313d6ce32ef1863",
+  "commit_dirty": false,
   "commit_note": "This is HEAD at generation time. When the manifest is committed it becomes the PARENT of the commit that carries it, so manifest.commit == HEAD~1 for the commit that adds/updates it. Regenerate on a clean tree so commit_dirty is false.",
   "generated_by": "experiments/make_manifest.py",
   "environment": {
