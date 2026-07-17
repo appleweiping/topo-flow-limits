@@ -225,12 +225,14 @@ def test_projector_excitation_equal_image_indistinguishable():
 
 
 def test_projector_chance_is_one_over_m_under_uniform_prior():
-    """(c) MINIMAX 'chance' at the projector excitation. The m equal-image
-    supports of a tetrahedron (the four 3-subsets of its faces) induce
+    """(c) MINIMAX 'chance' at the projector excitation. The equal-CARDINALITY
+    (size-3) equal-image supports of a tetrahedron (its four 3-subsets) induce
     IDENTICAL population covariances, so for ANY estimator, under a uniform
-    prior over the m supports, P(success) = (1/m) Σ_j P(Ŝ=S_j) ≤ 1/m (the
+    prior over these m supports, P(success) = (1/m) Σ_j P(Ŝ=S_j) ≤ 1/m (the
     events are disjoint). Chance is 1/m, not 0 — the α=1 endpoint's '0' is the
-    recovery of one *specific* support, which is ≤ 1/m. Here m=4, chance=1/4."""
+    recovery of one *specific* support, which is ≤ 1/m. Here m=4, chance=1/4.
+    (The FULL observational-equivalence class of that image is 5 — adding the
+    4-face support — which only lowers the ceiling to 1/5.)"""
     cx = complete_complex(5)
     _, B2 = build_incidences(cx)
     U = curl_domain_signatures(B2)

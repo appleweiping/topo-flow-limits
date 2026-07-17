@@ -97,6 +97,10 @@ def main() -> None:
     manifest = {
         "commit": _sh(["git", "rev-parse", "HEAD"]) or "(no git)",
         "commit_dirty": bool(_sh(["git", "status", "--porcelain"])),
+        "commit_note": "This is HEAD at generation time. When the manifest is "
+        "committed it becomes the PARENT of the commit that carries it, so "
+        "manifest.commit == HEAD~1 for the commit that adds/updates it. "
+        "Regenerate on a clean tree so commit_dirty is false.",
         "generated_by": "experiments/make_manifest.py",
         "environment": _versions(),
         "hardware": _hardware(),

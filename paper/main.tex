@@ -49,9 +49,9 @@ positive-diagonal $\Gam_\Scal$ (known or unknown), the weighted support is
 identifiable at \emph{any} rank deficiency of $\B_2$, because the lifted
 signatures $\{\bm b_\tau\bm b_\tau^{\!\top}\}$ are always linearly
 independent. For unrestricted PSD $\Gam_\Scal$, the population curl covariance
-$\bm\Sigma_z$ determines only the achievable set
-$\Ccal_\Scal=\{\bm M\!\succeq\!0:\im\bm M\subseteq\im\bm U_\Scal\}$, hence the
-support solely up to $\{\Scal:\im\bm M\subseteq\im\bm U_\Scal\}$; a strictly
+determines $\bm M=\bm\Sigma_z-\sigma_n^2\bm I$ exactly but pins the support
+only up to $\{\Scal:\im\bm M\subseteq\im\bm U_\Scal\}$ (the achievable set is
+$\Ccal_\Scal=\{\bm M\!\succeq\!0:\im\bm M\subseteq\im\bm U_\Scal\}$); a strictly
 positive-\emph{diagonal} but correlated $\Gam_\Scal$ already defeats
 identification (a rank-one witness on $K_4$). At the projector excitation
 $\Gam_\Scal=\sigma_c^2(\B_{2,\Scal}^{\!\top}\B_{2,\Scal})^{+}$ the covariance
@@ -424,9 +424,9 @@ analytic equal-image gap shrinks continuously and the empirical NNLS
 recovery of the specific $\Scal$ collapses \emph{before} the gap reaches
 zero --- thresholded estimation dies earlier than distinguishability ---
 with the threshold-free endpoint at $\alpha=1$ on Theorem~\ref{thm:tri}(c):
-the $m{=}4$ equal-image supports have identical distributions, so no estimator
-beats chance $1/m$; the plotted $0$ is \emph{specific}-$\Scal$ recovery, itself
-$\le1/m$. Identifiability is a property of the excitation, not the geometry
+the $m{=}4$ equal-image supports of the planted cardinality have identical
+distributions, so no estimator beats chance $1/m$; the plotted $0$ is
+\emph{specific}-$\Scal$ recovery, itself $\le1/m$. Identifiability is a property of the excitation, not the geometry
 alone.
 
 \section{Real data: curl-based vortex localization}

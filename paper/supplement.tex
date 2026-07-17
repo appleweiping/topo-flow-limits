@@ -434,8 +434,10 @@ relation). Take $\bm v=\bm e_1-\tfrac14\bm c=(.75,.25,-.25,.25)^{\!\top}$
 $\bm U_\Scal\Gam'\bm U_\Scal^{\!\top}=(\bm U_\Scal\bm v)(\bm U_\Scal\bm v)^{\!\top}
 =\bm u_1\bm u_1^{\!\top}$ (since $\bm U_\Scal\bm c=\bm 0$) --- identical to the
 singleton $\{\tau_1\}$ with unit variance, although $\dim\mathrm{im}\,\B_{2,\Scal}=3\ne1$.
-The obstruction is the off-diagonal \emph{correlation} of $\Gam'$
-($\approx0.19$), not any zero variance (the degenerate $\Gam=\mathrm{diag}(1,0)$
+The obstruction is that $\Gam'$ is non-diagonal --- nonzero off-diagonal
+\emph{entries} $v_iv_j\approx\pm0.19$ (being rank one, $\Gam'$ is in fact
+perfectly correlated) --- not any zero variance (the degenerate
+$\Gam=\mathrm{diag}(1,0)$
 example needs an inactive triangle; this one does not). Verified in
 \texttt{tests/test\_excitation.py}.
 \end{remark}
@@ -445,8 +447,16 @@ For $\Gam_\Scal=\sigma_c^2(\B_{2,\Scal}^{\!\top}\B_{2,\Scal})^{+}$,
 $\bm U_\Scal\Gam_\Scal\bm U_\Scal^{\!\top}=\sigma_c^2\bm P_{\im\bm U_\Scal}$
 exactly (SVD: $\bm A(\bm A^{\!\top}\bm A)^{+}\bm A^{\!\top}=\bm P_{\im\bm A}$).
 Supports with equal curl image therefore induce identical snapshot
-distributions --- indistinguishable at every SNR and $N$.
-\end{proposition}
+distributions --- indistinguishable at every SNR and $N$. Consequently, under
+a uniform prior over the $m$ supports sharing a given image, no estimator
+recovers the true one with probability exceeding $1/m$ (the events
+$\{\hat\Scal=\Scal_j\}$ are disjoint, so $\Pr[\text{success}]=\tfrac1m\sum_j\Pr[\hat\Scal=\Scal_j]\le\tfrac1m$).
+For one tetrahedron on $K_n$ the equal-\emph{cardinality} (size-3) class has
+$m=4$ (the four $3$-subsets of its faces); the \emph{full} observational-
+equivalence class of that image is $5$ (adding the $4$-face support), which
+only lowers the ceiling to $1/5$. The main paper's $\alpha$-sweep recovers a
+specific size-3 support, so it uses $m=4$; the estimator's plotted $0$ (it
+returns the wrong cardinality) is itself $\le1/m$.
 
 \begin{remark}[Deterministic boundary]
 Unknown deterministic signals are the rank-one degenerate boundary of regime (b): for

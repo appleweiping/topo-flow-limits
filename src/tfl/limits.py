@@ -468,7 +468,8 @@ def fano_rho_floor(p: int, k: int, N: int, err: float = 0.5) -> float:
 #          faces with Gamma' gives the SAME M as S={face0} with Gamma=[1], yet
 #          dim im B_{2,S}=1 != 3=dim im B_{2,S'}. Positive per-triangle variance
 #          is NOT enough; what regime (a) additionally requires is that Gamma be
-#          DIAGONAL (uncorrelated). Gamma' is correlated (off-diagonal ~0.19),
+#          DIAGONAL (uncorrelated). Gamma' is non-diagonal (off-diagonal
+#          ENTRIES v_i v_j ~ +-0.19; being rank one it is perfectly correlated),
 #          which is exactly what breaks identifiability here.
 #  (c) Gamma_S = sigma_c^2 (B_{2,S}^T B_{2,S})^+ (projector excitation): a
 #      SPECIFIC full-rank-on-its-own-image excitation for which
