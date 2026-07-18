@@ -69,34 +69,49 @@ the GNN remain **not done and not claimed as done**.
    (`src/tfl/gpu.py`, genuine CUDA batched GEMMs) gives 0.967/1.00/1.00 at
    `p=1000` and a tiled `p≈10⁴` feasibility point — all logged with runtime and
    peak GPU memory (§S6, `run_scaling.py` / `run_gpu_mc.py`).
-2. **Non-oracle threshold estimator.** ✅ **DONE.** A BIC-over-support-path rule
-   (`src/tfl/selection.py`) uses no `w_min` and an estimated `σ_n`; it is
-   selection-consistent (classical Gaussian-BIC guarantee, numerically
-   confirmed) and matches — even beats at small `N` — the oracle `w_min/2` rule
-   (§S6, `run_selection.py`). A sample-split variant is the assumption-light
-   fallback.
+2. **Non-oracle threshold estimator — with a RETRACTION (round-9).** A
+   BIC-over-support-path rule (`src/tfl/selection.py`) uses no `w_min` and an
+   estimated `σ_n`. The earlier claim of *unconditional* "classical BIC selection
+   consistency" was **wrong and is retracted**: `run_bic_boundary.py` /
+   `tests/test_bic_boundary.py` show it FAILS on dense supports even at `N=10⁵`
+   (K6, `k≥12` → 0 recovery) because the median-eigenvalue `σ_n` is a noise
+   eigenvalue only while the active curl-covariance rank `< r/2`
+   (noise-identifiability). What holds: GIVEN an identifiable `σ_n`, classical
+   Gaussian-BIC consistency under fixed `p`, lifted-atom injectivity, β-min, and
+   a unique minimizer (the oracle-`σ_n` path then recovers even `k=p`). The
+   median-`σ_n` rule is therefore an **empirical selector** valid in the
+   noise-identifiable (sufficiently sparse) regime the paper's `k=3` experiments
+   use; it matches — even beats at small `N` — the oracle there (§S6). A
+   sample-split variant is the assumption-light fallback.
 3. **Faithful literature baseline.** ✅ **DONE (convex-sparse).** A non-negative
    lifted-LASSO (soft-threshold FISTA, `λ` by BIC) in the sparse-covariance /
-   sparse-PCA lineage is implemented and evaluated; the NNLS estimator beats it
-   in-regime (§S6). *Not done:* a tuned Gurugubelli–Chepuri MAP / Barbarossa
-   PCA-BFMTV port (those target different objectives on our model); the
-   comparison and superiority claims are scoped to the methods actually run.
-   **Also deferred:** a GPU-trained GNN detector baseline (`src/tfl/neural.py`
-   was scoped but not implemented) — optional, since the GPU workload is already
-   genuinely exercised by the batched Monte-Carlo.
+   sparse-PCA lineage is implemented and evaluated. *Not done:* a tuned
+   Gurugubelli–Chepuri MAP / Barbarossa PCA-BFMTV port (those target different
+   objectives on our model). **Because those direct literature baselines are not
+   ported, the paper makes NO generalized superiority claim: every comparison is
+   scoped to the three implementations actually evaluated** (NNLS, subspace,
+   greedy) plus the convex-sparse LASSO, on our generative model.
+   **Also not done:** a GPU-trained GNN detector baseline (`src/tfl/neural.py`
+   was scoped but not implemented). This is a genuine gap in the baseline suite;
+   it is **not** excused by "the GPU is already exercised elsewhere" (that
+   conflates a scaling demo with a missing comparator).
 4. **Cyclone reprocessing.** ✅ **DONE** (`run_real_cyclone.py`,
    `results/real_cyclone.json`, supplement cyclone §). All 244 snapshots are
    loaded; the 15 non-overlapping 16-snapshot windows use 240 and drop the
    trailing 4 (disclosed in `season`). Panel C (budget degradation) is now the
    mean ± sd across **all 15 windows**, not the most-active one. Raw-vs-eligible
-   denominators are reported (726 fixes / 13 storms → 414 external-positive of
-   23,310 triangle-windows). Sensitivity sweeps added: localization radius
-   (1.0–2.5°: AUC 0.95–0.87), 34-kt→typhoon wind cutoff (0.91–0.92), window
-   length (2–6 d: 0.94–0.90), bootstrap block length (CI half-width ≈0.04), plus
-   the existing vorticity-threshold sweep. A **storm-cluster bootstrap**
-   (resamples whole storms) gives AUC [0.88, 0.95], agreeing with the
-   moving-block CI [0.879, 0.951]. All real-data CIs are labeled **exploratory**
-   (one 2020 season, no multi-year validation).
+   denominators are reported. **Round-9: split wind labels.** ~1/3 of fixes
+   (229/726, 11 storms) have no reported wind; the old labeling silently counted
+   them as ≥34 kt. Now BOTH **strict** (finite ≥34 kt; 312 positive) and
+   **inclusive** (missing counted; 414 positive) are computed and reported;
+   neither is privileged. Strict AUC 0.950 [0.915, 0.975], inclusive 0.920
+   [0.879, 0.951]; the detector beats the baseline on all three external metrics
+   under both. Sensitivity sweeps (radius, wind cutoff, window length, block
+   length) run for both; **monotonicity is a per-sweep computed flag, not an
+   assertion** — the wind-cutoff sweep is NOT monotone under inclusive labeling.
+   The **moving-block bootstrap is the primary CI**; the storm-cluster bootstrap
+   is corroboration only (mildly anti-conservative). All real-data CIs are
+   **exploratory** (one 2020 season, no multi-year validation).
 5. **CI smoke tests.** ✅ **DONE** (`.github/workflows/ci.yml`). CPU-only,
    torch-free matrix (Python 3.11/3.12): asserts the core imports without torch,
    compile-checks every `src/`/`experiments/` file, runs `pytest -q`.
@@ -116,7 +131,7 @@ the GNN remain **not done and not claimed as done**.
 
 - Environment: `requirements.lock`; provenance: `results/manifest.json`
   (regenerate with `python experiments/make_manifest.py`).
-- Tests: `pytest -q` (58 tests). These are **guardrails, not proofs** — the
+- Tests: `pytest -q` (63 tests). These are **guardrails, not proofs** — the
   identifiability claims are proven in `paper/supplement.tex` §S4 and
   independently re-derived in the commit history.
 - Every quoted number lives in `results/*.json`.

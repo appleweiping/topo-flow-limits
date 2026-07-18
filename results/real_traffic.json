@@ -9,9 +9,9 @@
       "dof_ratio": 1.0,
       "triangles_edge_disjoint": true,
       "real_flow_energy_frac": {
-        "gradient": 0.7235199616408393,
+        "gradient": 0.7235199616408396,
         "curl": 0.023866707324827503,
-        "harmonic": 0.25261333103433237
+        "harmonic": 0.25261333103433214
       }
     },
     {
@@ -32,7 +32,7 @@
       "dof_ratio": 1.0,
       "triangles_edge_disjoint": true,
       "real_flow_energy_frac": {
-        "gradient": 0.03390542015203786,
+        "gradient": 0.03390542015203796,
         "curl": 0.04626590172012947,
         "harmonic": 0.9198286781278325
       }
@@ -107,7 +107,7 @@
     "n_edge_sharing_pairs": 10,
     "Gp_diag_range": [
       0.3333333333333333,
-      0.4363636363636364
+      0.43636363636363645
     ],
     "rho": 3.0,
     "sigma_noise": 1.0,
@@ -136,11 +136,11 @@
     ],
     "theory_product_approx": [
       0.013401255596623961,
-      0.0954897313436303,
-      0.303735975230228,
+      0.09548973134363027,
+      0.30373597523022805,
       0.6115667490450293,
       0.8605011143116106,
-      0.9694403004216675,
+      0.9694403004216674,
       0.9963765903213707,
       0.9998126906956224
     ],
@@ -149,12 +149,46 @@
       0.0,
       0.0,
       0.5126540142640892,
-      0.850210166988977,
-      0.968986302551637,
+      0.8502101669889769,
+      0.9689863025516371,
       0.9963704131818246,
       0.9998126746772178
     ],
     "n_trials": 200,
     "seed": 7
+  },
+  "_provenance": {
+    "git_sha": "54c73d7c5a4f36a133fa644fdf1618827f07cb2f",
+    "git_dirty": true,
+    "hostname": "autodl-container-p48vc3ykfm-7ba3727f",
+    "command": "python /root/autodl-tmp/tfl_r9/experiments/run_real_traffic.py",
+    "seed": null,
+    "timestamp_utc": "2026-07-18T12:27:11+00:00",
+    "environment": {
+      "python": "3.12.3",
+      "numpy": "2.4.6",
+      "scipy": "1.17.1",
+      "matplotlib": "3.10.9",
+      "torch": null
+    },
+    "blas_threads": {
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null,
+      "NUMEXPR_NUM_THREADS": null,
+      "VECLIB_MAXIMUM_THREADS": null
+    },
+    "hardware": {
+      "hostname": "autodl-container-p48vc3ykfm-7ba3727f",
+      "platform": "Linux-5.15.0-25-generic-x86_64-with-glibc2.35",
+      "machine": "x86_64",
+      "processor": "x86_64",
+      "logical_cpus": 128,
+      "cpu_model": "Intel(R) Xeon(R) Platinum 8352V CPU @ 2.10GHz"
+    },
+    "wall_time_s": 479.8412129878998,
+    "peak_rss_mb": 151.4765625,
+    "peak_vram_mb": null,
+    "exit_status": "completed_ok"
   }
 }

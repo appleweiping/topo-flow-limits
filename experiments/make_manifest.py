@@ -92,6 +92,9 @@ EXPERIMENTS = [
      ["results/gpu_mc.json"]),
     ("experiments/run_selection.py", 0,
      ["results/selection.json", "results/figures/scaling.png"]),
+    # round-9: BIC noise-identifiability boundary (the retraction's counterexample)
+    ("experiments/run_bic_boundary.py", 0,
+     ["results/bic_boundary.json"]),
 ]
 
 
@@ -132,6 +135,14 @@ def main() -> None:
         "manifest.commit == HEAD~1 for the commit that adds/updates it. "
         "Regenerate on a clean tree so commit_dirty is false.",
         "generated_by": "experiments/make_manifest.py",
+        "provenance_note": "AUTHORITATIVE machine/run provenance now lives in the "
+        "'_provenance' block that tfl.provenance embeds in each results/*.json AT "
+        "GENERATION TIME (same process): git SHA/dirty, hostname, command, "
+        "timestamp, env, BLAS threads, hardware, wall time, peak RSS/VRAM. In "
+        "the round-9 server rerun those show git_sha=54c73d7 on the AutoDL host "
+        "with git_dirty=true -- 'true' only because the run overwrites tracked "
+        "results/*.json in place, NOT because the code differs from the SHA. "
+        "This manifest is an index; the per-JSON _provenance is the record.",
         "environment": _versions(),
         "hardware": _hardware(),
         "server_hardware": _server_hardware(),

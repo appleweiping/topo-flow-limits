@@ -151,5 +151,39 @@
       ],
       "sigma_n_median_rel_err": 0.021233329095676545
     }
-  ]
+  ],
+  "_provenance": {
+    "git_sha": "54c73d7c5a4f36a133fa644fdf1618827f07cb2f",
+    "git_dirty": true,
+    "hostname": "autodl-container-p48vc3ykfm-7ba3727f",
+    "command": "python /root/autodl-tmp/tfl_r9/experiments/run_selection.py",
+    "seed": null,
+    "timestamp_utc": "2026-07-18T12:42:39+00:00",
+    "environment": {
+      "python": "3.12.3",
+      "numpy": "2.4.6",
+      "scipy": "1.17.1",
+      "matplotlib": "3.10.9",
+      "torch": null
+    },
+    "blas_threads": {
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null,
+      "NUMEXPR_NUM_THREADS": null,
+      "VECLIB_MAXIMUM_THREADS": null
+    },
+    "hardware": {
+      "hostname": "autodl-container-p48vc3ykfm-7ba3727f",
+      "platform": "Linux-5.15.0-25-generic-x86_64-with-glibc2.35",
+      "machine": "x86_64",
+      "processor": "x86_64",
+      "logical_cpus": 128,
+      "cpu_model": "Intel(R) Xeon(R) Platinum 8352V CPU @ 2.10GHz"
+    },
+    "wall_time_s": 16.212872982025146,
+    "peak_rss_mb": 125.1953125,
+    "peak_vram_mb": null,
+    "exit_status": "completed_ok"
+  }
 }

@@ -1,0 +1,104 @@
+{
+  "generated_by": "experiments/run_all.py",
+  "total_wall_s": 1802.08,
+  "gpu_tier_included": false,
+  "records": [
+    {
+      "script": "run_phase_transition.py",
+      "tier": "cpu",
+      "exit_code": 0,
+      "wall_s": 47.48,
+      "status": "ok"
+    },
+    {
+      "script": "run_confusability.py",
+      "tier": "cpu",
+      "exit_code": 0,
+      "wall_s": 97.56,
+      "status": "ok"
+    },
+    {
+      "script": "run_real_fx.py",
+      "tier": "cpu",
+      "exit_code": 0,
+      "wall_s": 1.51,
+      "status": "ok"
+    },
+    {
+      "script": "run_real_traffic.py",
+      "tier": "cpu",
+      "exit_code": 0,
+      "wall_s": 481.72,
+      "status": "ok"
+    },
+    {
+      "script": "run_fano.py",
+      "tier": "cpu",
+      "exit_code": 0,
+      "wall_s": 3.36,
+      "status": "ok"
+    },
+    {
+      "script": "run_partial_sampling.py",
+      "tier": "cpu",
+      "exit_code": 0,
+      "wall_s": 424.43,
+      "status": "ok"
+    },
+    {
+      "script": "run_plugin.py",
+      "tier": "cpu",
+      "exit_code": 0,
+      "wall_s": 90.37,
+      "status": "ok"
+    },
+    {
+      "script": "run_second_order.py",
+      "tier": "cpu",
+      "exit_code": 0,
+      "wall_s": 283.44,
+      "status": "ok"
+    },
+    {
+      "script": "run_bic_boundary.py",
+      "tier": "cpu",
+      "exit_code": 0,
+      "wall_s": 63.39,
+      "status": "ok"
+    },
+    {
+      "script": "run_scaling.py",
+      "tier": "cpu",
+      "exit_code": 0,
+      "wall_s": 46.72,
+      "status": "ok"
+    },
+    {
+      "script": "run_selection.py",
+      "tier": "cpu",
+      "exit_code": 0,
+      "wall_s": 16.64,
+      "status": "ok"
+    },
+    {
+      "script": "run_real_cyclone.py",
+      "tier": "cpu",
+      "exit_code": 0,
+      "wall_s": 243.69,
+      "status": "ok"
+    },
+    {
+      "script": "run_gpu_mc.py",
+      "tier": "gpu",
+      "status": "skipped_gpu"
+    },
+    {
+      "script": "plot_scaling.py",
+      "tier": "cpu",
+      "exit_code": 0,
+      "wall_s": 1.76,
+      "status": "ok"
+    }
+  ],
+  "n_failed": 0
+}

@@ -14,10 +14,10 @@
   "n_edges": 36,
   "n_candidate_triangles": 84,
   "curl_dimension": 28,
-  "gradient_energy": 59143.06399432625,
-  "curl_energy": 1.0611373251788127e-26,
-  "harmonic_energy": 3.884702563780657e-26,
-  "curl_to_gradient_ratio": 1.7941872698387937e-31,
+  "gradient_energy": 59143.06399432623,
+  "curl_energy": 9.716082376352369e-27,
+  "harmonic_energy": 3.834008031795791e-26,
+  "curl_to_gradient_ratio": 1.6428101150262458e-31,
   "Kn_grid": [
     5,
     6,
@@ -47,5 +47,39 @@
     0.3,
     0.2727272727272727,
     0.25
-  ]
+  ],
+  "_provenance": {
+    "git_sha": "54c73d7c5a4f36a133fa644fdf1618827f07cb2f",
+    "git_dirty": true,
+    "hostname": "autodl-container-p48vc3ykfm-7ba3727f",
+    "command": "python /root/autodl-tmp/tfl_r9/experiments/run_real_fx.py",
+    "seed": null,
+    "timestamp_utc": "2026-07-18T12:19:09+00:00",
+    "environment": {
+      "python": "3.12.3",
+      "numpy": "2.4.6",
+      "scipy": "1.17.1",
+      "matplotlib": "3.10.9",
+      "torch": null
+    },
+    "blas_threads": {
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null,
+      "NUMEXPR_NUM_THREADS": null,
+      "VECLIB_MAXIMUM_THREADS": null
+    },
+    "hardware": {
+      "hostname": "autodl-container-p48vc3ykfm-7ba3727f",
+      "platform": "Linux-5.15.0-25-generic-x86_64-with-glibc2.35",
+      "machine": "x86_64",
+      "processor": "x86_64",
+      "logical_cpus": 128,
+      "cpu_model": "Intel(R) Xeon(R) Platinum 8352V CPU @ 2.10GHz"
+    },
+    "wall_time_s": 0.5224552154541016,
+    "peak_rss_mb": 64.67578125,
+    "peak_vram_mb": null,
+    "exit_status": "completed_ok"
+  }
 }

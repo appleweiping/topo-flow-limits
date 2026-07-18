@@ -150,7 +150,12 @@
         ]
       },
       "radius_auc_monotone_in_radius": true,
-      "window_len_auc_monotone_in_length": true
+      "window_len_auc_monotone_in_length": true,
+      "wind_cutoff_auc_monotone": true,
+      "auc_range_over_all_sweeps": [
+        0.8942551895975709,
+        0.9845074753118539
+      ]
     },
     "storm_cluster_bootstrap_exploratory": {
       "auc_external_ci95": [
@@ -268,7 +273,12 @@
           ]
         },
         "radius_auc_monotone_in_radius": true,
-        "window_len_auc_monotone_in_length": true
+        "window_len_auc_monotone_in_length": true,
+        "wind_cutoff_auc_monotone": true,
+        "auc_range_over_all_sweeps": [
+          0.8942551895975709,
+          0.9845074753118539
+        ]
       },
       "storm_cluster_bootstrap_exploratory": {
         "auc_external_ci95": [
@@ -385,7 +395,12 @@
           ]
         },
         "radius_auc_monotone_in_radius": true,
-        "window_len_auc_monotone_in_length": true
+        "window_len_auc_monotone_in_length": true,
+        "wind_cutoff_auc_monotone": false,
+        "auc_range_over_all_sweeps": [
+          0.8738967901234567,
+          0.9470948332952935
+        ]
       },
       "storm_cluster_bootstrap_exploratory": {
         "auc_external_ci95": [
@@ -576,18 +591,18 @@
     }
   ],
   "_provenance": {
-    "git_sha": "30191f03486b6c1aae80363f435fe5393f57e81b",
+    "git_sha": "54c73d7c5a4f36a133fa644fdf1618827f07cb2f",
     "git_dirty": true,
-    "hostname": "LAPTOP-3TQUS51M",
-    "command": "python.exe experiments/run_real_cyclone.py",
+    "hostname": "autodl-container-p48vc3ykfm-7ba3727f",
+    "command": "python /root/autodl-tmp/tfl_r9/experiments/run_real_cyclone.py",
     "seed": null,
-    "timestamp_utc": "2026-07-18T11:58:09+00:00",
+    "timestamp_utc": "2026-07-18T12:46:43+00:00",
     "environment": {
-      "python": "3.14.5",
+      "python": "3.12.3",
       "numpy": "2.4.6",
       "scipy": "1.17.1",
       "matplotlib": "3.10.9",
-      "torch": "2.12.0+cpu"
+      "torch": null
     },
     "blas_threads": {
       "OMP_NUM_THREADS": null,
@@ -597,14 +612,15 @@
       "VECLIB_MAXIMUM_THREADS": null
     },
     "hardware": {
-      "hostname": "LAPTOP-3TQUS51M",
-      "platform": "Windows-11-10.0.26200-SP0",
-      "machine": "AMD64",
-      "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
-      "logical_cpus": 16
+      "hostname": "autodl-container-p48vc3ykfm-7ba3727f",
+      "platform": "Linux-5.15.0-25-generic-x86_64-with-glibc2.35",
+      "machine": "x86_64",
+      "processor": "x86_64",
+      "logical_cpus": 128,
+      "cpu_model": "Intel(R) Xeon(R) Platinum 8352V CPU @ 2.10GHz"
     },
-    "wall_time_s": 311.33734130859375,
-    "peak_rss_mb": null,
+    "wall_time_s": 243.14269256591797,
+    "peak_rss_mb": 367.10546875,
     "peak_vram_mb": null,
     "exit_status": "completed_ok"
   }

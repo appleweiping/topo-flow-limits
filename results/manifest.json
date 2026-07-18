@@ -1,8 +1,9 @@
 {
-  "commit": "43adfb90b5951da80c38ddd95dd3911fd742c9f6",
-  "commit_dirty": false,
+  "commit": "54c73d7c5a4f36a133fa644fdf1618827f07cb2f",
+  "commit_dirty": true,
   "commit_note": "This is HEAD at generation time. When the manifest is committed it becomes the PARENT of the commit that carries it, so manifest.commit == HEAD~1 for the commit that adds/updates it. Regenerate on a clean tree so commit_dirty is false.",
   "generated_by": "experiments/make_manifest.py",
+  "provenance_note": "AUTHORITATIVE machine/run provenance now lives in the '_provenance' block that tfl.provenance embeds in each results/*.json AT GENERATION TIME (same process): git SHA/dirty, hostname, command, timestamp, env, BLAS threads, hardware, wall time, peak RSS/VRAM. In the round-9 server rerun those show git_sha=54c73d7 on the AutoDL host with git_dirty=true -- 'true' only because the run overwrites tracked results/*.json in place, NOT because the code differs from the SHA. This manifest is an index; the per-JSON _provenance is the record.",
   "environment": {
     "python": "3.14.5",
     "numpy": "2.4.6",
@@ -28,7 +29,7 @@
     "driver_line": "NVIDIA-SMI 595.71.05              Driver Version: 595.71.05      CUDA Version: 13.2",
     "cpu_model": "Intel(R) Xeon(R) Platinum 8352V CPU @ 2.10GHz",
     "cpu_count": "128",
-    "probe_sha256_16": "c29a27f20eeeb85c"
+    "probe_sha256_16": "660365fe45ceaebc"
   },
   "data": {
     "data/fx_rates.json": {
@@ -51,12 +52,12 @@
       "command": "python experiments/run_second_order.py",
       "artifacts": {
         "results/second_order.json": {
-          "sha256_16": "2be140f2a977ea0b",
-          "bytes": 219523
+          "sha256_16": "becacf2a9480fa71",
+          "bytes": 211575
         },
         "results/figures/second_order.png": {
-          "sha256_16": "7f5972d12e719b06",
-          "bytes": 256514
+          "sha256_16": "d55de7172a6d4a89",
+          "bytes": 279732
         }
       }
     },
@@ -66,12 +67,12 @@
       "command": "python experiments/run_real_cyclone.py",
       "artifacts": {
         "results/real_cyclone.json": {
-          "sha256_16": "c3cfb8db6b80d9a9",
-          "bytes": 9230
+          "sha256_16": "c7f8b17cd919f633",
+          "bytes": 17875
         },
         "results/figures/real_cyclone.png": {
-          "sha256_16": "08af982b702af7e4",
-          "bytes": 360131
+          "sha256_16": "32dc3ac0cfb78617",
+          "bytes": 382179
         }
       }
     },
@@ -81,12 +82,12 @@
       "command": "python experiments/run_phase_transition.py",
       "artifacts": {
         "results/phase_transition.json": {
-          "sha256_16": "91e1194909b837c7",
-          "bytes": 3634
+          "sha256_16": "27dc10e5bba37ee0",
+          "bytes": 4469
         },
         "results/figures/phase_transition.png": {
-          "sha256_16": "6d683c4fa89c4648",
-          "bytes": 62299
+          "sha256_16": "21f3016675eabfff",
+          "bytes": 69845
         }
       }
     },
@@ -96,12 +97,12 @@
       "command": "python experiments/run_confusability.py",
       "artifacts": {
         "results/confusability.json": {
-          "sha256_16": "0c3418f1bde8777b",
-          "bytes": 2030
+          "sha256_16": "8bfe37c6f86cd3b4",
+          "bytes": 3007
         },
         "results/figures/confusability.png": {
-          "sha256_16": "b1a80d9b1378154a",
-          "bytes": 97611
+          "sha256_16": "472bfc135f55fd11",
+          "bytes": 105743
         }
       }
     },
@@ -111,12 +112,12 @@
       "command": "python experiments/run_fano.py",
       "artifacts": {
         "results/fano.json": {
-          "sha256_16": "97fce8a0c1923bbb",
-          "bytes": 5963
+          "sha256_16": "11cfaa7c29583e67",
+          "bytes": 6795
         },
         "results/figures/fano_bounds.png": {
-          "sha256_16": "ca7ceb338cc61929",
-          "bytes": 106340
+          "sha256_16": "be7a6d31e2bd4034",
+          "bytes": 124459
         }
       }
     },
@@ -126,12 +127,12 @@
       "command": "python experiments/run_partial_sampling.py",
       "artifacts": {
         "results/partial_sampling.json": {
-          "sha256_16": "43e9f7aeeb27ef33",
-          "bytes": 1450
+          "sha256_16": "2fd17853d3b1767b",
+          "bytes": 2464
         },
         "results/figures/partial_sampling.png": {
-          "sha256_16": "6984330996190b68",
-          "bytes": 88770
+          "sha256_16": "14991064b6bde34d",
+          "bytes": 98673
         }
       }
     },
@@ -141,12 +142,12 @@
       "command": "python experiments/run_plugin.py",
       "artifacts": {
         "results/plugin.json": {
-          "sha256_16": "2285f6906b5d5b0a",
-          "bytes": 1358
+          "sha256_16": "f8e42218b9d8ab7e",
+          "bytes": 2374
         },
         "results/figures/plugin.png": {
-          "sha256_16": "565ef36ed2926f87",
-          "bytes": 87799
+          "sha256_16": "da9489e76e4b3a34",
+          "bytes": 99049
         }
       }
     },
@@ -156,12 +157,12 @@
       "command": "python experiments/run_real_traffic.py",
       "artifacts": {
         "results/real_traffic.json": {
-          "sha256_16": "17e6a536a5a023f4",
-          "bytes": 3326
+          "sha256_16": "da5eb2fc52357c83",
+          "bytes": 4266
         },
         "results/figures/real_traffic.png": {
-          "sha256_16": "6cc1a8d7e5242808",
-          "bytes": 122597
+          "sha256_16": "142bd04371602574",
+          "bytes": 126029
         }
       }
     },
@@ -171,12 +172,12 @@
       "command": "python experiments/run_real_fx.py",
       "artifacts": {
         "results/real_fx.json": {
-          "sha256_16": "07e23c1bdf691fb4",
-          "bytes": 840
+          "sha256_16": "e816e5da3cb756d1",
+          "bytes": 1878
         },
         "results/figures/real_fx.png": {
-          "sha256_16": "a67debd75fce6dcf",
-          "bytes": 101688
+          "sha256_16": "c8af0f78afa69cd0",
+          "bytes": 112803
         }
       }
     },
@@ -186,8 +187,8 @@
       "command": "python experiments/run_scaling.py",
       "artifacts": {
         "results/scaling.json": {
-          "sha256_16": "2a7efb26512b43f0",
-          "bytes": 2260
+          "sha256_16": "4209523b20b7473c",
+          "bytes": 3342
         }
       }
     },
@@ -197,8 +198,8 @@
       "command": "python experiments/run_gpu_mc.py",
       "artifacts": {
         "results/gpu_mc.json": {
-          "sha256_16": "a31201325ef68518",
-          "bytes": 1988
+          "sha256_16": "78d8064db6e11be2",
+          "bytes": 4681
         }
       }
     },
@@ -208,12 +209,23 @@
       "command": "python experiments/run_selection.py",
       "artifacts": {
         "results/selection.json": {
-          "sha256_16": "8ff601ed9d19725f",
-          "bytes": 3060
+          "sha256_16": "3d9376cf342f6461",
+          "bytes": 4151
         },
         "results/figures/scaling.png": {
-          "sha256_16": "f78809dc0c26b719",
-          "bytes": 124394
+          "sha256_16": "1b144398700029e8",
+          "bytes": 142379
+        }
+      }
+    },
+    {
+      "script": "experiments/run_bic_boundary.py",
+      "seed": 0,
+      "command": "python experiments/run_bic_boundary.py",
+      "artifacts": {
+        "results/bic_boundary.json": {
+          "sha256_16": "0a69557aec59afe4",
+          "bytes": 4494
         }
       }
     }

@@ -37,8 +37,8 @@
     1.0
   ],
   "theory_known": [
-    0.8580816586277736,
-    0.9480075528198645,
+    0.8580816586277737,
+    0.9480075528198646,
     0.9884363528863196,
     0.9990058295524076,
     0.999972595397127,
@@ -49,26 +49,60 @@
   ],
   "rel_err_sigma_noise": [
     0.1168644308353015,
-    0.08896833373987353,
-    0.06417530962701631,
-    0.0468989415720746,
+    0.08896833373987356,
+    0.06417530962701629,
+    0.04689894157207461,
     0.03774606958168138,
-    0.032123809349990186,
-    0.02641634943806992,
-    0.021970835118087575,
-    0.017768971925483195
+    0.03212380934999021,
+    0.026416349438069933,
+    0.02197083511808757,
+    0.017768971925483202
   ],
   "rel_err_sigma_curl": [
-    0.11552171022406,
-    0.0837349185740058,
-    0.0753493459011268,
-    0.06008833429412186,
+    0.11552171022406009,
+    0.08373491857400588,
+    0.07534934590112675,
+    0.06008833429412187,
     0.05109233683703496,
     0.0436976712653044,
-    0.033056685480509454,
-    0.027802762042578574,
-    0.024450263121066865
+    0.03305668548050945,
+    0.02780276204257858,
+    0.02445026312106689
   ],
   "n_trials": 300,
-  "seed": 13
+  "seed": 13,
+  "_provenance": {
+    "git_sha": "54c73d7c5a4f36a133fa644fdf1618827f07cb2f",
+    "git_dirty": true,
+    "hostname": "autodl-container-p48vc3ykfm-7ba3727f",
+    "command": "python /root/autodl-tmp/tfl_r9/experiments/run_plugin.py",
+    "seed": null,
+    "timestamp_utc": "2026-07-18T12:35:49+00:00",
+    "environment": {
+      "python": "3.12.3",
+      "numpy": "2.4.6",
+      "scipy": "1.17.1",
+      "matplotlib": "3.10.9",
+      "torch": null
+    },
+    "blas_threads": {
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null,
+      "NUMEXPR_NUM_THREADS": null,
+      "VECLIB_MAXIMUM_THREADS": null
+    },
+    "hardware": {
+      "hostname": "autodl-container-p48vc3ykfm-7ba3727f",
+      "platform": "Linux-5.15.0-25-generic-x86_64-with-glibc2.35",
+      "machine": "x86_64",
+      "processor": "x86_64",
+      "logical_cpus": 128,
+      "cpu_model": "Intel(R) Xeon(R) Platinum 8352V CPU @ 2.10GHz"
+    },
+    "wall_time_s": 88.43478322029114,
+    "peak_rss_mb": 124.6953125,
+    "peak_vram_mb": null,
+    "exit_status": "completed_ok"
+  }
 }

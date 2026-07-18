@@ -21,12 +21,12 @@
         0.9398260695220669,
         0.9999999999999999
       ],
-      "median_solve_s": 0.0023121285485103726,
+      "median_solve_s": 0.002317796112038195,
       "lipschitz": 19.925969554385322,
       "sigma_min_A": 2.449489742783175,
       "nnls_theory_bound": 1.0,
       "dense_operator_gb": 0.002,
-      "peak_rss_mb": 125.76171875,
+      "peak_rss_mb": 125.2421875,
       "recovery_active_set": 1.0
     },
     {
@@ -44,12 +44,12 @@
         0.9123754607496077,
         1.0
       ],
-      "median_solve_s": 0.010472623049281538,
+      "median_solve_s": 0.018350899452343583,
       "lipschitz": 19.982964920524214,
-      "sigma_min_A": 2.449489742783175,
+      "sigma_min_A": 2.4494897427831743,
       "nnls_theory_bound": 1.0,
       "dense_operator_gb": 0.054,
-      "peak_rss_mb": 130.27734375
+      "peak_rss_mb": 129.77734375
     },
     {
       "p_target": 1000,
@@ -66,12 +66,12 @@
         0.8864829086095221,
         1.0
       ],
-      "median_solve_s": 0.4858132904628292,
+      "median_solve_s": 0.5030953554669395,
       "lipschitz": 19.982868879364652,
-      "sigma_min_A": 2.4494897427831726,
+      "sigma_min_A": 2.449489742783173,
       "nnls_theory_bound": 1.0,
       "dense_operator_gb": 2.0,
-      "peak_rss_mb": 171.58203125
+      "peak_rss_mb": 172.46875
     },
     {
       "p_target": 1000,
@@ -88,12 +88,46 @@
         0.8864829086095221,
         1.0
       ],
-      "median_solve_s": 0.4054312889929861,
+      "median_solve_s": 0.503921125549823,
       "lipschitz": 25.755233698468757,
-      "sigma_min_A": 2.4494897427831717,
+      "sigma_min_A": 2.449489742783172,
       "nnls_theory_bound": 1.0,
       "dense_operator_gb": 1.152216576,
-      "peak_rss_mb": 183.73828125
+      "peak_rss_mb": 191.4609375
     }
-  ]
+  ],
+  "_provenance": {
+    "git_sha": "54c73d7c5a4f36a133fa644fdf1618827f07cb2f",
+    "git_dirty": true,
+    "hostname": "autodl-container-p48vc3ykfm-7ba3727f",
+    "command": "python /root/autodl-tmp/tfl_r9/experiments/run_scaling.py",
+    "seed": null,
+    "timestamp_utc": "2026-07-18T12:42:23+00:00",
+    "environment": {
+      "python": "3.12.3",
+      "numpy": "2.4.6",
+      "scipy": "1.17.1",
+      "matplotlib": "3.10.9",
+      "torch": null
+    },
+    "blas_threads": {
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null,
+      "NUMEXPR_NUM_THREADS": null,
+      "VECLIB_MAXIMUM_THREADS": null
+    },
+    "hardware": {
+      "hostname": "autodl-container-p48vc3ykfm-7ba3727f",
+      "platform": "Linux-5.15.0-25-generic-x86_64-with-glibc2.35",
+      "machine": "x86_64",
+      "processor": "x86_64",
+      "logical_cpus": 128,
+      "cpu_model": "Intel(R) Xeon(R) Platinum 8352V CPU @ 2.10GHz"
+    },
+    "wall_time_s": 46.052650451660156,
+    "peak_rss_mb": 191.46484375,
+    "peak_vram_mb": null,
+    "exit_status": "completed_ok"
+  }
 }

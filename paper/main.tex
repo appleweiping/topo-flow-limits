@@ -34,7 +34,7 @@
 
 \title{Excitation-dependent identifiability of latent\\ higher-order structure from edge flows}
 
-\name{Weiping Yan\thanks{Code/data: \texttt{github.com/appleweiping/topo-flow-limits}.}}
+\name{Weiping Yan\thanks{Code: \texttt{github.com/appleweiping/topo-flow-limits}}}
 \address{University of Minnesota, Twin Cities\\ Minneapolis, MN, USA}
 
 \begin{document}
@@ -66,7 +66,7 @@ interpolation under which equal-image distinguishability provably vanishes.
 On real data, the same curl statistic \emph{localizes} genuine unplanted
 rotational structure --- tropical cyclones in ERA5 winds --- against a
 same-field vorticity reference and an external IBTrACS archive. Code,
-data, and a 58-test guardrail suite (the quoted constants checked against Monte-Carlo) are released.
+data, and a 63-test guardrail suite (the quoted constants checked against Monte-Carlo) are released.
 \end{abstract}
 
 \begin{keywords}
@@ -439,8 +439,8 @@ curl-energy scores (vorticity scale) for the single most-active $4$-day window
 (argmax IBTrACS-positive triangles; illustrative only --- all metrics pool
 every window); red circles: \emph{IBTrACS-positive triangle centroids} (not raw
 fix positions). (B)~ROC pooled over all $15$ windows: same-field vorticity
-reference, external IBTrACS labels (with PR-AUC), and the classical
-coarse-vorticity baseline. (C)~Budget degradation, averaged over \emph{all}
+reference, external IBTrACS labels (\emph{strict} policy shown; PR-AUC), and the
+classical coarse-vorticity baseline. (C)~Budget degradation, averaged over \emph{all}
 $15$ windows ($6$ subsample draws each; band is the window-to-window sd;
 uniform centered statistic, $N\ge3$).}
 \label{fig:cyclone}
@@ -467,14 +467,17 @@ deposits. Validation (Fig.~\ref{fig:cyclone}B) against a \emph{same-field
 consistency reference} (finite-difference vorticity on the $3\times$-finer
 source grid) gives AUC $0.914$ (moving-block bootstrap $95\%$ CI
 $[0.894,0.936]$), and against the \emph{external, separately curated} IBTrACS
-archive \cite{knapp2010ibtracs} (raw: $726$ fixes over $13$ storms; entering
-the metric: $414$ IBTrACS-positive of $23{,}310$ triangle-windows, prevalence
-$1.8\%$) AUC $0.920$ $[0.879,0.951]$, PR-AUC $0.494$ $[0.273,0.666]$, and
-P@$k=0.483$. Against a classical pointwise-vorticity baseline
-at the same information budget (mesh-node winds), the edge-flow statistic
-is better on \emph{all three} independent external metrics (baseline: AUC
-$0.898$, PR-AUC $0.360$, P@$k=0.389$) and slightly lower on the internal
-reference ($0.914$ vs.\ $0.948$), which shares the baseline's functional. The decorrelated (GLS) variant of Prop.~\ref{prop:gls}
+archive \cite{knapp2010ibtracs} (raw: $726$ fixes over $13$ storms, of which
+$229$ carry no reported wind, so we report two label sets). Under
+\emph{strict} labeling (finite $\ge34$\,kt only; $312$ of $23{,}310$
+triangle-windows positive) AUC is $0.950\,[0.915,0.975]$; under
+\emph{inclusive} labeling (missing-wind positions also counted; $414$ positive)
+AUC is $0.920\,[0.879,0.951]$ (PR-AUC $0.49$, P@$k\,{=}\,0.48$ in both). Against
+a classical pointwise-vorticity baseline at the same information budget
+(mesh-node winds), the edge-flow statistic is better on \emph{all three}
+external metrics under \emph{both} label sets (baseline AUC $0.927$/$0.898$),
+and slightly lower on the internal reference ($0.914$ vs.\ $0.948$), which
+shares the baseline's functional. The decorrelated (GLS) variant of Prop.~\ref{prop:gls}
 ranks worse here ($\bm G^{-1}$ amplifies noise on a near-regular mesh) and
 is reported in the repository. FX consistency checks and planted road-network
 studies from earlier revisions are retained in the repository and
@@ -482,8 +485,8 @@ supplement, not claimed as recovery evidence.
 
 \smallskip\noindent\emph{Limitations.} The i.i.d.-Gaussian snapshot model is
 an idealization of windowed weather; evaluation is therefore threshold-free
-ranking rather than support recovery, moving-block \emph{and} storm-cluster
-bootstrap intervals (which agree) quantify pooling uncertainty and are
+ranking rather than support recovery, the moving-block bootstrap (primary; a
+whole-storm resampling corroborates it) quantifies pooling uncertainty and is
 \emph{exploratory} (one 2020 season), and the internal reference is a
 same-field consistency check --- IBTrACS is the external archive. The AUC is
 stable across localization radius, wind cutoff, window length, and vorticity
@@ -536,7 +539,7 @@ across iterative adversarial-review cycles. Because IEEE/SPS policy does not
 permit AI-generated manuscript \emph{text}, the author will independently
 rewrite the manuscript before any formal submission and then disclose only
 the permitted uses (editing, code, visualization, and review feedback). All
-mathematical statements are checked by the released test suite (58 tests,
+mathematical statements are checked by the released test suite (63 tests,
 including exhaustive and Monte-Carlo checks for every quoted constant), and
 the full revision history is preserved unaltered in the public repository ---
 git history is deliberately \emph{not} rewritten to obscure AI use. The

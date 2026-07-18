@@ -2,10 +2,24 @@
   "gpu": "NVIDIA GeForce RTX 4080 SUPER, 32760 MiB, 595.71.05",
   "torch": "2.8.0+cu128",
   "crosscheck": {
-    "cpu_recovery": 1.0,
-    "gpu_recovery": 1.0,
     "p": 60,
-    "r": 36
+    "r": 36,
+    "dtype": "float64",
+    "gpu_iters": 30,
+    "max_abs_weight_diff": 2.220446049250313e-16,
+    "rel_weight_diff": 2.062647031367348e-16,
+    "obj_cpu": 3.324267362361059,
+    "obj_gpu": 3.3242673623610592,
+    "abs_obj_diff": 4.440892098500626e-16,
+    "kkt_cpu": 3.593998362805273e-11,
+    "kkt_gpu": 3.593994546413626e-11,
+    "support_agree": true,
+    "n_support_cpu": 3,
+    "n_support_gpu": 3,
+    "true_support_size": 3,
+    "batch_cpu_recovery": 1.0,
+    "batch_gpu_recovery": 1.0,
+    "batch_gpu_converged_frac": 1.0
   },
   "runs": [
     {
@@ -22,10 +36,18 @@
         0.9764072167492062
       ],
       "lipschitz": 19.964506149291992,
-      "wall_s": 65.87763513810933,
+      "wall_s": 68.62869055499323,
       "peak_gpu_mb": 6033.579008,
       "device": "cuda",
       "dtype": "float32",
+      "max_iter": 1500,
+      "mean_iters": 1500.0,
+      "kkt_tol": 0.0001,
+      "kkt_mean": 1.7131417989730835e-06,
+      "kkt_max": 3.546476364135742e-06,
+      "converged_frac": 1.0,
+      "converged": true,
+      "mean_objective": 1497.6375,
       "regime": "headline_fully_batched"
     },
     {
@@ -42,10 +64,18 @@
         1.0
       ],
       "lipschitz": 19.964506149291992,
-      "wall_s": 65.44100296497345,
+      "wall_s": 69.04001708305441,
       "peak_gpu_mb": 6033.237504,
       "device": "cuda",
       "dtype": "float32",
+      "max_iter": 1500,
+      "mean_iters": 1500.0,
+      "kkt_tol": 0.0001,
+      "kkt_mean": 1.6455091536045075e-06,
+      "kkt_max": 3.2186508178710938e-06,
+      "converged_frac": 1.0,
+      "converged": true,
+      "mean_objective": 748.8996875,
       "regime": "headline_fully_batched"
     },
     {
@@ -62,10 +92,18 @@
         1.0
       ],
       "lipschitz": 19.964506149291992,
-      "wall_s": 65.63103137700818,
+      "wall_s": 68.8250157169532,
       "peak_gpu_mb": 6813.21216,
       "device": "cuda",
       "dtype": "float32",
+      "max_iter": 1500,
+      "mean_iters": 1500.0,
+      "kkt_tol": 0.0001,
+      "kkt_mean": 1.605367287993431e-06,
+      "kkt_max": 3.2410025596618652e-06,
+      "converged_frac": 1.0,
+      "converged": true,
+      "mean_objective": 374.540625,
       "regime": "headline_fully_batched"
     },
     {
@@ -82,12 +120,58 @@
         1.0
       ],
       "lipschitz": 49.08399200439453,
-      "wall_s": 132.94825921789743,
+      "wall_s": 140.26548421289772,
       "peak_gpu_mb": 2983.89504,
       "device": "cuda",
       "dtype": "float32",
-      "regime": "stretch_tiled_feasibility"
+      "max_iter": 400,
+      "mean_iters": 400.0,
+      "kkt_tol": 0.0001,
+      "kkt_mean": 2.6186316972598433e-06,
+      "kkt_max": 4.24310564994812e-06,
+      "converged_frac": 1.0,
+      "converged": true,
+      "mean_objective": 4805.07177734375,
+      "regime": "stretch_tiled_converged"
     }
   ],
-  "sigma_n": 1.0
+  "sigma_n": 1.0,
+  "_provenance": {
+    "git_sha": "54c73d7c5a4f36a133fa644fdf1618827f07cb2f",
+    "git_dirty": true,
+    "hostname": "autodl-container-p48vc3ykfm-7ba3727f",
+    "command": "python experiments/run_gpu_mc.py",
+    "seed": null,
+    "timestamp_utc": "2026-07-18T12:53:01+00:00",
+    "environment": {
+      "python": "3.12.3",
+      "numpy": "2.4.6",
+      "scipy": "1.18.0",
+      "matplotlib": "3.11.0",
+      "torch": "2.8.0+cu128"
+    },
+    "blas_threads": {
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null,
+      "NUMEXPR_NUM_THREADS": null,
+      "VECLIB_MAXIMUM_THREADS": null
+    },
+    "hardware": {
+      "hostname": "autodl-container-p48vc3ykfm-7ba3727f",
+      "platform": "Linux-5.15.0-25-generic-x86_64-with-glibc2.35",
+      "machine": "x86_64",
+      "processor": "x86_64",
+      "logical_cpus": 128,
+      "cpu_model": "Intel(R) Xeon(R) Platinum 8352V CPU @ 2.10GHz",
+      "gpu": "NVIDIA GeForce RTX 4080 SUPER",
+      "gpu_mem_total_mb": 33796.456448,
+      "cuda": "12.8",
+      "driver": "595.71.05"
+    },
+    "wall_time_s": 375.06418085098267,
+    "peak_rss_mb": 1696.96875,
+    "peak_vram_mb": 2983.89504,
+    "exit_status": "completed_ok"
+  }
 }

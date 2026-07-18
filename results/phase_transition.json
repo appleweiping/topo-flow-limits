@@ -235,11 +235,11 @@
   "theory_exact": [
     5.398754152881021,
     3.678263555177983,
-    3.203542356311289,
+    3.2035423563112873,
     2.3619689035589584,
     1.9118953427660528,
     1.4905627751969486,
-    1.2464783974074276,
+    1.246478397407429,
     1.034466452644477,
     0.8518527399120507,
     0.7178696460536865,
@@ -254,11 +254,45 @@
     5.168665275140614,
     3.7251382671651543,
     2.963276534585434,
-    2.3473589499336835,
+    2.347358949933687,
     1.851993751098895,
     1.5098129389098154,
     1.2376070105848904,
     1.0227890613565092
   ],
-  "n_trials": 200
+  "n_trials": 200,
+  "_provenance": {
+    "git_sha": "54c73d7c5a4f36a133fa644fdf1618827f07cb2f",
+    "git_dirty": false,
+    "hostname": "autodl-container-p48vc3ykfm-7ba3727f",
+    "command": "python /root/autodl-tmp/tfl_r9/experiments/run_phase_transition.py",
+    "seed": null,
+    "timestamp_utc": "2026-07-18T12:17:30+00:00",
+    "environment": {
+      "python": "3.12.3",
+      "numpy": "2.4.6",
+      "scipy": "1.17.1",
+      "matplotlib": "3.10.9",
+      "torch": null
+    },
+    "blas_threads": {
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null,
+      "NUMEXPR_NUM_THREADS": null,
+      "VECLIB_MAXIMUM_THREADS": null
+    },
+    "hardware": {
+      "hostname": "autodl-container-p48vc3ykfm-7ba3727f",
+      "platform": "Linux-5.15.0-25-generic-x86_64-with-glibc2.35",
+      "machine": "x86_64",
+      "processor": "x86_64",
+      "logical_cpus": 128,
+      "cpu_model": "Intel(R) Xeon(R) Platinum 8352V CPU @ 2.10GHz"
+    },
+    "wall_time_s": 45.79809808731079,
+    "peak_rss_mb": 124.57421875,
+    "peak_vram_mb": null,
+    "exit_status": "completed_ok"
+  }
 }

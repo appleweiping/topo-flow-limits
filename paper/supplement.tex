@@ -459,11 +459,11 @@ specific size-3 support, so it uses $m=4$; the estimator's plotted $0$ (it
 returns the wrong cardinality) is itself $\le1/m$.
 \end{proposition}
 
-\begin{remark}[Deterministic boundary]
-Unknown deterministic signals are the rank-one degenerate boundary of regime (b): for
+\begin{remark}[Deterministic case]
+Unknown deterministic signals are the rank-one boundary of regime (b): for
 equal-image supports the mean families
 $\{\B_{2,\Scal}\bm y\}=\{\B_{2,\Scal'}\bm y'\}$ coincide per snapshot, so no
-test distinguishes them at any SNR and any $N$. Tetrahedral confusers realize
+test separates them at any SNR and any $N$. Tetrahedral confusers realize
 equal image: the four faces satisfy
 $\bm b_{012}-\bm b_{013}+\bm b_{023}-\bm b_{123}=\bm 0$, so any three faces
 span the same $3$-space as any other three; on $K_n$ there are
@@ -729,11 +729,14 @@ $0.7^\circ$ grid (the detector only ever sees the $2.1^\circ$ mesh flows);
 per-triangle truth $=$ window-mean $|\zeta|$ averaged over grid points inside
 the triangle; ROC sweeps the detector score against truth binarized at
 typhoon-scale $3\times10^{-5}\,\mathrm{s}^{-1}$. External: IBTrACS v04r01
-best-track fixes ($\ge$ 34\,kt where wind is reported), a triangle labeled
-positive if a fix falls within $1.5^\circ$ of its centroid during the window.
-The external reference is an external, separately-curated archive of agency
-best-tracks, not derived from the ERA5 winds our statistic reads --- the
-community's record of where cyclones actually were. A synthetic Rankine-vortex test (\texttt{tests/test\_geo.py})
+best-track fixes, a triangle labeled positive if a qualifying fix falls within
+$1.5^\circ$ of its centroid during the window. About one third of the fixes
+carry \emph{no} reported wind, so we report \emph{two} label sets and privilege
+neither: \textbf{strict} (only fixes with a finite wind $\ge34$\,kt qualify) and
+\textbf{inclusive} (missing-wind fixes---genuine best-track positions without a
+logged intensity---also qualify). The external reference is an external,
+separately-curated archive of agency best-tracks, not derived from the ERA5
+winds our statistic reads --- the community's record of where cyclones were. A synthetic Rankine-vortex test (\texttt{tests/test\_geo.py})
 verifies the whole bridge end-to-end: localization at the core, correct
 cyclonic sign after orientation correction, and rank agreement with the
 finite-difference vorticity.
@@ -741,28 +744,35 @@ finite-difference vorticity.
 \paragraph{Windowing and counts.} The season is $244$ six-hourly snapshots;
 the $15$ non-overlapping $16$-snapshot windows use the first $240$ and drop the
 trailing $4$ (a partial window). Every pooled metric is over these $15$
-complete windows. Denominators, raw vs.\ eligible: $726$ IBTrACS fixes over
-$13$ storms ($12$ reach $\ge34$\,kt) enter labeling; $414$ of the
-$1554\times15=23{,}310$ scored triangle-windows are external-positive
-(prevalence $1.8\%$), $711$ internal-positive.
+complete windows and the $1554\times15=23{,}310$ scored triangle-windows ($711$
+internal-positive). Raw archive: $726$ fixes over $13$ storms; of these
+$497$ have a finite wind and $229$ (over $11$ storms) have \emph{none}. Strict
+labeling ($311$ finite-$\ge34$\,kt fixes over $12$ storms) marks $312$
+triangle-windows positive; inclusive labeling (adding the $229$ missing-wind
+fixes, $540$ qualifying over $12$ storms) marks $414$.
 
-\paragraph{Robustness and exploratory CIs.} The pooled external AUC is stable
-under the labeling and processing choices: localization radius
-$1.0$--$2.5^\circ$ gives AUC $0.95$--$0.87$ (headline $1.5^\circ{:}\,0.92$),
-wind cutoff TD--typhoon ($0$--$64$\,kt) gives $0.91$--$0.92$, window length
-$2$--$6$ days gives $0.94$--$0.90$, and the moving-block CI is insensitive to
-the block length ($1$--$5$ windows: half-widths $0.03$--$0.04$). A
-\emph{storm-cluster} bootstrap that resamples whole storms (rather than time
-blocks) gives a comparable AUC interval $[0.88,0.95]$; both are single-season
-\emph{exploratory} intervals targeting different resampling units, and the
-storm-cluster scheme (which collapses storm multiplicity and leaves the
-background negatives unresampled) is mildly anti-conservative, so their overlap
-is corroboration, not proof. The
+\paragraph{Both label sets, and robustness.} The detector is strong under
+\emph{both} policies, and the conservative one is not the weaker: pooled
+external AUC is $0.950\,[0.915,0.975]$ strict and $0.920\,[0.879,0.951]$
+inclusive (moving-block CI; the coarse-vorticity baseline is $0.927$/$0.898$).
+Sensitivity, reported per policy in \texttt{real\_cyclone.json}: AUC decreases
+\emph{monotonically} as the localization radius grows ($1.0$--$2.5^\circ$:
+$0.97\!\to\!0.89$ strict, $0.95\!\to\!0.87$ inclusive) and with window length
+($2$--$6$ days), and the moving-block CI is insensitive to block length
+($1$--$5$ windows: half-widths $0.03$--$0.04$). The wind-cutoff sweep is
+\emph{not} monotone under inclusive labeling (it peaks near $34$\,kt,
+$0.91$--$0.92$ over TD--typhoon) but is monotone increasing under strict
+($0.92\!\to\!0.99$), as one expects when only confirmed-intensity fixes count;
+we state monotonicity only where the released numbers actually are monotone (a
+per-sweep boolean flag is in the JSON). A \emph{storm-cluster} bootstrap
+(resampling whole storms) gives a comparable interval and is reported as
+\emph{corroboration only}: the moving-block bootstrap is the primary CI; the
+storm-cluster scheme collapses storm multiplicity and leaves the background
+negatives unresampled, so it is mildly anti-conservative. The
 budget-degradation panel (Fig.~3C) is the mean over \emph{all} $15$ windows
-($\pm$ window-to-window sd), not a single hand-picked window. \emph{All
-real-data confidence intervals are exploratory}: one season (WNP 2020), no
-multi-year or out-of-sample validation; they quantify within-season resampling
-spread only.
+($\pm$ window-to-window sd), not a hand-picked window. \emph{All real-data
+confidence intervals are exploratory}: one season (WNP 2020), no multi-year or
+out-of-sample validation.
 
 \section{Scaling, GPU Monte-Carlo, and non-oracle selection}\label{sec:scaling}
 
@@ -809,12 +819,20 @@ $2.0$\,GB (Fig.~\ref{fig:scaling}A).
 on-device and solving all $B$ NNLS problems with batched einsum GEMMs turns the
 Monte-Carlo into dense GPU work. On an RTX~4080 SUPER (32\,GB), the fully-batched
 $p{=}10^3$ run ($B{=}10^3$) gives exact-recovery $0.967$/$1.00$/$1.00$ at
-$N{=}100$/$200$/$400$ ($\approx65$\,s, $6.0$\,GB peak), and a tiled
-$p{=}10^4$ feasibility point ($r{=}1890$, dof $0.19$; $B{=}64$) recovers
-$1.00$ in $133$\,s at $3.0$\,GB (Fig.~\ref{fig:scaling}B). The batched GPU
-FISTA matches the CPU matrix-free path on a shared cross-check. (The $p{=}10^4$
-run is deliberately a small-$B$ feasibility measurement; its wide CI is
-labeled as such.)
+$N{=}100$/$200$/$400$ ($\approx69$\,s, $6.0$\,GB peak), and a tiled
+$p{\approx}10^4$ run ($r{=}1890$, dof $0.19$; $B{=}64$) recovers $1.00$ in
+$140$\,s at $3.0$\,GB (Fig.~\ref{fig:scaling}B). \emph{Same-input verification},
+not a rate comparison: on identical $\bm U,\bm C$, support, and observations the
+CPU (\texttt{numpy}) and GPU (\texttt{torch}) NNLS agree in \texttt{float64} to
+machine precision --- weights differ by $2.2\times10^{-16}$, objective by
+$4.4\times10^{-16}$, both KKT residuals $\|\min(\bm w,\nabla f)\|_\infty
+{=}3.6\times10^{-11}$, and the recovered supports are identical
+(\texttt{gpu\_mc.json}, \texttt{crosscheck}). Every released GPU run records its
+per-solve iteration count, mean/max KKT residual, and converged fraction; both
+the $p{=}10^3$ and the $p{\approx}10^4$ runs reach KKT residual $\le4{\times}10^{-6}$
+(converged fraction $1.00$), so the $p{\approx}10^4$ point is \emph{converged},
+not merely feasible --- though at $B{=}64$ its recovery CI is wide
+($[0.943,1.0]$) and we do not read a precise rate from it.
 
 \paragraph{Non-oracle threshold.} The main paper's $w_{\min}/2$ rule uses the
 true $w_{\min}$ and $\sigma_n$ (an oracle setting). Replacing both: estimate
@@ -841,7 +859,7 @@ covariance has rank below ${\sim}r/2$} (a noise-identifiability / sparsity
 ceiling). Beyond it the median eigenvalue is signal-inflated (on $K_6$ it climbs
 from $1.0$ to $7.0$ as $k$ grows $3\to20$), $\sigma_n$ is overestimated, and the
 \emph{fully} non-oracle rule \textbf{fails even as $N\to\infty$}: at $N{=}10^5$
-its $K_6$ recovery collapses from $1.0$ ($k{\le}8$) to $0.10$ ($k{=}12$) and
+its $K_6$ recovery collapses from $1.0$ ($k{\le}6$) through $0.10$ ($k{=}12$) to
 $0.00$ ($k{\ge}15$), while the oracle stays at $1.0$
 (\texttt{results/bic\_boundary.json}; locked by
 \texttt{tests/test\_bic\_boundary.py}). The median-$\sigma_n$ rule is therefore
@@ -883,7 +901,7 @@ All figures regenerate on CPU from fixed seeds via
   \texttt{run\_real\_cyclone.py} ($\approx$3\,min from the cached
   ERA5/IBTrACS files).
 \end{itemize}
-The test-suite (\texttt{pytest -q}, 58 tests) checks: the Fano bounds against
+The test-suite (\texttt{pytest -q}, 63 tests) checks: the Fano bounds against
 the empirical recovery boundary of the phase-transition experiment
 (\texttt{run\_phase\_transition.py}, repo/supplement; a converse must
 lower bound it), the closed form \eqref{eq:qform} against Monte-Carlo, the
@@ -893,6 +911,19 @@ separation $16$, $C_G/\rho_2^2\to1$, Chernoff envelope, rank-deficient
 recovery), and the wind-to-edge-flow bridge (mesh full rank by Euler; a
 synthetic Rankine vortex localizes at the correct triangles with the correct
 sign and matches the finite-difference vorticity ranking).
+
+\paragraph{Environment and provenance.} \texttt{run\_all.py} has a CPU tier
+(default; every paper figure) and an optional \texttt{--gpu} tier (only the
+S6 batched Monte-Carlo); pinned environments are \texttt{requirements-cpu.lock}
+and \texttt{requirements-gpu.lock}, and CI runs both a floating and a
+pinned-lock job. Each \texttt{results/*.json} carries a \texttt{\_provenance}
+block written \emph{by the same process that produced it} --- git SHA, host,
+command, timestamp, dependency versions, BLAS threads, hardware, wall time, and
+peak RSS/VRAM --- so a released number is bound to the run that made it (not to
+a separately-generated manifest). The round-9 numbers here were regenerated
+from a clean git checkout on the GPU host; \texttt{git\_dirty} reads true there
+only because the run overwrites tracked \texttt{results/*.json} in place, not
+because the code differs from the recorded SHA.
 
 \begin{thebibliography}{9}
 \bibitem{vershynin2018high}
