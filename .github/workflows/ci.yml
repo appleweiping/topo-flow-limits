@@ -1,0 +1,52 @@
+name: CI
+
+# Guardrails, not proofs: the identifiability claims are proven in
+# paper/supplement.tex and re-derived in the commit history. This workflow only
+# checks that the code imports, compiles, and the test suite stays green on a
+# clean, CPU-only, torch-free environment (the GPU path in src/tfl/gpu.py is
+# exercised separately on the server, not in CI).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install (CPU core + dev; no torch)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[dev]'
+
+      - name: Confirm the core imports without torch
+        run: |
+          python - <<'PY'
+          import importlib, sys
+          for m in ("tfl", "tfl.estimators_mf", "tfl.complexes", "tfl.selection",
+                    "tfl.hodge", "tfl.estimators", "tfl.limits", "tfl.geo"):
+              importlib.import_module(m)
+          assert "torch" not in sys.modules, "core must not import torch"
+          print("core imports OK, torch not pulled in")
+          PY
+
+      - name: Compile-check every experiment and source file
+        run: |
+          python -m py_compile $(git ls-files 'src/tfl/*.py' 'experiments/*.py')
+          echo "all py files compile"
+
+      - name: Run the test suite
+        run: pytest -q

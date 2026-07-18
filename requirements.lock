@@ -6,6 +6,13 @@ scipy==1.17.1
 matplotlib==3.10.9
 pytest==9.0.3
 
+# GPU extra (ONLY for src/tfl/gpu.py + experiments/run_gpu_mc.py; the CPU core
+# and the full test suite run without it). The server GPU results were produced
+# with:
+#   torch==2.8.0+cu128        (CUDA 12.8, RTX 4080 SUPER, driver 595.71.05)
+#   psutil==5.9              (per-run peak-RSS capture in run_scaling.py)
+# Install via:  pip install -e '.[gpu]'
+#
 # Optional (only for RE-FETCHING the raw data; the repo ships cached copies,
 # so these are NOT needed to reproduce any result from the shipped data):
 #   xarray, zarr, gcsfs, numcodecs   (data/fetch_era5*.py)

@@ -617,7 +617,7 @@ topo-flow-limits/
 │   ├── run_plugin.py             supplement S3 figure + plugin.json
 │   └── run_all.py                one-click: all of the above from fixed seeds
 │
-├── tests/                    52 tests — the theorems' guardrails (see §8)
+├── tests/                    58 tests — the theorems' guardrails (see §8)
 │   ├── test_hodge.py
 │   ├── test_theory_vs_sim.py
 │   ├── test_excitation.py    the three excitation regimes + NNLS guardrails (15 tests:
@@ -682,7 +682,7 @@ cd topo-flow-limits
 uv venv --python 3.11 .venv
 uv pip install --python .venv\Scripts\python.exe numpy scipy networkx cvxpy matplotlib pandas pytest
 
-# 1) validate all theory against Monte-Carlo (52 tests; ~3-5 min)
+# 1) validate all theory against Monte-Carlo (58 tests; ~3-5 min)
 .\.venv\Scripts\python.exe -m pytest -q
 
 # 2) regenerate every figure and metric (~30-45 min, 8 experiments)

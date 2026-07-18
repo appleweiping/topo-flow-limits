@@ -665,7 +665,7 @@ isolated-triangle exponent to $3\times10^{-5}$ relative at
 $\rho_2=10^{-5}$, and the Monte-Carlo error of the optimal test within the
 $e^{-NC_G}$ envelope with empirical exponent decreasing onto $C_G$; (vi)
 exact greedy covariance-atom recovery on rank-deficient $K_5$.
-\texttt{tests/test\_excitation.py} additionally checks every claim of the
+\texttt{tests/test\_excitation.py} additionally checks the core claims of the
 regime and estimator theory: weighted-diagonal identifiability and the
 $K_n$ unknown-noise ambiguity direction
 ($\sum_\tau\bm u_\tau\bm u_\tau^{\!\top}=n\bm I_r$); PSD matching for
@@ -860,12 +860,12 @@ All figures regenerate on CPU from fixed seeds via
   \texttt{run\_real\_cyclone.py} ($\approx$3\,min from the cached
   ERA5/IBTrACS files).
 \end{itemize}
-The test-suite (\texttt{pytest -q}, 52 tests) checks: the Fano bounds against
+The test-suite (\texttt{pytest -q}, 58 tests) checks: the Fano bounds against
 the empirical recovery boundary of the phase-transition experiment
 (\texttt{run\_phase\_transition.py}, repo/supplement; a converse must
 lower bound it), the closed form \eqref{eq:qform} against Monte-Carlo, the
-envelope of Lemma~\ref{lem:median}, the adaptive-vs-known recovery gap, every
-claim of Section~\ref{sec:dichotomy} (spark, exhaustive $K_4$ injectivity,
+envelope of Lemma~\ref{lem:median}, the adaptive-vs-known recovery gap, the
+enumerated claims of Section~\ref{sec:dichotomy} (spark, exhaustive $K_4$ injectivity,
 separation $16$, $C_G/\rho_2^2\to1$, Chernoff envelope, rank-deficient
 recovery), and the wind-to-edge-flow bridge (mesh full rank by Euler; a
 synthetic Rankine vortex localizes at the correct triangles with the correct

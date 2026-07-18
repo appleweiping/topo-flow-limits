@@ -236,6 +236,12 @@ def _plot(grid: dict, alpha: dict) -> None:
     N_fix = 200 if 200 in avail_N else avail_N[-1]
     rho_fix = 1.0 if 1.0 in avail_r else avail_r[-1]
 
+    import matplotlib.lines as mlines
+    # DUAL ENCODING: color = complex K_n, linestyle = estimator (so the legend
+    # factorizes cleanly instead of one entry per (K_n, estimator) pair).
+    kn_colors = {n: plt.cm.viridis((n - 4) / 4.0) for n in range(4, 9)}
+    est_styles = (("nnls", "-"), ("subspace", "--"), ("greedy", ":"))
+    est_names = {"nnls": "NNLS", "subspace": "subspace", "greedy": "greedy"}
     ax = axes[0]
     for n in range(4, 9):
         g = grid[f"K{n}"]
@@ -244,16 +250,16 @@ def _plot(grid: dict, alpha: dict) -> None:
                  and c["k"] == k_mid]
         cells.sort(key=lambda c: c["N"])
         Ns = [c["N"] for c in cells]
-        for est, ls in (("nnls", "-"), ("subspace", "--"), ("greedy", ":")):
+        col = kn_colors[n]
+        for est, ls in est_styles:
             y = [c[est]["p_exact"] for c in cells]
             lo = [c[est]["ci95"][0] for c in cells]
             hi = [c[est]["ci95"][1] for c in cells]
-            line, = ax.plot(Ns, y, ls, marker="o" if est == "nnls" else None,
-                            ms=3, label=f"K{n} {est}" if est == "nnls" else None,
-                            alpha=0.9 if est == "nnls" else 0.45)
+            ax.plot(Ns, y, ls, color=col,
+                    marker="o" if est == "nnls" else None, ms=3,
+                    alpha=0.9 if est == "nnls" else 0.5)
             if est == "nnls":
-                ax.fill_between(Ns, lo, hi, alpha=0.12,
-                                color=line.get_color())
+                ax.fill_between(Ns, lo, hi, alpha=0.10, color=col)
     ax.set_xscale("log")
     ax.set_xticks(avail_N)
     ax.xaxis.set_major_formatter(mticker.ScalarFormatter())
@@ -261,7 +267,16 @@ def _plot(grid: dict, alpha: dict) -> None:
     ax.set_xlabel("snapshots N")
     ax.set_ylabel("P(exact recovery)")
     ax.set_title(f"(A) NNLS vs baselines ($\\rho_2$={rho_fix}, mid-$k$)")
-    ax.legend(fontsize=7, ncol=2, loc="lower right")
+    color_handles = [mlines.Line2D([], [], color=kn_colors[n], lw=2.2,
+                                   label=f"$K_{n}$") for n in range(4, 9)]
+    style_handles = [mlines.Line2D([], [], color="0.35", ls=ls, lw=1.6,
+                                   marker="o" if est == "nnls" else None, ms=3,
+                                   label=est_names[est]) for est, ls in est_styles]
+    leg_color = ax.legend(handles=color_handles, fontsize=6.5, ncol=2,
+                          loc="lower right", title="complex", title_fontsize=6.5)
+    ax.add_artist(leg_color)
+    ax.legend(handles=style_handles, fontsize=6.5, loc="upper left",
+              title="estimator", title_fontsize=6.5)
     ax.grid(alpha=0.3)
 
     ax = axes[1]
