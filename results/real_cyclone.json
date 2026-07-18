@@ -28,152 +28,382 @@
     "vort_thresh_per_s": 3e-05,
     "n_positive": 711,
     "n_total": 23310,
-    "spearman_score_vs_vorticity": 0.767819575416663
+    "spearman_score_vs_vorticity": 0.767819575416663,
+    "decorrelated_auc_internal": 0.7727501104843331,
+    "decorrelated_spearman": 0.3610280182954344,
+    "baseline_auc_internal": 0.9476412862946713
   },
-  "external_validation": {
-    "auc": 0.919632714361431,
-    "auc_ci95_block_bootstrap": [
-      0.8791034355095659,
-      0.951260034433967
-    ],
-    "pr_auc": 0.4942804150706731,
-    "pr_auc_ci95_block_bootstrap": [
-      0.272859121790053,
-      0.666445640832643
-    ],
-    "n_cyclone_triangle_windows": 414,
-    "precision_at_k": 0.4830917874396135,
-    "prevalence": 0.01776061776061776,
-    "n_ibtracs_fixes": 726
-  },
-  "decorrelated_variant": {
-    "auc_internal": 0.7727501104843331,
-    "auc_external": 0.8053969935891594,
-    "spearman": 0.3610280182954344,
-    "note": "G^{-1} noise amplification hurts pure detection ranking on this nearly-regular full-rank mesh"
-  },
-  "baseline_coarse_fd_vorticity": {
-    "auc_internal": 0.9476412862946713,
-    "auc_external": 0.8976570596893494,
-    "auc_external_ci95_block_bootstrap": [
-      0.8372778864327536,
-      0.9465063963151318
-    ],
-    "pr_auc_external": 0.3600813731599066,
-    "precision_at_k_external": 0.3888888888888889,
-    "note": "classical pointwise FD vorticity from winds subsampled at the mesh nodes (2.1 deg) \u2014 same information budget; the edge-flow statistic should match it (the contribution is the limits framework, not a new TC detector)"
-  },
-  "counts_raw_vs_eligible": {
-    "raw_ibtracs_fixes": 726,
+  "wind_label_counts": {
+    "raw_fixes": 726,
     "raw_storms": 13,
-    "storms_ge_34kt": 12,
-    "eligible_triangle_windows": 23310,
-    "external_positive_triangle_windows": 414,
-    "internal_positive_triangle_windows": 711,
-    "note": "raw = every fix/storm in the WNP-2020 IBTrACS slice; eligible = (triangles x windows) actually scored; external positives use the 34-kt, 1.5-deg default labeling."
+    "finite_wind_fixes": 497,
+    "finite_wind_storms": 13,
+    "missing_wind_fixes": 229,
+    "missing_wind_storms": 11,
+    "finite_ge34_fixes": 311,
+    "finite_ge34_storms": 12,
+    "inclusive_qualifying_fixes": 540,
+    "inclusive_qualifying_storms": 12,
+    "note": "STRICT labels use only finite wind >=34 kt; INCLUSIVE also counts missing-wind fixes (genuine best-track positions with no logged intensity, ~1/3 of the 2020 WNP fixes)."
   },
-  "sensitivity": {
-    "internal_auc_vs_vorticity_threshold": {
-      "1e-05": 0.876226035527785,
-      "2e-05": 0.9001180673997699,
-      "3e-05": 0.9144878957030386,
-      "4e-05": 0.9217825530230007,
-      "5e-05": 0.959404287102863
+  "primary_label_policy": "strict",
+  "external_validation_primary": {
+    "auc": 0.9504145845458132,
+    "auc_ci95_block_bootstrap": [
+      0.9145100694600894,
+      0.9750885784156713
+    ],
+    "pr_auc": 0.4932173885291063,
+    "pr_auc_ci95_block_bootstrap": [
+      0.20248468800976144,
+      0.7320667461450158
+    ],
+    "n_cyclone_triangle_windows": 312,
+    "precision_at_k": 0.4807692307692308,
+    "prevalence": 0.013384813384813385,
+    "decorrelated_auc_external": 0.8605588055594577,
+    "baseline_auc_external": 0.9269504483110014,
+    "baseline_pr_auc_external": 0.3197699173357941,
+    "baseline_precision_at_k": 0.3814102564102564,
+    "baseline_auc_ci95_block_bootstrap": [
+      0.8752915928659669,
+      0.9667372366100532
+    ],
+    "sensitivity": {
+      "external_vs_localization_radius": {
+        "1.0deg": {
+          "auc_ext": 0.9710512932523248,
+          "pr_ext": 0.5187484246790867,
+          "n_pos": 193
+        },
+        "1.5deg": {
+          "auc_ext": 0.9504145845458132,
+          "pr_ext": 0.4932173885291063,
+          "n_pos": 312
+        },
+        "2.0deg": {
+          "auc_ext": 0.9248046762764675,
+          "pr_ext": 0.43312333178579704,
+          "n_pos": 453
+        },
+        "2.5deg": {
+          "auc_ext": 0.8942551895975709,
+          "pr_ext": 0.3709145430496147,
+          "n_pos": 616
+        }
+      },
+      "external_vs_wind_cutoff_kt": {
+        "0kt": {
+          "auc_ext": 0.922738140120317,
+          "pr_ext": 0.41072169672671816,
+          "n_pos": 472
+        },
+        "34kt": {
+          "auc_ext": 0.9504145845458132,
+          "pr_ext": 0.4932173885291063,
+          "n_pos": 312
+        },
+        "50kt": {
+          "auc_ext": 0.9695677084704211,
+          "pr_ext": 0.5838013311199596,
+          "n_pos": 184
+        },
+        "64kt": {
+          "auc_ext": 0.9845074753118539,
+          "pr_ext": 0.6208692152428728,
+          "n_pos": 124
+        }
+      },
+      "external_vs_window_length": {
+        "8x6h": {
+          "auc_ext": 0.970851275695667,
+          "pr_ext": 0.5001516554881594,
+          "n_windows": 30
+        },
+        "16x6h": {
+          "auc_ext": 0.9504145845458132,
+          "pr_ext": 0.4932173885291063,
+          "n_windows": 15
+        },
+        "24x6h": {
+          "auc_ext": 0.933884917603405,
+          "pr_ext": 0.4749441711593834,
+          "n_windows": 10
+        }
+      },
+      "auc_external_ci_vs_bootstrap_block_len": {
+        "block1": [
+          0.9187009897011482,
+          0.9764858141322433
+        ],
+        "block2": [
+          0.9155319525848434,
+          0.9739885121619094
+        ],
+        "block3": [
+          0.9145100694600894,
+          0.9750885784156713
+        ],
+        "block5": [
+          0.9197293712212549,
+          0.974697789873998
+        ]
+      },
+      "radius_auc_monotone_in_radius": true,
+      "window_len_auc_monotone_in_length": true
     },
-    "external_vs_localization_radius": {
-      "1.0deg": {
-        "auc_ext": 0.9470948332952935,
-        "pr_ext": 0.5259576202976534,
-        "n_pos": 251
-      },
-      "1.5deg": {
-        "auc_ext": 0.919632714361431,
-        "pr_ext": 0.4942804150706731,
-        "n_pos": 414
-      },
-      "2.0deg": {
-        "auc_ext": 0.896268193637668,
-        "pr_ext": 0.4437916548929651,
-        "n_pos": 601
-      },
-      "2.5deg": {
-        "auc_ext": 0.8738967901234567,
-        "pr_ext": 0.3961664882007384,
-        "n_pos": 810
-      }
-    },
-    "external_vs_wind_cutoff_kt": {
-      "0kt": {
-        "auc_ext": 0.9106196610588282,
-        "pr_ext": 0.44575806080830954,
-        "n_pos": 552
-      },
-      "34kt": {
-        "auc_ext": 0.919632714361431,
-        "pr_ext": 0.4942804150706731,
-        "n_pos": 414
-      },
-      "50kt": {
-        "auc_ext": 0.9157082975699838,
-        "pr_ext": 0.5130741372125317,
-        "n_pos": 294
-      },
-      "64kt": {
-        "auc_ext": 0.9096822603179453,
-        "pr_ext": 0.4847524856460055,
-        "n_pos": 236
-      }
-    },
-    "external_vs_window_length": {
-      "8x6h": {
-        "auc_ext": 0.9444959897692542,
-        "pr_ext": 0.48258952394212407,
-        "n_windows": 30
-      },
-      "16x6h": {
-        "auc_ext": 0.919632714361431,
-        "pr_ext": 0.4942804150706731,
-        "n_windows": 15
-      },
-      "24x6h": {
-        "auc_ext": 0.90195759758966,
-        "pr_ext": 0.48272680895851444,
-        "n_windows": 10
-      }
-    },
-    "auc_external_ci_vs_bootstrap_block_len": {
-      "block1": [
-        0.8732705466077083,
-        0.9545624311467862
+    "storm_cluster_bootstrap_exploratory": {
+      "auc_external_ci95": [
+        0.9253542611225888,
+        0.9724813618344496
       ],
-      "block2": [
-        0.876785754501004,
-        0.950193708306147
+      "pr_auc_external_ci95": [
+        0.18626831377148775,
+        0.5663769709092488
       ],
-      "block3": [
+      "n_storms_resampled": 12
+    }
+  },
+  "external_by_wind_policy": {
+    "strict": {
+      "auc": 0.9504145845458132,
+      "auc_ci95_block_bootstrap": [
+        0.9145100694600894,
+        0.9750885784156713
+      ],
+      "pr_auc": 0.4932173885291063,
+      "pr_auc_ci95_block_bootstrap": [
+        0.20248468800976144,
+        0.7320667461450158
+      ],
+      "n_cyclone_triangle_windows": 312,
+      "precision_at_k": 0.4807692307692308,
+      "prevalence": 0.013384813384813385,
+      "decorrelated_auc_external": 0.8605588055594577,
+      "baseline_auc_external": 0.9269504483110014,
+      "baseline_pr_auc_external": 0.3197699173357941,
+      "baseline_precision_at_k": 0.3814102564102564,
+      "baseline_auc_ci95_block_bootstrap": [
+        0.8752915928659669,
+        0.9667372366100532
+      ],
+      "sensitivity": {
+        "external_vs_localization_radius": {
+          "1.0deg": {
+            "auc_ext": 0.9710512932523248,
+            "pr_ext": 0.5187484246790867,
+            "n_pos": 193
+          },
+          "1.5deg": {
+            "auc_ext": 0.9504145845458132,
+            "pr_ext": 0.4932173885291063,
+            "n_pos": 312
+          },
+          "2.0deg": {
+            "auc_ext": 0.9248046762764675,
+            "pr_ext": 0.43312333178579704,
+            "n_pos": 453
+          },
+          "2.5deg": {
+            "auc_ext": 0.8942551895975709,
+            "pr_ext": 0.3709145430496147,
+            "n_pos": 616
+          }
+        },
+        "external_vs_wind_cutoff_kt": {
+          "0kt": {
+            "auc_ext": 0.922738140120317,
+            "pr_ext": 0.41072169672671816,
+            "n_pos": 472
+          },
+          "34kt": {
+            "auc_ext": 0.9504145845458132,
+            "pr_ext": 0.4932173885291063,
+            "n_pos": 312
+          },
+          "50kt": {
+            "auc_ext": 0.9695677084704211,
+            "pr_ext": 0.5838013311199596,
+            "n_pos": 184
+          },
+          "64kt": {
+            "auc_ext": 0.9845074753118539,
+            "pr_ext": 0.6208692152428728,
+            "n_pos": 124
+          }
+        },
+        "external_vs_window_length": {
+          "8x6h": {
+            "auc_ext": 0.970851275695667,
+            "pr_ext": 0.5001516554881594,
+            "n_windows": 30
+          },
+          "16x6h": {
+            "auc_ext": 0.9504145845458132,
+            "pr_ext": 0.4932173885291063,
+            "n_windows": 15
+          },
+          "24x6h": {
+            "auc_ext": 0.933884917603405,
+            "pr_ext": 0.4749441711593834,
+            "n_windows": 10
+          }
+        },
+        "auc_external_ci_vs_bootstrap_block_len": {
+          "block1": [
+            0.9187009897011482,
+            0.9764858141322433
+          ],
+          "block2": [
+            0.9155319525848434,
+            0.9739885121619094
+          ],
+          "block3": [
+            0.9145100694600894,
+            0.9750885784156713
+          ],
+          "block5": [
+            0.9197293712212549,
+            0.974697789873998
+          ]
+        },
+        "radius_auc_monotone_in_radius": true,
+        "window_len_auc_monotone_in_length": true
+      },
+      "storm_cluster_bootstrap_exploratory": {
+        "auc_external_ci95": [
+          0.9253542611225888,
+          0.9724813618344496
+        ],
+        "pr_auc_external_ci95": [
+          0.18626831377148775,
+          0.5663769709092488
+        ],
+        "n_storms_resampled": 12
+      }
+    },
+    "inclusive": {
+      "auc": 0.919632714361431,
+      "auc_ci95_block_bootstrap": [
         0.8791034355095659,
         0.951260034433967
       ],
-      "block5": [
-        0.8876422236032178,
-        0.9500838221756434
-      ]
-    },
-    "note": "the headline external AUC is stable across localization radius (1.0-2.5 deg), wind cutoff (TD..typhoon), window length (2-6 days), and bootstrap block length."
+      "pr_auc": 0.49428041507067344,
+      "pr_auc_ci95_block_bootstrap": [
+        0.272859121790053,
+        0.6664456408326421
+      ],
+      "n_cyclone_triangle_windows": 414,
+      "precision_at_k": 0.4830917874396135,
+      "prevalence": 0.01776061776061776,
+      "decorrelated_auc_external": 0.8053969935891594,
+      "baseline_auc_external": 0.8976570596893494,
+      "baseline_pr_auc_external": 0.3600813731599064,
+      "baseline_precision_at_k": 0.3888888888888889,
+      "baseline_auc_ci95_block_bootstrap": [
+        0.8372778864327536,
+        0.9465063963151318
+      ],
+      "sensitivity": {
+        "external_vs_localization_radius": {
+          "1.0deg": {
+            "auc_ext": 0.9470948332952935,
+            "pr_ext": 0.5259576202976526,
+            "n_pos": 251
+          },
+          "1.5deg": {
+            "auc_ext": 0.919632714361431,
+            "pr_ext": 0.49428041507067344,
+            "n_pos": 414
+          },
+          "2.0deg": {
+            "auc_ext": 0.896268193637668,
+            "pr_ext": 0.4437916548929647,
+            "n_pos": 601
+          },
+          "2.5deg": {
+            "auc_ext": 0.8738967901234567,
+            "pr_ext": 0.3961664882007393,
+            "n_pos": 810
+          }
+        },
+        "external_vs_wind_cutoff_kt": {
+          "0kt": {
+            "auc_ext": 0.9106196610588282,
+            "pr_ext": 0.4457580608083095,
+            "n_pos": 552
+          },
+          "34kt": {
+            "auc_ext": 0.919632714361431,
+            "pr_ext": 0.49428041507067344,
+            "n_pos": 414
+          },
+          "50kt": {
+            "auc_ext": 0.9157082975699838,
+            "pr_ext": 0.513074137212532,
+            "n_pos": 294
+          },
+          "64kt": {
+            "auc_ext": 0.9096822603179453,
+            "pr_ext": 0.48475248564600576,
+            "n_pos": 236
+          }
+        },
+        "external_vs_window_length": {
+          "8x6h": {
+            "auc_ext": 0.9444959897692542,
+            "pr_ext": 0.48258952394212384,
+            "n_windows": 30
+          },
+          "16x6h": {
+            "auc_ext": 0.919632714361431,
+            "pr_ext": 0.49428041507067344,
+            "n_windows": 15
+          },
+          "24x6h": {
+            "auc_ext": 0.90195759758966,
+            "pr_ext": 0.482726808958514,
+            "n_windows": 10
+          }
+        },
+        "auc_external_ci_vs_bootstrap_block_len": {
+          "block1": [
+            0.8732705466077083,
+            0.9545624311467862
+          ],
+          "block2": [
+            0.876785754501004,
+            0.950193708306147
+          ],
+          "block3": [
+            0.8791034355095659,
+            0.951260034433967
+          ],
+          "block5": [
+            0.8876422236032178,
+            0.9500838221756434
+          ]
+        },
+        "radius_auc_monotone_in_radius": true,
+        "window_len_auc_monotone_in_length": true
+      },
+      "storm_cluster_bootstrap_exploratory": {
+        "auc_external_ci95": [
+          0.8826223734274206,
+          0.9501467330552921
+        ],
+        "pr_auc_external_ci95": [
+          0.26543577417928677,
+          0.5559665030083004
+        ],
+        "n_storms_resampled": 12
+      }
+    }
   },
-  "storm_cluster_bootstrap_exploratory": {
-    "auc_external_ci95": [
-      0.8826223734274206,
-      0.9501467330552921
-    ],
-    "pr_auc_external_ci95": [
-      0.265435774179287,
-      0.5559665030083
-    ],
-    "n_storms_resampled": 12,
-    "note": "EXPLORATORY: resamples whole storms (single 2020 season, no multi-year validation). Complements the moving-block CI."
-  },
-  "ci_status": "All real-data confidence intervals here are EXPLORATORY: one season (WNP 2020), no multi-year or out-of-sample validation; they quantify within-season resampling spread only.",
+  "moving_block_is_primary_ci": true,
+  "ci_status": "All real-data confidence intervals here are EXPLORATORY: one season (WNP 2020), no multi-year or out-of-sample validation; they quantify within-season resampling spread only. The moving-block bootstrap is the PRIMARY CI; the storm-cluster bootstrap is corroboration only (it collapses storm multiplicity and is mildly anti-conservative).",
+  "decorrelated_note": "G^{-1} noise amplification hurts pure detection ranking on this nearly-regular full-rank mesh",
+  "baseline_note": "classical pointwise FD vorticity from winds subsampled at the mesh nodes (2.1 deg) - same information budget; the edge-flow statistic should match it (the contribution is the limits framework, not a new TC detector)",
   "internal_auc_vs_vorticity_threshold": {
     "1e-05": 0.876226035527785,
     "2e-05": 0.9001180673997699,
@@ -271,63 +501,111 @@
   "per_window": [
     {
       "t0": "2020-08-01T00",
-      "n_ext_pos": 29
+      "n_ext_pos_strict": 24,
+      "n_ext_pos_inclusive": 29
     },
     {
       "t0": "2020-08-05T00",
-      "n_ext_pos": 27
+      "n_ext_pos_strict": 0,
+      "n_ext_pos_inclusive": 27
     },
     {
       "t0": "2020-08-09T00",
-      "n_ext_pos": 62
+      "n_ext_pos_strict": 59,
+      "n_ext_pos_inclusive": 62
     },
     {
       "t0": "2020-08-13T00",
-      "n_ext_pos": 3
+      "n_ext_pos_strict": 0,
+      "n_ext_pos_inclusive": 3
     },
     {
       "t0": "2020-08-17T00",
-      "n_ext_pos": 21
+      "n_ext_pos_strict": 10,
+      "n_ext_pos_inclusive": 21
     },
     {
       "t0": "2020-08-21T00",
-      "n_ext_pos": 14
+      "n_ext_pos_strict": 14,
+      "n_ext_pos_inclusive": 14
     },
     {
       "t0": "2020-08-25T00",
-      "n_ext_pos": 30
+      "n_ext_pos_strict": 28,
+      "n_ext_pos_inclusive": 30
     },
     {
       "t0": "2020-08-29T00",
-      "n_ext_pos": 34
+      "n_ext_pos_strict": 30,
+      "n_ext_pos_inclusive": 34
     },
     {
       "t0": "2020-09-02T00",
-      "n_ext_pos": 45
+      "n_ext_pos_strict": 45,
+      "n_ext_pos_inclusive": 45
     },
     {
       "t0": "2020-09-06T00",
-      "n_ext_pos": 30
+      "n_ext_pos_strict": 23,
+      "n_ext_pos_inclusive": 30
     },
     {
       "t0": "2020-09-10T00",
-      "n_ext_pos": 7
+      "n_ext_pos_strict": 0,
+      "n_ext_pos_inclusive": 7
     },
     {
       "t0": "2020-09-14T00",
-      "n_ext_pos": 17
+      "n_ext_pos_strict": 17,
+      "n_ext_pos_inclusive": 17
     },
     {
       "t0": "2020-09-18T00",
-      "n_ext_pos": 14
+      "n_ext_pos_strict": 12,
+      "n_ext_pos_inclusive": 14
     },
     {
       "t0": "2020-09-22T00",
-      "n_ext_pos": 31
+      "n_ext_pos_strict": 16,
+      "n_ext_pos_inclusive": 31
     },
     {
       "t0": "2020-09-26T00",
-      "n_ext_pos": 50
+      "n_ext_pos_strict": 34,
+      "n_ext_pos_inclusive": 50
     }
-  ]
+  ],
+  "_provenance": {
+    "git_sha": "30191f03486b6c1aae80363f435fe5393f57e81b",
+    "git_dirty": true,
+    "hostname": "LAPTOP-3TQUS51M",
+    "command": "python.exe experiments/run_real_cyclone.py",
+    "seed": null,
+    "timestamp_utc": "2026-07-18T11:58:09+00:00",
+    "environment": {
+      "python": "3.14.5",
+      "numpy": "2.4.6",
+      "scipy": "1.17.1",
+      "matplotlib": "3.10.9",
+      "torch": "2.12.0+cpu"
+    },
+    "blas_threads": {
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null,
+      "NUMEXPR_NUM_THREADS": null,
+      "VECLIB_MAXIMUM_THREADS": null
+    },
+    "hardware": {
+      "hostname": "LAPTOP-3TQUS51M",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "machine": "AMD64",
+      "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+      "logical_cpus": 16
+    },
+    "wall_time_s": 311.33734130859375,
+    "peak_rss_mb": null,
+    "peak_vram_mb": null,
+    "exit_status": "completed_ok"
+  }
 }

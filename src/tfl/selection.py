@@ -5,15 +5,30 @@ minimum weight ``w_min`` and the true ``sigma_n`` -- an ORACLE theorem setting.
 This module provides reproducible NON-oracle rules that use neither:
 
   * :func:`estimate_sigma_n_curl` -- ``sigma_n`` from the median eigenvalue of
-    the curl-coordinate sample covariance (robust when the active fraction of
-    the ``r`` curl directions is below one half);
+    the curl-coordinate sample covariance.  This is a *noise* eigenvalue ONLY
+    when the active curl-covariance rank is below ~``r/2`` (a noise-
+    identifiability / sparsity ceiling); beyond it the median eigenvalue is
+    signal-inflated and ``sigma_n`` is overestimated.
   * :func:`bic_support_path` -- walk the NNLS solution path (nest the support by
     decreasing ``w_hat``) and pick the support minimizing the Gaussian-model
-    BIC ``N[log det Sigma_S + tr(Sigma_S^{-1} Sigma_hat)] + |S| log N``.  This is
-    the headline non-oracle rule: it needs no ``w_min`` and inherits the
-    classical BIC selection consistency for Gaussian covariance models
-    (``P(select S*) -> 1`` as ``N -> infinity`` at fixed ``p``), verified
-    numerically before use.
+    BIC ``N[log det Sigma_S + tr(Sigma_S^{-1} Sigma_hat)] + |S| log N``.
+
+IMPORTANT (round-9 retraction of an earlier overclaim).  The BIC selector is
+NOT unconditionally consistent.  What is true:
+
+  * GIVEN an identifiable ``sigma_n`` (e.g. the true value), classical Gaussian-
+    BIC selection consistency holds under fixed ``p``, lifted-atom injectivity
+    on ``S*`` (``rank(G o G)|_{S*}`` full), a beta-min gap, and a unique
+    minimizer.  Numerically the oracle-``sigma_n`` path recovers even the fully
+    DENSE ``k=p`` support on ``K6`` (``experiments/run_bic_boundary.py``).
+  * The FULLY non-oracle rule (median-eigenvalue ``sigma_n``) is therefore an
+    EMPIRICAL selector, valid only inside the noise-identifiable regime.  When
+    the support is dense enough that the active curl covariance approaches full
+    rank ``r``, the median rule FAILS even as ``N -> infinity`` -- a counter-
+    example (``K6``, ``k>=12``, ``N=1e5`` -> 0 recovery) is reproduced in
+    ``run_bic_boundary.py`` and locked by ``tests/test_bic_boundary.py``.  Do
+    NOT describe the median-sigma_n selector as "consistent" for dense supports.
+
   * :func:`sample_split_support` -- assumption-light held-out-residual variant.
 """
 from __future__ import annotations

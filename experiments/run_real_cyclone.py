@@ -76,6 +76,11 @@ MESH_STEP = 3          # 3 x 0.703 deg ~ 2.1 deg mesh (~230 km edges)
 WINDOW_LEN = 16        # 16 x 6h = 4 days
 VORT_THRESH = 3e-5     # 1/s; typhoon-scale area-mean |vorticity|
 VORT_MIN_WIND_KT = 34.0  # tropical-storm strength cutoff for external labels
+# Headline label policy. STRICT (finite wind >= 34 kt only) is the conservative
+# default; INCLUSIVE (missing-wind fixes also count) is reported alongside. The
+# ~1/3 of 2020 WNP fixes with no reported intensity are genuine best-track
+# positions, so neither policy is "correct" -- both are released.
+PRIMARY_POLICY = "strict"
 
 
 def dataset_from_flows(F: np.ndarray, B1, B2, cx) -> FlowDataset:
@@ -89,38 +94,31 @@ def dataset_from_flows(F: np.ndarray, B1, B2, cx) -> FlowDataset:
 
 
 def roc_curve(scores: np.ndarray, labels: np.ndarray, n_thresh: int = 200):
-    order = np.argsort(-scores)
-    s_sorted = scores[order]
-    l_sorted = labels[order].astype(float)
-    P = l_sorted.sum()
-    Nn = len(labels) - P
-    tpr = [0.0]
-    fpr = [0.0]
-    tp = fp = 0.0
-    for v in l_sorted:
-        tp += v
-        fp += 1 - v
-        tpr.append(tp / max(P, 1))
-        fpr.append(fp / max(Nn, 1))
-    auc = float(np.trapezoid(tpr, fpr))
-    return np.array(fpr), np.array(tpr), auc
+    """Pooled ROC + AUC. Vectorized (cumsum over score-sorted labels); returns
+    exactly the same step-function AUC as the per-point loop, ~100x faster --
+    which is what makes the moving-block / storm bootstraps affordable."""
+    order = np.argsort(-scores, kind="mergesort")   # stable: deterministic ties
+    l = labels[order].astype(float)
+    P = float(l.sum())
+    Nn = float(len(labels)) - P
+    tp = np.concatenate([[0.0], np.cumsum(l)])
+    fp = np.concatenate([[0.0], np.cumsum(1.0 - l)])
+    tpr = tp / max(P, 1.0)
+    fpr = fp / max(Nn, 1.0)
+    return fpr, tpr, float(np.trapezoid(tpr, fpr))
 
 
 def pr_auc(scores: np.ndarray, labels: np.ndarray) -> float:
-    """Average precision (step-wise PR-AUC): sum over positives, in score
-    order, of precision-at-that-rank weighted by recall increments."""
-    order = np.argsort(-scores)
-    l_sorted = labels[order].astype(float)
-    P = l_sorted.sum()
+    """Average precision (step-wise PR-AUC): mean over positives, in score
+    order, of precision-at-that-rank. Vectorized; identical to the loop form."""
+    order = np.argsort(-scores, kind="mergesort")
+    l = labels[order].astype(float)
+    P = float(l.sum())
     if P == 0:
         return 0.0
-    tp = 0.0
-    ap = 0.0
-    for i, v in enumerate(l_sorted, start=1):
-        if v:
-            tp += 1
-            ap += (tp / i) / P
-    return float(ap)
+    ranks = np.arange(1, len(l) + 1, dtype=float)
+    prec = np.cumsum(l) / ranks
+    return float(np.sum(prec * l) / P)
 
 
 def cluster_bootstrap_ci(
@@ -156,16 +154,18 @@ def cluster_bootstrap_ci(
 
 
 def storm_coverage(mesh, fixes, times, windows,
-                   min_wind_kt: float = 34.0, radius_deg: float = 1.5) -> dict:
+                   min_wind_kt: float = 34.0, radius_deg: float = 1.5,
+                   include_missing_wind: bool = True) -> dict:
     """Flattened (window, triangle) positive mask for each storm, keyed by
-    IBTrACS ``sid``. A storm covers a cell iff one of ITS OWN fixes (within the
-    window and >= ``min_wind_kt``) lies within ``radius_deg`` of the centroid.
-    Only storms that cover at least one cell are returned."""
+    IBTrACS ``sid``. A storm covers a cell iff one of ITS OWN qualifying fixes
+    (within the window, under the same wind policy) lies within ``radius_deg``
+    of the centroid. Only storms that cover at least one cell are returned."""
     cover: dict[str, np.ndarray] = {}
     for sid in sorted({fx.sid for fx in fixes}):
         fx_s = [fx for fx in fixes if fx.sid == sid]
         m = np.concatenate([
-            cyclone_triangle_labels(mesh, fx_s, times, w, min_wind_kt, radius_deg)
+            cyclone_triangle_labels(mesh, fx_s, times, w, min_wind_kt,
+                                    radius_deg, include_missing_wind)
             for w in windows])
         if m.any():
             cover[sid] = m
@@ -236,7 +236,8 @@ def main() -> None:
     windows = [slice(s, s + WINDOW_LEN) for s in range(0, T - WINDOW_LEN + 1, WINDOW_LEN)]
     print(f"{len(windows)} windows of {WINDOW_LEN} snapshots")
 
-    all_scores, all_int_gt, all_ext_gt = [], [], []
+    all_scores, all_int_gt = [], []
+    all_ext = {"strict": [], "inclusive": []}
     per_window = []
     # classical baseline inputs: winds subsampled at the mesh nodes (2.1 deg)
     lat_c = lat[np.unique(mesh.lat_idx)]
@@ -261,165 +262,176 @@ def main() -> None:
 
         zeta = grid_vorticity(u[w], v[w], lat, lon)
         gt_vort = triangle_mean_abs_vorticity(zeta, tri_pts)
-        ext = cyclone_triangle_labels(mesh, fixes, times, w)
+        ext_incl = cyclone_triangle_labels(mesh, fixes, times, w,
+                                           include_missing_wind=True)
+        ext_strict = cyclone_triangle_labels(mesh, fixes, times, w,
+                                             include_missing_wind=False)
 
         all_scores.append(scores)
         all_scores_wh.append(scores_wh)
         all_scores_base.append(scores_base)
         all_int_gt.append(gt_vort)
-        all_ext_gt.append(ext)
+        all_ext["inclusive"].append(ext_incl)
+        all_ext["strict"].append(ext_strict)
         per_window.append({
             "t0": np.datetime_as_string(times[w][0], unit="h"),
-            "n_ext_pos": int(ext.sum()),
+            "n_ext_pos_strict": int(ext_strict.sum()),
+            "n_ext_pos_inclusive": int(ext_incl.sum()),
         })
 
     scores_flat = np.concatenate(all_scores)
     scores_wh_flat = np.concatenate(all_scores_wh)
     scores_base_flat = np.concatenate(all_scores_base)
     int_gt_flat = np.concatenate(all_int_gt)
-    ext_gt_flat = np.concatenate(all_ext_gt)
 
-    # ---- internal validation: ROC against full-res vorticity ----
+    # ---- internal validation: ROC against full-res vorticity (policy-free) ----
     int_labels = int_gt_flat > VORT_THRESH
     fpr_i, tpr_i, auc_i = roc_curve(scores_flat, int_labels)
     print(f"INTERNAL: {int(int_labels.sum())}/{len(int_labels)} vorticity-positive "
           f"triangle-windows; AUC = {auc_i:.3f}")
-
-    # ---- external validation: ROC + PR + P@k against IBTrACS ----
-    fpr_e, tpr_e, auc_e = roc_curve(scores_flat, ext_gt_flat)
-    ap_e = pr_auc(scores_flat, ext_gt_flat)
-    # operating point: top-k where k = number of external positives
-    k = int(ext_gt_flat.sum())
-    top = np.argsort(-scores_flat)[:k]
-    hits = int(ext_gt_flat[top].sum())
-    precision = hits / max(k, 1)
-    print(f"EXTERNAL: {k} cyclone triangle-windows; AUC = {auc_e:.3f}; "
-          f"PR-AUC = {ap_e:.3f}; P@k = {precision:.3f}")
-
-    # cluster (per-window) bootstrap CIs for the headline pooled metrics
     int_labels_pw = [g > VORT_THRESH for g in all_int_gt]
-    boot = {
-        "auc_internal": cluster_bootstrap_ci(all_scores, int_labels_pw,
-                                             lambda s, l: roc_curve(s, l)[2]),
-        "auc_external": cluster_bootstrap_ci(all_scores, all_ext_gt,
-                                             lambda s, l: roc_curve(s, l)[2]),
-        "pr_auc_external": cluster_bootstrap_ci(all_scores, all_ext_gt, pr_auc),
-    }
-    print(f"block-bootstrap 95% CI: AUC_int={boot['auc_internal']}, "
-          f"AUC_ext={boot['auc_external']}, PR_ext={boot['pr_auc_external']}")
-
-    # rank correlation between detector score and internal GT
+    boot_int = cluster_bootstrap_ci(all_scores, int_labels_pw,
+                                    lambda s, l: roc_curve(s, l)[2])
     from scipy.stats import spearmanr
     rho_s, _ = spearmanr(scores_flat, int_gt_flat)
-    print(f"Spearman(score, |vorticity|) = {rho_s:.3f}")
-    # honesty comparison: the decorrelated (GLS, main Prop.1) score on the same task
     _, _, auc_i_wh = roc_curve(scores_wh_flat, int_labels)
-    _, _, auc_e_wh = roc_curve(scores_wh_flat, ext_gt_flat)
     rho_s_wh, _ = spearmanr(scores_wh_flat, int_gt_flat)
-    print(f"decorrelated variant: AUC_int={auc_i_wh:.3f} AUC_ext={auc_e_wh:.3f} "
-          f"spearman={rho_s_wh:.3f}")
-    # classical baseline at the same information budget (full metric set)
     fpr_b, tpr_b, auc_i_base = roc_curve(scores_base_flat, int_labels)
-    fpr_be, tpr_be, _auc_e_base_curve = roc_curve(scores_base_flat, ext_gt_flat)
-    _, _, auc_e_base = roc_curve(scores_base_flat, ext_gt_flat)
-    ap_e_base = pr_auc(scores_base_flat, ext_gt_flat)
-    top_b = np.argsort(-scores_base_flat)[:k]
-    precision_base = int(ext_gt_flat[top_b].sum()) / max(k, 1)
-    boot["auc_external_baseline"] = cluster_bootstrap_ci(
-        all_scores_base, all_ext_gt, lambda s, l: roc_curve(s, l)[2])
-    print(f"coarse-vorticity baseline: AUC_int={auc_i_base:.3f} "
-          f"AUC_ext={auc_e_base:.3f} PR_ext={ap_e_base:.3f} "
-          f"P@k={precision_base:.3f}")
-    # sensitivity of the internal AUC to the vorticity threshold
     thresh_sweep = {}
     for th in (1e-5, 2e-5, 3e-5, 4e-5, 5e-5):
         _, _, a = roc_curve(scores_flat, int_gt_flat > th)
         thresh_sweep[f"{th:.0e}"] = float(a)
-    print("threshold sweep (internal AUC):", thresh_sweep)
 
-    # ---- raw archive vs eligible-in-metric counts (honest denominators) ----
-    sids_all = sorted({fx.sid for fx in fixes})
-    sids_ts = sorted({fx.sid for fx in fixes
-                      if np.isnan(fx.wind_kt) or fx.wind_kt >= VORT_MIN_WIND_KT})
-    counts = {
-        "raw_ibtracs_fixes": len(fixes),
-        "raw_storms": len(sids_all),
-        "storms_ge_34kt": len(sids_ts),
-        "eligible_triangle_windows": int(len(ext_gt_flat)),
-        "external_positive_triangle_windows": int(ext_gt_flat.sum()),
-        "internal_positive_triangle_windows": int(int_labels.sum()),
-        "note": "raw = every fix/storm in the WNP-2020 IBTrACS slice; eligible ="
-                " (triangles x windows) actually scored; external positives use "
-                "the 34-kt, 1.5-deg default labeling.",
+    # ---- wind-label bookkeeping (raw / finite / missing / >=34 / eligible) ----
+    finite = [f for f in fixes if not np.isnan(f.wind_kt)]
+    missing = [f for f in fixes if np.isnan(f.wind_kt)]
+    ge34_finite = [f for f in finite if f.wind_kt >= VORT_MIN_WIND_KT]
+    def _sids(fs):
+        return len({f.sid for f in fs})
+    wind_counts = {
+        "raw_fixes": len(fixes), "raw_storms": _sids(fixes),
+        "finite_wind_fixes": len(finite), "finite_wind_storms": _sids(finite),
+        "missing_wind_fixes": len(missing), "missing_wind_storms": _sids(missing),
+        "finite_ge34_fixes": len(ge34_finite), "finite_ge34_storms": _sids(ge34_finite),
+        "inclusive_qualifying_fixes": len(ge34_finite) + len(missing),
+        "inclusive_qualifying_storms": _sids(ge34_finite + missing),
+        "note": "STRICT labels use only finite wind >=34 kt; INCLUSIVE also "
+                "counts missing-wind fixes (genuine best-track positions with no "
+                "logged intensity, ~1/3 of the 2020 WNP fixes).",
     }
-    print(f"counts: {len(fixes)} fixes / {len(sids_all)} storms raw "
-          f"({len(sids_ts)} >=34kt); {int(ext_gt_flat.sum())} ext-pos of "
-          f"{len(ext_gt_flat)} triangle-windows")
+    print(f"wind counts: raw {len(fixes)}f/{_sids(fixes)}s | finite {len(finite)} | "
+          f"missing {len(missing)} | finite>=34 {len(ge34_finite)} | "
+          f"inclusive {len(ge34_finite)+len(missing)}")
 
-    # ---- external-labeling sensitivity: localization radius and wind cutoff ----
-    def pooled_ext(min_wind_kt, radius_deg):
-        lab = np.concatenate([
-            cyclone_triangle_labels(mesh, fixes, times, w, min_wind_kt, radius_deg)
-            for w in windows])
-        _, _, a = roc_curve(scores_flat, lab)
-        return float(a), float(pr_auc(scores_flat, lab)), int(lab.sum())
+    def external_suite(incl: bool) -> dict:
+        """Full external-metric suite under one wind policy (incl=inclusive)."""
+        ext_pw = all_ext["inclusive" if incl else "strict"]
+        ext_flat = np.concatenate(ext_pw)
+        _, _, auc_e = roc_curve(scores_flat, ext_flat)
+        ap_e = pr_auc(scores_flat, ext_flat)
+        k = int(ext_flat.sum())
+        precision = int(ext_flat[np.argsort(-scores_flat)[:k]].sum()) / max(k, 1)
+        _, _, auc_e_wh = roc_curve(scores_wh_flat, ext_flat)
+        _, _, auc_e_base = roc_curve(scores_base_flat, ext_flat)
+        ap_e_base = pr_auc(scores_base_flat, ext_flat)
+        prec_base = int(ext_flat[np.argsort(-scores_base_flat)[:k]].sum()) / max(k, 1)
+        b_auc = cluster_bootstrap_ci(all_scores, ext_pw, lambda s, l: roc_curve(s, l)[2])
+        b_pr = cluster_bootstrap_ci(all_scores, ext_pw, pr_auc)
+        b_base = cluster_bootstrap_ci(all_scores_base, ext_pw,
+                                      lambda s, l: roc_curve(s, l)[2])
 
-    radius_sweep = {}
-    for rdeg in (1.0, 1.5, 2.0, 2.5):
-        a, pr, npos = pooled_ext(VORT_MIN_WIND_KT, rdeg)
-        radius_sweep[f"{rdeg:.1f}deg"] = {"auc_ext": a, "pr_ext": pr, "n_pos": npos}
-    wind_sweep = {}
-    for wkt in (0.0, 34.0, 50.0, 64.0):   # 0 = all fixes incl. TD; 64 = typhoon
-        a, pr, npos = pooled_ext(wkt, 1.5)
-        wind_sweep[f"{int(wkt)}kt"] = {"auc_ext": a, "pr_ext": pr, "n_pos": npos}
-    print("radius sweep:", {k: round(v["auc_ext"], 3) for k, v in radius_sweep.items()})
-    print("wind-cutoff sweep:", {k: round(v["auc_ext"], 3) for k, v in wind_sweep.items()})
+        def pooled(min_wind_kt, radius_deg):
+            lab = np.concatenate([
+                cyclone_triangle_labels(mesh, fixes, times, w, min_wind_kt,
+                                        radius_deg, incl) for w in windows])
+            _, _, a = roc_curve(scores_flat, lab)
+            return {"auc_ext": float(a), "pr_ext": float(pr_auc(scores_flat, lab)),
+                    "n_pos": int(lab.sum())}
+        radius_sweep = {f"{r:.1f}deg": pooled(VORT_MIN_WIND_KT, r)
+                        for r in (1.0, 1.5, 2.0, 2.5)}
+        wind_sweep = {f"{int(wk)}kt": pooled(wk, 1.5)
+                      for wk in (0.0, 34.0, 50.0, 64.0)}
+        window_len_sweep = {}
+        for wl in (8, 16, 24):
+            wins = [slice(s, s + wl) for s in range(0, T - wl + 1, wl)]
+            sc, ex = [], []
+            for w_ in wins:
+                Cc = B2.T @ F_all[:, w_]; Cc = Cc - Cc.mean(axis=1, keepdims=True)
+                sc.append(np.mean(Cc**2, axis=1) / area_norm)
+                ex.append(cyclone_triangle_labels(mesh, fixes, times, w_,
+                                                  VORT_MIN_WIND_KT, 1.5, incl))
+            sc_f, ex_f = np.concatenate(sc), np.concatenate(ex)
+            _, _, a = roc_curve(sc_f, ex_f)
+            window_len_sweep[f"{wl}x6h"] = {"auc_ext": float(a),
+                                            "pr_ext": float(pr_auc(sc_f, ex_f)),
+                                            "n_windows": len(wins)}
+        block_len_sweep = {}
+        for bl in (1, 2, 3, 5):
+            block_len_sweep[f"block{bl}"] = list(cluster_bootstrap_ci(
+                all_scores, ext_pw, lambda s, l: roc_curve(s, l)[2], block_len=bl))
+        cover = storm_coverage(mesh, fixes, times, windows,
+                               include_missing_wind=incl)
+        storm_boot = {
+            "auc_external_ci95": list(storm_cluster_bootstrap_ci(
+                scores_flat, cover, lambda s, l: roc_curve(s, l)[2])),
+            "pr_auc_external_ci95": list(storm_cluster_bootstrap_ci(
+                scores_flat, cover, pr_auc)),
+            "n_storms_resampled": len(cover),
+        }
+        # monotonicity is a numerical property -- test it, don't assert it
+        def _mono(seq):
+            d = np.diff(seq)
+            return bool(np.all(d <= 1e-9) or np.all(d >= -1e-9))
+        rad_vals = [radius_sweep[k]["auc_ext"] for k in radius_sweep]
+        win_vals = [window_len_sweep[k]["auc_ext"] for k in window_len_sweep]
+        wind_vals = [wind_sweep[k]["auc_ext"] for k in wind_sweep]
+        return {
+            "auc": float(auc_e), "auc_ci95_block_bootstrap": list(b_auc),
+            "pr_auc": float(ap_e), "pr_auc_ci95_block_bootstrap": list(b_pr),
+            "n_cyclone_triangle_windows": k, "precision_at_k": float(precision),
+            "prevalence": k / int(len(ext_flat)),
+            "decorrelated_auc_external": float(auc_e_wh),
+            "baseline_auc_external": float(auc_e_base),
+            "baseline_pr_auc_external": float(ap_e_base),
+            "baseline_precision_at_k": float(prec_base),
+            "baseline_auc_ci95_block_bootstrap": list(b_base),
+            "sensitivity": {
+                "external_vs_localization_radius": radius_sweep,
+                "external_vs_wind_cutoff_kt": wind_sweep,
+                "external_vs_window_length": window_len_sweep,
+                "auc_external_ci_vs_bootstrap_block_len": block_len_sweep,
+                "radius_auc_monotone_in_radius": _mono(rad_vals),
+                "window_len_auc_monotone_in_length": _mono(win_vals),
+                "wind_cutoff_auc_monotone": _mono(wind_vals),
+                "auc_range_over_all_sweeps": [
+                    float(min(rad_vals + win_vals + wind_vals)),
+                    float(max(rad_vals + win_vals + wind_vals))],
+            },
+            "storm_cluster_bootstrap_exploratory": storm_boot,
+        }
 
-    # ---- window-length sensitivity (rebuild the whole pipeline per length) ----
-    window_len_sweep = {}
-    for wl in (8, 16, 24):
-        wins = [slice(s, s + wl) for s in range(0, T - wl + 1, wl)]
-        sc, ex = [], []
-        for w in wins:
-            C = B2.T @ F_all[:, w]
-            C = C - C.mean(axis=1, keepdims=True)
-            sc.append(np.mean(C**2, axis=1) / area_norm)
-            ex.append(cyclone_triangle_labels(mesh, fixes, times, w))
-        sc_f, ex_f = np.concatenate(sc), np.concatenate(ex)
-        _, _, a = roc_curve(sc_f, ex_f)
-        window_len_sweep[f"{wl}x6h"] = {"auc_ext": float(a),
-                                        "pr_ext": float(pr_auc(sc_f, ex_f)),
-                                        "n_windows": len(wins)}
-    print("window-length sweep:", {k: round(v["auc_ext"], 3)
-                                    for k, v in window_len_sweep.items()})
-
-    # ---- bootstrap block-length sensitivity (moving-block CI width vs block) ----
-    block_len_sweep = {}
-    for bl in (1, 2, 3, 5):
-        lo, hi = cluster_bootstrap_ci(all_scores, all_ext_gt,
-                                      lambda s, l: roc_curve(s, l)[2], block_len=bl)
-        block_len_sweep[f"block{bl}"] = [lo, hi]
-    print("block-length sweep (AUC_ext CI):",
-          {k: [round(x, 3) for x in v] for k, v in block_len_sweep.items()})
-
-    # ---- storm-cluster bootstrap (resample whole storms) — EXPLORATORY ----
-    cover = storm_coverage(mesh, fixes, times, windows)
-    storm_boot = {
-        "auc_external": storm_cluster_bootstrap_ci(
-            scores_flat, cover, lambda s, l: roc_curve(s, l)[2]),
-        "pr_auc_external": storm_cluster_bootstrap_ci(scores_flat, cover, pr_auc),
-        "n_storms_resampled": len(cover),
-    }
-    print(f"storm-cluster bootstrap ({len(cover)} storms): "
-          f"AUC_ext={storm_boot['auc_external']}, "
-          f"PR_ext={storm_boot['pr_auc_external']}")
+    external = {"strict": external_suite(False),
+                "inclusive": external_suite(True)}
+    for pol in ("strict", "inclusive"):
+        e = external[pol]
+        print(f"EXTERNAL[{pol}]: {e['n_cyclone_triangle_windows']} pos; "
+              f"AUC={e['auc']:.3f} {e['auc_ci95_block_bootstrap']}; "
+              f"PR={e['pr_auc']:.3f}; P@k={e['precision_at_k']:.3f}; "
+              f"baseline AUC={e['baseline_auc_external']:.3f}")
+    prim = external[PRIMARY_POLICY]
+    all_ext_gt = all_ext[PRIMARY_POLICY]     # primary policy drives the figure
+    ext_gt_flat = np.concatenate(all_ext_gt)
+    fpr_e, tpr_e, _ = roc_curve(scores_flat, ext_gt_flat)
+    fpr_be, tpr_be, _ = roc_curve(scores_base_flat, ext_gt_flat)
+    auc_e, ap_e = prim["auc"], prim["pr_auc"]
+    auc_e_base, ap_e_base = prim["baseline_auc_external"], prim["baseline_pr_auc_external"]
 
     # ---- degradation: snapshot budget vs detection quality (ALL windows) ----
     # For each (noise, N): subsample N snapshots in EVERY window, score vs that
     # window's internal GT, average over reps; the plotted band is the mean and
     # sd ACROSS windows (window-to-window spread), not a single hand-picked
     # window. (wi below is used only for the illustrative Panel-A score map.)
-    wi = int(np.argmax([pw["n_ext_pos"] for pw in per_window]))
+    wi = int(np.argmax([pw[f"n_ext_pos_{PRIMARY_POLICY}"] for pw in per_window]))
     win_gt = [g > VORT_THRESH for g in all_int_gt]
     rng = np.random.default_rng(0)
     noise_levels = [0.0, 0.5, 1.0, 2.0]
@@ -532,56 +544,32 @@ def main() -> None:
                      "(vorticity scale); decorrelated (GLS, main Prop.1) variant reported "
                      "for comparison",
         "internal_validation": {"auc": auc_i,
-                                "auc_ci95_block_bootstrap": list(boot["auc_internal"]),
+                                "auc_ci95_block_bootstrap": list(boot_int),
                                 "vort_thresh_per_s": VORT_THRESH,
                                 "n_positive": int(int_labels.sum()),
                                 "n_total": int(len(int_labels)),
-                                "spearman_score_vs_vorticity": float(rho_s)},
-        "external_validation": {"auc": auc_e,
-                                "auc_ci95_block_bootstrap": list(boot["auc_external"]),
-                                "pr_auc": ap_e,
-                                "pr_auc_ci95_block_bootstrap": list(boot["pr_auc_external"]),
-                                "n_cyclone_triangle_windows": k,
-                                "precision_at_k": precision,
-                                "prevalence": k / int(len(ext_gt_flat)),
-                                "n_ibtracs_fixes": len(fixes)},
-        "decorrelated_variant": {"auc_internal": float(auc_i_wh),
-                                 "auc_external": float(auc_e_wh),
-                                 "spearman": float(rho_s_wh),
-                                 "note": "G^{-1} noise amplification hurts pure "
-                                         "detection ranking on this nearly-regular "
-                                         "full-rank mesh"},
-        "baseline_coarse_fd_vorticity": {
-            "auc_internal": float(auc_i_base), "auc_external": float(auc_e_base),
-            "auc_external_ci95_block_bootstrap": list(boot["auc_external_baseline"]),
-            "pr_auc_external": float(ap_e_base),
-            "precision_at_k_external": float(precision_base),
-            "note": "classical pointwise FD vorticity from winds subsampled at "
-                    "the mesh nodes (2.1 deg) — same information budget; the "
-                    "edge-flow statistic should match it (the contribution is "
-                    "the limits framework, not a new TC detector)"},
-        "counts_raw_vs_eligible": counts,
-        "sensitivity": {
-            "internal_auc_vs_vorticity_threshold": thresh_sweep,
-            "external_vs_localization_radius": radius_sweep,
-            "external_vs_wind_cutoff_kt": wind_sweep,
-            "external_vs_window_length": window_len_sweep,
-            "auc_external_ci_vs_bootstrap_block_len": block_len_sweep,
-            "note": "the headline external AUC is stable across localization "
-                    "radius (1.0-2.5 deg), wind cutoff (TD..typhoon), window "
-                    "length (2-6 days), and bootstrap block length.",
-        },
-        "storm_cluster_bootstrap_exploratory": {
-            "auc_external_ci95": list(storm_boot["auc_external"]),
-            "pr_auc_external_ci95": list(storm_boot["pr_auc_external"]),
-            "n_storms_resampled": storm_boot["n_storms_resampled"],
-            "note": "EXPLORATORY: resamples whole storms (single 2020 season, "
-                    "no multi-year validation). Complements the moving-block CI.",
-        },
+                                "spearman_score_vs_vorticity": float(rho_s),
+                                "decorrelated_auc_internal": float(auc_i_wh),
+                                "decorrelated_spearman": float(rho_s_wh),
+                                "baseline_auc_internal": float(auc_i_base)},
+        "wind_label_counts": wind_counts,
+        "primary_label_policy": PRIMARY_POLICY,
+        "external_validation_primary": external[PRIMARY_POLICY],
+        "external_by_wind_policy": external,
+        "moving_block_is_primary_ci": True,
         "ci_status": "All real-data confidence intervals here are EXPLORATORY: "
                      "one season (WNP 2020), no multi-year or out-of-sample "
                      "validation; they quantify within-season resampling spread "
-                     "only.",
+                     "only. The moving-block bootstrap is the PRIMARY CI; the "
+                     "storm-cluster bootstrap is corroboration only (it collapses "
+                     "storm multiplicity and is mildly anti-conservative).",
+        "decorrelated_note": "G^{-1} noise amplification hurts pure detection "
+                             "ranking on this nearly-regular full-rank mesh",
+        "baseline_note": "classical pointwise FD vorticity from winds subsampled "
+                         "at the mesh nodes (2.1 deg) - same information budget; "
+                         "the edge-flow statistic should match it (the "
+                         "contribution is the limits framework, not a new TC "
+                         "detector)",
         "internal_auc_vs_vorticity_threshold": thresh_sweep,
         "degradation": {"Ns": Ns, "noise_levels": noise_levels,
                         "auc_by_noise": degradation,

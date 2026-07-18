@@ -1,7 +1,10 @@
-PROBE_RESULT: CONNECTED to 116.172.94.204:22886 as root
+PROBE_RESULT: CONNECTED to a rented AutoDL GPU instance
+  (live endpoint / IP / port / user REDACTED for the public repo; the
+   authoritative machine identity is now the same-process "_provenance" block
+   embedded in each results/*.json by tfl.provenance).
 
 ===== [uname] uname -a =====
-Linux autodl-container-p48vc3ykfm-7ba3727f 5.15.0-25-generic #25-Ubuntu SMP Wed Mar 30 15:54:22 UTC 2022 x86_64 x86_64 x86_64 GNU/Linux
+Linux <container-host-redacted> 5.15.0-25-generic #25-Ubuntu SMP Wed Mar 30 15:54:22 UTC 2022 x86_64 x86_64 x86_64 GNU/Linux
 
 ===== [python] python3 -V 2>&1 || python -V 2>&1 =====
 bash: line 1: python3: command not found

@@ -672,7 +672,10 @@ topo-flow-limits/
 ## 7. Installation and full reproduction
 
 Requirements: Python ≥ 3.11 and [`uv`](https://github.com/astral-sh/uv) (or plain
-`pip`). Everything is CPU-only.
+`pip`). The core, the full test suite, and **every paper figure** run CPU-only.
+An **optional** GPU path (`pip install -e '.[gpu]'`, needs CUDA + `torch`)
+reproduces only the batched Monte-Carlo of supplement §S6; it is not required
+for any figure in the main paper.
 
 **Windows (PowerShell):**
 

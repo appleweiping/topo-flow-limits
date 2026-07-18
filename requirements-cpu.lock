@@ -1,0 +1,19 @@
+# CPU lock -- everything the tests, all main-paper figures, and the supplement's
+# CPU results need. Pinned to the versions the released JSON/figures/tests were
+# produced with (Python 3.11-3.14). Install with:
+#     pip install -r requirements-cpu.lock
+# This is sufficient for `pytest -q` and `python experiments/run_all.py`
+# (the GPU tier needs requirements-gpu.lock in addition).
+numpy==2.4.6
+scipy==1.17.1
+matplotlib==3.10.9
+networkx==3.6.1
+pandas==2.3.3
+pytest==9.0.3
+
+# OPTIONAL (not on any test or run_all path): the reference SDP estimator in
+# src/tfl/estimators.py imports cvxpy lazily. Install only to exercise it:
+#     pip install 'cvxpy>=1.5'
+#
+# OPTIONAL (only for RE-FETCHING raw data; the repo ships cached copies):
+#     xarray, zarr, gcsfs, numcodecs   (data/fetch_era5*.py)

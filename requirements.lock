@@ -1,21 +1,16 @@
-# Pinned runtime dependencies for topo-flow-limits (the versions the released
-# JSON/figures/tests were produced with; Python 3.14 on the manifest machine).
-# Core (needed for src/, tests/, and all experiments/run_*.py):
+# DEPRECATED name kept for back-compat. The reproduction locks are now split:
+#   requirements-cpu.lock  -- tests + every paper figure (CPU-only)
+#   requirements-gpu.lock  -- adds torch for the supplement-S6 batched MC
+# The pins below equal requirements-cpu.lock so old references still install a
+# complete CPU environment.
 numpy==2.4.6
 scipy==1.17.1
 matplotlib==3.10.9
+networkx==3.6.1
+pandas==2.3.3
 pytest==9.0.3
 
-# GPU extra (ONLY for src/tfl/gpu.py + experiments/run_gpu_mc.py; the CPU core
-# and the full test suite run without it). The server GPU results were produced
-# with:
-#   torch==2.8.0+cu128        (CUDA 12.8, RTX 4080 SUPER, driver 595.71.05)
-#   psutil==5.9              (per-run peak-RSS capture in run_scaling.py)
-# Install via:  pip install -e '.[gpu]'
-#
-# Optional (only for RE-FETCHING the raw data; the repo ships cached copies,
-# so these are NOT needed to reproduce any result from the shipped data):
-#   xarray, zarr, gcsfs, numcodecs   (data/fetch_era5*.py)
-#   pandas                           (IBTrACS/traffic parsing helpers)
-# Pin these to your environment if you refetch; they do not affect reproduction
-# from the cached data/*.npz, data/*.csv, data/*.json.
+# GPU tier (see requirements-gpu.lock): torch==2.8.0 (+cu128, CUDA 12.8, RTX
+# 4080 SUPER, driver 595.71.05) + psutil==5.9.8. Install via
+# `pip install -e '.[gpu]'` or `-r requirements-gpu.lock` on a CUDA machine.
+# cvxpy is OPTIONAL (lazy import in src/tfl/estimators.py; no test/run_all path).

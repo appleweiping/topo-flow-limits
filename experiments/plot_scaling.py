@@ -32,7 +32,7 @@ def run() -> None:
                         xytext=(4, -12), textcoords="offset points")
     a0.set_xlabel("candidate triangles $p$")
     a0.set_ylabel("matrix-free solve time (s)")
-    a0.set_title("(A) matrix-free NNLS scales\n(dense $(r^2,p)$ operator OOMs)")
+    a0.set_title("(A) matrix-free NNLS scales\n(avoids the explicit $r^2\\times p$ operator)")
     a0.grid(alpha=0.3, which="both")
 
     # (B) GPU recovery vs N at p~1000, and the p~1e4 feasibility point

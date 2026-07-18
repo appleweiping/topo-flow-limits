@@ -242,16 +242,32 @@ def cyclone_triangle_labels(
     window: slice,
     min_wind_kt: float = 34.0,
     radius_deg: float = 1.5,
+    include_missing_wind: bool = True,
 ) -> np.ndarray:
-    """External per-triangle labels for one time window: True iff an IBTrACS
-    fix (at tropical-storm strength or above) within the window's time range
-    falls within ``radius_deg`` of the triangle centroid. Times are matched by
-    ISO date-hour prefix (IBTrACS is 3/6-hourly, ERA5 6-hourly)."""
+    """External per-triangle labels for one time window: True iff a qualifying
+    IBTrACS fix within the window's time range falls within ``radius_deg`` of the
+    triangle centroid. Times are matched by ISO date-hour prefix (IBTrACS is
+    3/6-hourly, ERA5 6-hourly).
+
+    ``include_missing_wind`` sets how fixes with NO reported wind (``NaN``;
+    ~1/3 of the 2020 WNP fixes) are treated:
+
+      * ``True``  (INCLUSIVE) -- a missing-wind fix qualifies (it is a genuine
+        best-track position, just without an intensity estimate);
+      * ``False`` (STRICT)    -- only fixes with a *finite* wind ``>= min_wind_kt``
+        qualify; missing-wind fixes are dropped.
+
+    Both label sets are reported in the released JSON; neither is privileged."""
     t0 = np.datetime_as_string(times[window][0], unit="h")
     t1 = np.datetime_as_string(times[window][-1], unit="h")
+
+    def _wind_ok(fx: StormFix) -> bool:
+        if np.isnan(fx.wind_kt):
+            return include_missing_wind
+        return fx.wind_kt >= min_wind_kt
+
     sel = [fx for fx in fixes
-           if t0 <= fx.iso_time.replace(" ", "T")[:13] <= t1
-           and (np.isnan(fx.wind_kt) or fx.wind_kt >= min_wind_kt)]
+           if t0 <= fx.iso_time.replace(" ", "T")[:13] <= t1 and _wind_ok(fx)]
 
     cen_lat = np.array([np.mean([mesh.node_lat[v] for v in t]) for t in mesh.cx.triangles])
     cen_lon = np.array([np.mean([mesh.node_lon[v] for v in t]) for t in mesh.cx.triangles])

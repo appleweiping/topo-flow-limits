@@ -50,3 +50,22 @@ jobs:
 
       - name: Run the test suite
         run: pytest -q
+
+  pinned-lock:
+    # Reproduce the released environment exactly from the CPU lock, then run the
+    # tests + the BIC noise-identifiability counterexample. This is the "clean
+    # env against a pinned lock" job (round-9).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the pinned CPU lock
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-cpu.lock
+      - name: Tests (pinned)
+        run: PYTHONPATH=src pytest -q
+      - name: BIC counterexample stays a counterexample (pinned)
+        run: PYTHONPATH=src pytest -q tests/test_bic_boundary.py

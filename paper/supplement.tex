@@ -825,15 +825,34 @@ minimizing the Gaussian-model BIC
 \mathrm{BIC}(\Scal)=N\bigl[\log\det\bm\Sigma_\Scal
 +\mathrm{tr}(\bm\Sigma_\Scal^{-1}\hat{\bm\Sigma}_z)\bigr]+|\Scal|\log N .
 \]
-This inherits the classical BIC selection consistency for Gaussian covariance
-models (it selects $\Scal^\star$ with probability tending to $1$ as
-$N\to\infty$ at fixed $p$) and is
-confirmed numerically (Fig.~\ref{fig:scaling}C): on $K_6$ the BIC rule
-matches the oracle within Monte-Carlo error at every $N$ and \emph{beats} it at
-$N{=}50$ ($0.985$ vs.\ $0.875$), using no $w_{\min}$; the estimated $\sigma_n$
-has median relative error within $2$--$7\%$ across $N$ (recorded per-$N$ in
-\texttt{selection.json}). A sample-splitting variant is provided as an
-assumption-light fallback.
+\emph{This selector is not unconditionally consistent, and we do not claim it
+is.} What holds is conditional. \textbf{(i) Given an identifiable $\sigma_n$}
+(e.g.\ the true value), the BIC path inherits classical Gaussian-covariance
+model-selection consistency ($\Pr[\text{select }\Scal^\star]\to1$ as
+$N\to\infty$) under: fixed $p$; lifted-atom injectivity on $\Scal^\star$ (the
+principal submatrix of $\bm G\!\circ\!\bm G$ indexed by $\Scal^\star$ is
+invertible); a $\beta$-min gap ($\min_{\tau\in\Scal^\star}w_\tau\ge c>0$); and a
+unique minimizer. Numerically the oracle-$\sigma_n$ path then recovers even the
+\emph{fully dense} $k{=}p$ support on $K_6$ (the lifted atoms stay independent,
+$\mathrm{rank}(\bm G\!\circ\!\bm G){=}p$;
+\texttt{run\_bic\_boundary.py}). \textbf{(ii) The median-eigenvalue $\sigma_n$
+estimator, however, is a \emph{noise} eigenvalue only while the active curl
+covariance has rank below ${\sim}r/2$} (a noise-identifiability / sparsity
+ceiling). Beyond it the median eigenvalue is signal-inflated (on $K_6$ it climbs
+from $1.0$ to $7.0$ as $k$ grows $3\to20$), $\sigma_n$ is overestimated, and the
+\emph{fully} non-oracle rule \textbf{fails even as $N\to\infty$}: at $N{=}10^5$
+its $K_6$ recovery collapses from $1.0$ ($k{\le}8$) to $0.10$ ($k{=}12$) and
+$0.00$ ($k{\ge}15$), while the oracle stays at $1.0$
+(\texttt{results/bic\_boundary.json}; locked by
+\texttt{tests/test\_bic\_boundary.py}). The median-$\sigma_n$ rule is therefore
+an \emph{empirical selector valid inside the noise-identifiable (sufficiently
+sparse) regime}, not a theorem for dense supports. The main paper's experiments
+sit at $k{=}3$ on $K_6$ ($\mathrm{active\ rank}=3\ll r/2$), well inside that
+regime, where it matches the oracle within Monte-Carlo error and \emph{beats} it
+at $N{=}50$ ($0.985$ vs.\ $0.875$), using no $w_{\min}$, with $\sigma_n$ median
+relative error $2$--$7\%$ across $N$ (per-$N$ in \texttt{selection.json};
+Fig.~\ref{fig:scaling}C). A sample-splitting variant is the assumption-light
+fallback.
 
 \paragraph{Convex-sparse baseline.} A non-negative lifted LASSO
 $\min_{\bm w\ge0}\tfrac12\|\bm C-\bm A\bm w\|_F^2+\lambda\|\bm w\|_1$

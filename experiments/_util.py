@@ -3,7 +3,13 @@
 from __future__ import annotations
 
 import json
+import time as _time
 from pathlib import Path
+
+# Wall-clock anchor: _util is imported at the very top of each experiment, so
+# this approximates the experiment's start time (used for same-process wall time
+# in the provenance block, without requiring psutil).
+_UTIL_IMPORT_TIME = _time.time()
 
 import matplotlib
 
@@ -19,8 +25,23 @@ def ensure_dirs() -> None:
     FIGDIR.mkdir(parents=True, exist_ok=True)
 
 
-def save_json(name: str, obj: dict) -> Path:
+def save_json(name: str, obj: dict, seed=None,
+              embed_provenance: bool = True) -> Path:
+    """Write ``obj`` to results/``name``. By default embeds same-process
+    provenance under ``_provenance`` (git SHA/dirty, host, command, timestamp,
+    env, hardware, wall time, peak RSS/VRAM) so a released JSON carries the
+    identity of the run that produced it (round-9). Pass ``seed`` to record the
+    experiment's master seed; ``embed_provenance=False`` to opt out."""
     ensure_dirs()
+    if embed_provenance and "_provenance" not in obj:
+        try:
+            import sys as _sys
+            _sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+            from tfl.provenance import collect
+            obj = {**obj, "_provenance": collect(seed=seed,
+                                                 wall_start=_UTIL_IMPORT_TIME)}
+        except Exception as e:  # never let provenance failure lose a result
+            obj = {**obj, "_provenance": {"error": f"provenance failed: {e!r}"}}
     p = RESULTS / name
     p.write_text(json.dumps(obj, indent=2))
     return p

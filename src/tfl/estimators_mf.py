@@ -4,8 +4,10 @@ estimator.
 The lifted design operator ``A`` maps ``w in R^p`` to
 ``sum_tau w_tau vec(u_tau u_tau^T) in R^{r^2}``.  The dense ``(r^2, p)`` matrix
 built by :func:`tfl.limits.lifted_atom_matrix` is fine for ``K4-K8`` but has
-``r^2 p`` entries (~1 TB at ``p=1e3``), so it does not scale.  Everything here
-works only through ``U`` (``r x p``) and two factored kernels:
+``r^2 p`` float64 entries -- with ``r = dof * p`` and ``dof ~ 0.5`` that is
+about ``2`` GB at ``p=1e3`` (``r=500``) and grows to the ``~1-2`` TB range at
+``p=1e4``, so it does not scale.  Everything here works only through ``U``
+(``r x p``) and two factored kernels:
 
     A w      = U diag(w) U^T              (r x r),   :func:`lifted_apply`
     A^T R    = [u_tau^T R u_tau]_tau      (p,),      :func:`lifted_adjoint`

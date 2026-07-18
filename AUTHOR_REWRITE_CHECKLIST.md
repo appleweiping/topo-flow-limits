@@ -57,10 +57,12 @@ Items 1–3 below were **completed in round 8** on a reachable GPU server (see
 supplement §S6 and `results/{scaling,gpu_mc,selection}.json`); items 4–6 and
 the GNN remain **not done and not claimed as done**.
 
-1. **Server / scale experiments (`p = 10², 10³, 10⁴`).** ✅ **DONE.** The server
-   `connect.weste.seetacloud.com:22886` was reached (by IP; local DNS was the
-   blocker, not the host) — an RTX 4080 SUPER (32 GB) + 128-core Xeon, recorded
-   in `results/hardware/server_probe.txt` and the manifest. A matrix-free
+1. **Server / scale experiments (`p = 10², 10³, 10⁴`).** ✅ **DONE.** A rented
+   AutoDL GPU instance (live endpoint/IP redacted from the public repo) — an
+   RTX 4080 SUPER (32 GB) + 128-core Xeon — was used; each result JSON now
+   carries a same-process `_provenance` block (git SHA, host, command,
+   timestamp, env, hardware, wall time, peak RSS/VRAM) as the authoritative
+   machine record (`src/tfl/provenance.py`), not a stapled-on probe. A matrix-free
    lifted operator (`src/tfl/estimators_mf.py`, verified equal to the dense
    `scipy.nnls` support with 0 mismatches) recovers at `p=1000` in ~0.49 s/solve
    on CPU (dense operator would be 2.0 GB), and a GPU-batched Monte-Carlo

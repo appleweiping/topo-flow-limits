@@ -1,0 +1,11 @@
+# GPU lock -- ONLY for the batched Monte-Carlo of supplement S6
+# (src/tfl/gpu.py + experiments/run_gpu_mc.py). Install ON TOP OF
+# requirements-cpu.lock, on a CUDA machine:
+#     pip install -r requirements-cpu.lock
+#     pip install -r requirements-gpu.lock
+# No main-paper figure needs this. The released GPU results were produced with
+# torch 2.8.0+cu128 (CUDA 12.8) on an RTX 4080 SUPER (driver 595.71.05); pin
+# torch to the CUDA build matching your driver.
+torch==2.8.0
+# enables same-process wall-time + peak-RSS capture in the provenance block
+psutil==5.9.8

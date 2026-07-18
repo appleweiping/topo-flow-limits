@@ -1,89 +1,104 @@
-"""One-click reproduction of every figure and number in the paper + supplement.
+"""One-click reproduction of every figure and JSON in the paper + supplement.
 
-Runs all experiments from fixed seeds and writes to ``results/`` (+ figures).
-CPU-only; completes in roughly 30-45 minutes on a laptop (run_second_order
-dominates). The vortex-localization experiment [8/8] needs the cached
-ERA5/IBTrACS files (ship with the repo via
-``data/fetch_era5.py`` / ``data/fetch_ibtracs.py``); it is skipped with a
-notice if they are absent.
+Round-9 rewrite: layered, subprocess-based, provenance-aware.
+
+  * CPU tier (default): every experiment behind the MAIN paper AND the
+    supplement's CPU results -- theory grids, real-data studies, the BIC
+    noise-identifiability boundary, the matrix-free scaling, the non-oracle
+    selection. No GPU, no torch. Reproduces every figure in the paper.
+  * GPU tier (``--gpu``): additionally the batched Monte-Carlo of supplement
+    S6 (needs CUDA + torch; ``pip install -e '.[gpu]'``).
+
+Each experiment runs as its OWN subprocess, so (a) its ``results/*.json`` gets a
+clean same-process ``_provenance`` block, and (b) run_all records its exit code
+and wall time in ``results/run_all_manifest.json``. A non-zero exit is reported,
+not swallowed.
+
+    python experiments/run_all.py            # CPU tier
+    python experiments/run_all.py --gpu      # CPU + GPU tiers
+    python experiments/run_all.py --only run_selection.py run_scaling.py
 """
-
 from __future__ import annotations
 
+import argparse
+import json
+import subprocess
 import sys
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+ROOT = Path(__file__).resolve().parent.parent
+EXP = ROOT / "experiments"
+DATA = ROOT / "data"
 
-import run_phase_transition
-import run_confusability
-import run_real_fx
-import run_real_traffic
-import run_fano
-import run_partial_sampling
-import run_plugin
+# (script, tier, needs_data) in run order. tier in {"cpu","gpu"}.
+EXPERIMENTS = [
+    ("run_phase_transition.py", "cpu", False),
+    ("run_confusability.py", "cpu", False),
+    ("run_real_fx.py", "cpu", False),
+    ("run_real_traffic.py", "cpu", False),
+    ("run_fano.py", "cpu", False),
+    ("run_partial_sampling.py", "cpu", False),
+    ("run_plugin.py", "cpu", False),
+    ("run_second_order.py", "cpu", False),
+    ("run_bic_boundary.py", "cpu", False),        # round-9: BIC noise-id boundary
+    ("run_scaling.py", "cpu", False),             # matrix-free scaling (CPU)
+    ("run_selection.py", "cpu", False),           # non-oracle BIC selection
+    ("run_real_cyclone.py", "cpu", True),         # ERA5 + IBTrACS (cached)
+    ("run_gpu_mc.py", "gpu", False),              # GPU-only batched Monte-Carlo
+    ("plot_scaling.py", "cpu", False),            # figure from the 3 JSONs above
+]
+
+
+def _data_present() -> bool:
+    return (DATA / "era5_wnp_2020.npz").exists() and \
+        (DATA / "ibtracs_wp_2020.csv").exists()
 
 
 def main() -> None:
-    t0 = time.perf_counter()
-    print("[1/8] phase transition (curl-invisibility, exact recovery vs theory) ...")
-    pt = run_phase_transition.run()
-    print("      p=%d active=%d; exact-theory rho* at N=%d -> %.3f"
-          % (pt["n_tri"], pt["n_active"], pt["T_grid"][-1], pt["theory_exact"][-1]))
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--gpu", action="store_true", help="also run the GPU tier")
+    ap.add_argument("--only", nargs="*", help="run only these script names")
+    args = ap.parse_args()
 
-    print("[2/8] confusability (naive vs whitened on edge-sharing strip) ...")
-    cf = run_confusability.run()
-    print("      Hamming@N=%d: naive=%.2f whitened=%.2f greedy=%.2f"
-          % (cf["T_grid"][-1], cf["hamming"]["naive"][-1],
-             cf["hamming"]["whitened"][-1], cf["hamming"]["greedy"][-1]))
+    t_all = time.perf_counter()
+    records = []
+    for script, tier, needs_data in EXPERIMENTS:
+        if args.only and script not in args.only:
+            continue
+        if tier == "gpu" and not args.gpu and not (args.only and script in args.only):
+            print(f"[skip] {script} (GPU tier; pass --gpu)")
+            records.append({"script": script, "tier": tier, "status": "skipped_gpu"})
+            continue
+        if needs_data and not _data_present():
+            print(f"[skip] {script} (cached ERA5/IBTrACS missing)")
+            records.append({"script": script, "tier": tier, "status": "skipped_no_data"})
+            continue
+        print(f"[run ] {script} ({tier}) ...", flush=True)
+        t0 = time.perf_counter()
+        proc = subprocess.run([sys.executable, str(EXP / script)], cwd=str(ROOT))
+        dt = time.perf_counter() - t0
+        rec = {"script": script, "tier": tier, "exit_code": proc.returncode,
+               "wall_s": round(dt, 2),
+               "status": "ok" if proc.returncode == 0 else "FAILED"}
+        records.append(rec)
+        print(f"       -> exit {proc.returncode} in {dt:.1f}s", flush=True)
+        if proc.returncode != 0:
+            print(f"       !! {script} FAILED (exit {proc.returncode})", flush=True)
 
-    print("[3/8] real FX (curl-invisibility in the wild + rank obstruction) ...")
-    fx = run_real_fx.run()
-    print("      curl/grad=%.1e ; K%d: %d curl dims vs %d triangle coefficients"
-          % (fx["curl_to_gradient_ratio"], len(fx["currencies"]),
-             fx["curl_dimension"], fx["n_candidate_triangles"]))
-
-    print("[4/8] real road-network traffic (favorable geometry + achievability) ...")
-    tr = run_real_traffic.run()
-    an = [r for r in tr["geometry"] if r["network"] == "Anaheim"][0]
-    rec = tr["recovery"]
-    print("      Anaheim DoF %d/%d=1.0 ; recovery@N=%d: emp=%.2f theory=%.2f"
-          % (an["rank_B2"], an["n_triangles"], rec["N_grid"][-1],
-             rec["empirical"][-1], rec["theory_product_exact"][-1]))
-
-    print("[5/8] Fano converse curves (supplement S1) ...")
-    fa = run_fano.run()
-    print("      floors at N=%d: chernoff=%.3f fano(p=1e4)=%.3f"
-          % (fa["N_grid"][-1], fa["chernoff_floor"][-1],
-             fa["cases"][1]["fano_gauss_floor"][-1]))
-
-    print("[6/8] partial edge sampling + plug-in estimation (supplement S2-S3) ...")
-    ps = run_partial_sampling.run()
-    pl = run_plugin.run()
-    gap = max(abs(a - b) for a, b in
-              zip(pl["recovery_known"], pl["recovery_plugin"]))
-    print("      sampling: P(exact) emp=%.2f theory=%.2f at q=%.2f ; "
-          "plugin max gap=%.3f"
-          % (ps["empirical"][-2], ps["theory_closed_form"][-2],
-             ps["q_grid"][-2], gap))
-
-    print("[7/8] second-order achievability grid + alpha sweep (K4-K8) ...")
-    import run_second_order
-    run_second_order.main()
-
-    print("[8/8] real vortex localization (unplanted; ERA5 + IBTrACS) ...")
-    data_dir = Path(__file__).resolve().parent.parent / "data"
-    if (data_dir / "era5_wnp_2020.npz").exists() and \
-            (data_dir / "ibtracs_wp_2020.csv").exists():
-        import run_real_cyclone
-        run_real_cyclone.main()
-    else:
-        print("      SKIPPED: cached ERA5/IBTrACS files missing "
-              "(run data/fetch_era5.py and data/fetch_ibtracs.py first)")
-
-    print("done in %.1fs. figures in results/figures/, metrics in results/*.json"
-          % (time.perf_counter() - t0))
+    manifest = {
+        "generated_by": "experiments/run_all.py",
+        "total_wall_s": round(time.perf_counter() - t_all, 2),
+        "gpu_tier_included": bool(args.gpu),
+        "records": records,
+        "n_failed": sum(1 for r in records if r.get("status") == "FAILED"),
+    }
+    (ROOT / "results" / "run_all_manifest.json").write_text(
+        json.dumps(manifest, indent=2))
+    n_fail = manifest["n_failed"]
+    print(f"\ndone in {manifest['total_wall_s']:.1f}s; {n_fail} failed. "
+          f"run manifest -> results/run_all_manifest.json")
+    sys.exit(1 if n_fail else 0)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,152 @@
+{
+  "config": {
+    "complex": "K6",
+    "r": 10,
+    "p": 20,
+    "sigma_n": 1.0,
+    "rho2": 1.0,
+    "N": 100000,
+    "n_trials": 40,
+    "seed": 0
+  },
+  "rank_lifted_atoms": 20,
+  "atoms_independent": true,
+  "note": "median = shipped non-oracle rule (median-eigenvalue sigma_n); oracle = same BIC path given the true sigma_n. The median rule fails for dense supports (noise-identifiability boundary); the oracle stays at 1.0 (population identifiability holds). This is the retraction of the unconditional-consistency claim.",
+  "curves": [
+    {
+      "k": 3,
+      "median_sigma_n": 1.0,
+      "median_ci95": [
+        0.9123754607496077,
+        1.0
+      ],
+      "oracle_sigma_n": 1.0,
+      "oracle_ci95": [
+        0.9123754607496077,
+        1.0
+      ],
+      "median_eig_mean": 1.0054221576226599,
+      "active_cov_rank_mean": 3.0
+    },
+    {
+      "k": 5,
+      "median_sigma_n": 1.0,
+      "median_ci95": [
+        0.9123754607496077,
+        1.0
+      ],
+      "oracle_sigma_n": 1.0,
+      "oracle_ci95": [
+        0.9123754607496077,
+        1.0
+      ],
+      "median_eig_mean": 1.523808246621432,
+      "active_cov_rank_mean": 4.925
+    },
+    {
+      "k": 6,
+      "median_sigma_n": 1.0,
+      "median_ci95": [
+        0.9123754607496077,
+        1.0
+      ],
+      "oracle_sigma_n": 0.95,
+      "oracle_ci95": [
+        0.834958291820748,
+        0.9861796228538989
+      ],
+      "median_eig_mean": 2.2401702732834865,
+      "active_cov_rank_mean": 5.95
+    },
+    {
+      "k": 8,
+      "median_sigma_n": 0.975,
+      "median_ci95": [
+        0.8711834051199223,
+        0.9955732825922052
+      ],
+      "oracle_sigma_n": 1.0,
+      "oracle_ci95": [
+        0.9123754607496077,
+        1.0
+      ],
+      "median_eig_mean": 3.079232681664172,
+      "active_cov_rank_mean": 7.725
+    },
+    {
+      "k": 10,
+      "median_sigma_n": 0.95,
+      "median_ci95": [
+        0.834958291820748,
+        0.9861796228538989
+      ],
+      "oracle_sigma_n": 1.0,
+      "oracle_ci95": [
+        0.9123754607496077,
+        1.0
+      ],
+      "median_eig_mean": 3.9951909345476606,
+      "active_cov_rank_mean": 9.125
+    },
+    {
+      "k": 12,
+      "median_sigma_n": 0.1,
+      "median_ci95": [
+        0.03957888759557486,
+        0.23052074380473897
+      ],
+      "oracle_sigma_n": 1.0,
+      "oracle_ci95": [
+        0.9123754607496077,
+        1.0
+      ],
+      "median_eig_mean": 4.86332883364197,
+      "active_cov_rank_mean": 9.725
+    },
+    {
+      "k": 15,
+      "median_sigma_n": 0.0,
+      "median_ci95": [
+        0.0,
+        0.08762453925039232
+      ],
+      "oracle_sigma_n": 1.0,
+      "oracle_ci95": [
+        0.9123754607496077,
+        1.0
+      ],
+      "median_eig_mean": 6.3769897510830145,
+      "active_cov_rank_mean": 9.95
+    },
+    {
+      "k": 18,
+      "median_sigma_n": 0.0,
+      "median_ci95": [
+        0.0,
+        0.08762453925039232
+      ],
+      "oracle_sigma_n": 0.975,
+      "oracle_ci95": [
+        0.8711834051199223,
+        0.9955732825922052
+      ],
+      "median_eig_mean": 6.979751155636049,
+      "active_cov_rank_mean": 10.0
+    },
+    {
+      "k": 20,
+      "median_sigma_n": 0.0,
+      "median_ci95": [
+        0.0,
+        0.08762453925039232
+      ],
+      "oracle_sigma_n": 1.0,
+      "oracle_ci95": [
+        0.9123754607496077,
+        1.0
+      ],
+      "median_eig_mean": 7.000389305639487,
+      "active_cov_rank_mean": 10.0
+    }
+  ]
+}
