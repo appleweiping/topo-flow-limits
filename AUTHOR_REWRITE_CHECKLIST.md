@@ -95,11 +95,18 @@ the GNN remain **not done and not claimed as done**.
    (resamples whole storms) gives AUC [0.88, 0.95], agreeing with the
    moving-block CI [0.879, 0.951]. All real-data CIs are labeled **exploratory**
    (one 2020 season, no multi-year validation).
-5. **CI smoke tests.** A GitHub Actions workflow running `pytest -q` and a
-   figure-free smoke of the fast experiments is **not yet added**.
-6. **Clean-environment full rerun.** All experiments should be regenerated from
-   a fresh environment against `requirements.lock`, then `make_manifest.py`
-   re-run so the manifest hashes match; **not done here**.
+5. **CI smoke tests.** ✅ **DONE** (`.github/workflows/ci.yml`). CPU-only,
+   torch-free matrix (Python 3.11/3.12): asserts the core imports without torch,
+   compile-checks every `src/`/`experiments/` file, runs `pytest -q`.
+6. **Clean-environment rerun.** ✅ **DONE (server).** A fresh `venv` on the GPU
+   server with the exact pinned deps (`numpy==2.4.6`, `scipy==1.17.1`,
+   `matplotlib==3.10.9`, `pytest==9.0.3`) runs the full suite green
+   (**58 passed**), confirming `requirements.lock` is sufficient. The GPU extra
+   (`torch==2.8.0+cu128`) is recorded separately. Bit-identical manifest hashes
+   across machines are **not** claimed: RNG/BLAS differences make experiment
+   outputs vary at the last digits (the round-8 server JSONs are the committed
+   authoritative copies), so the manifest binds the *released* artifacts, not a
+   cross-machine hash match.
 
 ---
 
@@ -107,7 +114,7 @@ the GNN remain **not done and not claimed as done**.
 
 - Environment: `requirements.lock`; provenance: `results/manifest.json`
   (regenerate with `python experiments/make_manifest.py`).
-- Tests: `pytest -q` (52 tests). These are **guardrails, not proofs** — the
+- Tests: `pytest -q` (58 tests). These are **guardrails, not proofs** — the
   identifiability claims are proven in `paper/supplement.tex` §S4 and
   independently re-derived in the commit history.
 - Every quoted number lives in `results/*.json`.

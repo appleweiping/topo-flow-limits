@@ -47,10 +47,13 @@ def run() -> dict:
     U = _kn(6); r, p = U.shape
     for N in N_GRID:
         h = {"bic": 0, "oracle": 0, "split": 0, "lasso": 0}
+        sigma_rel_errs = []
         for _ in range(N_TRIALS):
             a = np.zeros(p, bool); a[rng.choice(p, 3, replace=False)] = True
             Z = U[:, a] @ (sc * rng.standard_normal((3, N))) + SIGMA_N * rng.standard_normal((r, N))
-            mb, _, _ = bic_nonoracle_support(Z, U, N); h["bic"] += int(np.array_equal(mb, a))
+            mb, _, info = bic_nonoracle_support(Z, U, N); h["bic"] += int(np.array_equal(mb, a))
+            # non-oracle sigma_n accuracy (true sigma_n = SIGMA_N): relative error
+            sigma_rel_errs.append(abs(info["sigma_n_estimated"] - SIGMA_N) / SIGMA_N)
             mo, _ = nnls_lifted_support_mf(Z, U, SIGMA_N, thr); h["oracle"] += int(np.array_equal(mo, a))
             ms, _ = sample_split_support(Z, U); h["split"] += int(np.array_equal(ms, a))
             ml, _ = lasso_lifted_support(Z, U, SIGMA_N, N); h["lasso"] += int(np.array_equal(ml, a))
@@ -59,9 +62,11 @@ def run() -> dict:
             lo, hi = wilson_ci(hits, N_TRIALS)
             row[key] = hits / N_TRIALS
             row[key + "_ci95"] = [lo, hi]
+        row["sigma_n_median_rel_err"] = float(np.median(sigma_rel_errs))
         out["curves"].append(row)
         print(f"N={N:4d}: BIC {row['bic']:.3f} | oracle {row['oracle']:.3f} | "
-              f"split {row['split']:.3f} | LASSO {row['lasso']:.3f}", flush=True)
+              f"split {row['split']:.3f} | LASSO {row['lasso']:.3f} | "
+              f"sigma_n relerr {row['sigma_n_median_rel_err']:.3f}", flush=True)
     save_json("selection.json", out)
     return out
 

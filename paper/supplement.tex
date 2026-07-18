@@ -751,10 +751,13 @@ under the labeling and processing choices: localization radius
 $1.0$--$2.5^\circ$ gives AUC $0.95$--$0.87$ (headline $1.5^\circ{:}\,0.92$),
 wind cutoff TD--typhoon ($0$--$64$\,kt) gives $0.91$--$0.92$, window length
 $2$--$6$ days gives $0.94$--$0.90$, and the moving-block CI is insensitive to
-the block length ($1$--$5$ windows: half-widths $0.04$). A \emph{storm-cluster}
-bootstrap that resamples whole storms (rather than time blocks) gives AUC
-$[0.88,0.95]$, agreeing with the moving-block interval $[0.879,0.951]$ ---
-evidence the headline is not an artifact of one resampling assumption. The
+the block length ($1$--$5$ windows: half-widths $0.03$--$0.04$). A
+\emph{storm-cluster} bootstrap that resamples whole storms (rather than time
+blocks) gives a comparable AUC interval $[0.88,0.95]$; both are single-season
+\emph{exploratory} intervals targeting different resampling units, and the
+storm-cluster scheme (which collapses storm multiplicity and leaves the
+background negatives unresampled) is mildly anti-conservative, so their overlap
+is corroboration, not proof. The
 budget-degradation panel (Fig.~3C) is the mean over \emph{all} $15$ windows
 ($\pm$ window-to-window sd), not a single hand-picked window. \emph{All
 real-data confidence intervals are exploratory}: one season (WNP 2020), no
@@ -779,7 +782,7 @@ hardware is recorded in \texttt{manifest.json} and \texttt{results/hardware/}.
 overlapping-$K_s$ complexes, dof $0.5$); the dense $(r^2,p)$ operator size is
 annotated. (B) GPU-batched exact recovery vs.\ $N$ at $p{=}10^3$ ($B{=}10^3$
 fully batched) and a tiled $p{\approx}10^4$ feasibility point, on an
-RTX~4080. (C) The non-oracle BIC threshold matches --- and at small $N$ beats
+RTX~4080 SUPER. (C) The non-oracle BIC threshold matches --- and at small $N$ beats
 --- the oracle $w_{\min}/2$ rule, and the NNLS estimator beats a convex
 lifted-LASSO baseline.}
 \label{fig:scaling}
@@ -804,7 +807,7 @@ $2.0$\,GB (Fig.~\ref{fig:scaling}A).
 
 \paragraph{GPU-batched Monte-Carlo.} Sampling $B$ curl-domain covariances
 on-device and solving all $B$ NNLS problems with batched einsum GEMMs turns the
-Monte-Carlo into dense GPU work. On an RTX~4080 (32\,GB), the fully-batched
+Monte-Carlo into dense GPU work. On an RTX~4080 SUPER (32\,GB), the fully-batched
 $p{=}10^3$ run ($B{=}10^3$) gives exact-recovery $0.967$/$1.00$/$1.00$ at
 $N{=}100$/$200$/$400$ ($\approx65$\,s, $6.0$\,GB peak), and a tiled
 $p{=}10^4$ feasibility point ($r{=}1890$, dof $0.19$; $B{=}64$) recovers
@@ -826,10 +829,11 @@ This inherits the classical BIC selection consistency for Gaussian covariance
 models (it selects $\Scal^\star$ with probability tending to $1$ as
 $N\to\infty$ at fixed $p$) and is
 confirmed numerically (Fig.~\ref{fig:scaling}C): on $K_6$ the BIC rule
-matches the oracle at every $N$ and \emph{beats} it at $N{=}50$
-($0.985$ vs.\ $0.875$), using no $w_{\min}$; the $\sigma_n$ estimate is within
-$2$--$7\%$. A sample-splitting variant is provided as an assumption-light
-fallback.
+matches the oracle within Monte-Carlo error at every $N$ and \emph{beats} it at
+$N{=}50$ ($0.985$ vs.\ $0.875$), using no $w_{\min}$; the estimated $\sigma_n$
+has median relative error within $2$--$7\%$ across $N$ (recorded per-$N$ in
+\texttt{selection.json}). A sample-splitting variant is provided as an
+assumption-light fallback.
 
 \paragraph{Convex-sparse baseline.} A non-negative lifted LASSO
 $\min_{\bm w\ge0}\tfrac12\|\bm C-\bm A\bm w\|_F^2+\lambda\|\bm w\|_1$
