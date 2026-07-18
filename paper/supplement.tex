@@ -731,12 +731,35 @@ the triangle; ROC sweeps the detector score against truth binarized at
 typhoon-scale $3\times10^{-5}\,\mathrm{s}^{-1}$. External: IBTrACS v04r01
 best-track fixes ($\ge$ 34\,kt where wind is reported), a triangle labeled
 positive if a fix falls within $1.5^\circ$ of its centroid during the window.
-The external reference shares nothing with ERA5's assimilation of winds into
-our statistic --- it is the community's independent record of where cyclones
-actually were. A synthetic Rankine-vortex test (\texttt{tests/test\_geo.py})
+The external reference is an external, separately-curated archive of agency
+best-tracks, not derived from the ERA5 winds our statistic reads --- the
+community's record of where cyclones actually were. A synthetic Rankine-vortex test (\texttt{tests/test\_geo.py})
 verifies the whole bridge end-to-end: localization at the core, correct
 cyclonic sign after orientation correction, and rank agreement with the
 finite-difference vorticity.
+
+\paragraph{Windowing and counts.} The season is $244$ six-hourly snapshots;
+the $15$ non-overlapping $16$-snapshot windows use the first $240$ and drop the
+trailing $4$ (a partial window). Every pooled metric is over these $15$
+complete windows. Denominators, raw vs.\ eligible: $726$ IBTrACS fixes over
+$13$ storms ($12$ reach $\ge34$\,kt) enter labeling; $414$ of the
+$1554\times15=23{,}310$ scored triangle-windows are external-positive
+(prevalence $1.8\%$), $711$ internal-positive.
+
+\paragraph{Robustness and exploratory CIs.} The pooled external AUC is stable
+under the labeling and processing choices: localization radius
+$1.0$--$2.5^\circ$ gives AUC $0.95$--$0.87$ (headline $1.5^\circ{:}\,0.92$),
+wind cutoff TD--typhoon ($0$--$64$\,kt) gives $0.91$--$0.92$, window length
+$2$--$6$ days gives $0.94$--$0.90$, and the moving-block CI is insensitive to
+the block length ($1$--$5$ windows: half-widths $0.04$). A \emph{storm-cluster}
+bootstrap that resamples whole storms (rather than time blocks) gives AUC
+$[0.88,0.95]$, agreeing with the moving-block interval $[0.879,0.951]$ ---
+evidence the headline is not an artifact of one resampling assumption. The
+budget-degradation panel (Fig.~3C) is the mean over \emph{all} $15$ windows
+($\pm$ window-to-window sd), not a single hand-picked window. \emph{All
+real-data confidence intervals are exploratory}: one season (WNP 2020), no
+multi-year or out-of-sample validation; they quantify within-season resampling
+spread only.
 
 \section{Scaling, GPU Monte-Carlo, and non-oracle selection}\label{sec:scaling}
 

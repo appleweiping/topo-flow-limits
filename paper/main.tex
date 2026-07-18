@@ -481,12 +481,12 @@ supplement, not claimed as recovery evidence.
 
 \smallskip\noindent\emph{Limitations.} The i.i.d.-Gaussian snapshot model is
 an idealization of windowed weather; evaluation is therefore threshold-free
-ranking rather than support recovery, moving-block bootstrap intervals
-quantify pooling uncertainty, and the internal reference is a same-field
-consistency check --- only IBTrACS is independent. The vorticity-threshold
-sensitivity of the internal AUC ($0.876$--$0.959$ over
-$10^{-5}$--$5\times10^{-5}\,\mathrm{s}^{-1}$) is reported in the released
-JSON. Nothing here claims a new cyclone detector; the experiment grounds the
+ranking rather than support recovery, moving-block \emph{and} storm-cluster
+bootstrap intervals (which agree) quantify pooling uncertainty and are
+\emph{exploratory} (one 2020 season), and the internal reference is a
+same-field consistency check --- IBTrACS is the external archive. The AUC is
+stable across localization radius, wind cutoff, window length, and vorticity
+threshold (supplement). Nothing here claims a new cyclone detector; the experiment grounds the
 paper's sufficient statistic on genuinely unplanted structure.
 
 \section{Conclusion}

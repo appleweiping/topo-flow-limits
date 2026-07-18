@@ -13,8 +13,9 @@ validated against two references:
   from the full-resolution field by finite differences (a different
   functional of the same winds, at finer resolution than anything the mesh
   detector sees; NOT an independent measurement);
-* EXTERNAL: the IBTrACS best-track archive (agency-verified cyclone
-  positions, genuinely independent of the reanalysis winds).
+* EXTERNAL: the IBTrACS best-track archive — an external, separately-curated
+  record of agency best-track cyclone positions (not derived from the
+  reanalysis winds).
 
 Geometry note: edges are measured in a local equirectangular metric
 (dx = R cos(lat) dlon, dy = R dlat) — standard for regional meshes at these

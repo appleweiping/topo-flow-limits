@@ -11,7 +11,11 @@
     "t0": "2020-08-01T00",
     "t1": "2020-09-30T18",
     "n_snapshots": 244,
-    "n_windows": 15
+    "n_windows": 15,
+    "n_snapshots_used": 240,
+    "n_snapshots_dropped": 4,
+    "window_len": 16,
+    "note": "244 six-hourly snapshots; non-overlapping 16-snapshot windows use the first 240 and drop the trailing 4 (a partial window). All pooled metrics are over these 15 complete windows."
   },
   "task": "curl-based vortex localization (NOT filled-triangle topology recovery: the mesh has no equal-image confusers and real weather has no latent boolean support)",
   "statistic": "temporally centered curl energy, area^2-normalized (vorticity scale); decorrelated (GLS, main Prop.1) variant reported for comparison",
@@ -59,6 +63,117 @@
     "precision_at_k_external": 0.3888888888888889,
     "note": "classical pointwise FD vorticity from winds subsampled at the mesh nodes (2.1 deg) \u2014 same information budget; the edge-flow statistic should match it (the contribution is the limits framework, not a new TC detector)"
   },
+  "counts_raw_vs_eligible": {
+    "raw_ibtracs_fixes": 726,
+    "raw_storms": 13,
+    "storms_ge_34kt": 12,
+    "eligible_triangle_windows": 23310,
+    "external_positive_triangle_windows": 414,
+    "internal_positive_triangle_windows": 711,
+    "note": "raw = every fix/storm in the WNP-2020 IBTrACS slice; eligible = (triangles x windows) actually scored; external positives use the 34-kt, 1.5-deg default labeling."
+  },
+  "sensitivity": {
+    "internal_auc_vs_vorticity_threshold": {
+      "1e-05": 0.876226035527785,
+      "2e-05": 0.9001180673997699,
+      "3e-05": 0.9144878957030386,
+      "4e-05": 0.9217825530230007,
+      "5e-05": 0.959404287102863
+    },
+    "external_vs_localization_radius": {
+      "1.0deg": {
+        "auc_ext": 0.9470948332952935,
+        "pr_ext": 0.5259576202976534,
+        "n_pos": 251
+      },
+      "1.5deg": {
+        "auc_ext": 0.919632714361431,
+        "pr_ext": 0.4942804150706731,
+        "n_pos": 414
+      },
+      "2.0deg": {
+        "auc_ext": 0.896268193637668,
+        "pr_ext": 0.4437916548929651,
+        "n_pos": 601
+      },
+      "2.5deg": {
+        "auc_ext": 0.8738967901234567,
+        "pr_ext": 0.3961664882007384,
+        "n_pos": 810
+      }
+    },
+    "external_vs_wind_cutoff_kt": {
+      "0kt": {
+        "auc_ext": 0.9106196610588282,
+        "pr_ext": 0.44575806080830954,
+        "n_pos": 552
+      },
+      "34kt": {
+        "auc_ext": 0.919632714361431,
+        "pr_ext": 0.4942804150706731,
+        "n_pos": 414
+      },
+      "50kt": {
+        "auc_ext": 0.9157082975699838,
+        "pr_ext": 0.5130741372125317,
+        "n_pos": 294
+      },
+      "64kt": {
+        "auc_ext": 0.9096822603179453,
+        "pr_ext": 0.4847524856460055,
+        "n_pos": 236
+      }
+    },
+    "external_vs_window_length": {
+      "8x6h": {
+        "auc_ext": 0.9444959897692542,
+        "pr_ext": 0.48258952394212407,
+        "n_windows": 30
+      },
+      "16x6h": {
+        "auc_ext": 0.919632714361431,
+        "pr_ext": 0.4942804150706731,
+        "n_windows": 15
+      },
+      "24x6h": {
+        "auc_ext": 0.90195759758966,
+        "pr_ext": 0.48272680895851444,
+        "n_windows": 10
+      }
+    },
+    "auc_external_ci_vs_bootstrap_block_len": {
+      "block1": [
+        0.8732705466077083,
+        0.9545624311467862
+      ],
+      "block2": [
+        0.876785754501004,
+        0.950193708306147
+      ],
+      "block3": [
+        0.8791034355095659,
+        0.951260034433967
+      ],
+      "block5": [
+        0.8876422236032178,
+        0.9500838221756434
+      ]
+    },
+    "note": "the headline external AUC is stable across localization radius (1.0-2.5 deg), wind cutoff (TD..typhoon), window length (2-6 days), and bootstrap block length."
+  },
+  "storm_cluster_bootstrap_exploratory": {
+    "auc_external_ci95": [
+      0.8826223734274206,
+      0.9501467330552921
+    ],
+    "pr_auc_external_ci95": [
+      0.265435774179287,
+      0.5559665030083
+    ],
+    "n_storms_resampled": 12,
+    "note": "EXPLORATORY: resamples whole storms (single 2020 season, no multi-year validation). Complements the moving-block CI."
+  },
+  "ci_status": "All real-data confidence intervals here are EXPLORATORY: one season (WNP 2020), no multi-year or out-of-sample validation; they quantify within-season resampling spread only.",
   "internal_auc_vs_vorticity_threshold": {
     "1e-05": 0.876226035527785,
     "2e-05": 0.9001180673997699,
@@ -83,73 +198,75 @@
     ],
     "auc_by_noise": {
       "0.0": [
-        0.7075269704975783,
-        0.7436426684280053,
-        0.7867913364156759,
-        0.8031057353588729,
-        0.813434335094672,
-        0.8162318361955085
+        0.8265303288326113,
+        0.8662369737334684,
+        0.880318369611454,
+        0.8970196475991156,
+        0.910041270222514,
+        0.9128471277156869
       ],
       "0.5": [
-        0.5841603368560105,
-        0.599142723469837,
-        0.6418909621312198,
-        0.661180372082783,
-        0.6875550418317923,
-        0.6986432188463231
+        0.6525679401411774,
+        0.6849042146021652,
+        0.7421456302123098,
+        0.7624301198254846,
+        0.7991960019434072,
+        0.8309514231536036
       ],
       "1.0": [
-        0.5424867899603699,
-        0.559782309555262,
-        0.5990918097754294,
-        0.5839924592690444,
-        0.6095387494495818,
-        0.6386889035667106
+        0.5942714564090958,
+        0.6118839852954964,
+        0.6549371139162915,
+        0.6664393641346478,
+        0.7043991903100575,
+        0.7340801977929488
       ],
       "2.0": [
-        0.5517255614266844,
-        0.5453627256715102,
-        0.5337599075297226,
-        0.5733019594892118,
-        0.6436454205195948,
-        0.6250481616028182
+        0.553805219997488,
+        0.566098856848263,
+        0.5917735079399145,
+        0.6134153337146468,
+        0.6325321339551591,
+        0.6514513657380203
       ]
     },
     "auc_sd_by_noise": {
       "0.0": [
-        0.04701624951965446,
-        0.037092853593301875,
-        0.029471386562758092,
-        0.022198777933509713,
-        0.013315151187050643,
-        0.0
+        0.03488558575111165,
+        0.042541704505959003,
+        0.04543803158519085,
+        0.042276368778791325,
+        0.03666397839857109,
+        0.03984258561331522
       ],
       "0.5": [
-        0.049285479892515874,
-        0.034715332181447275,
-        0.04006700617013809,
-        0.045176354135656654,
-        0.048352971847322075,
-        0.02432549905930245
+        0.03817700992689801,
+        0.04580391441876234,
+        0.058849327036490054,
+        0.06658981819597827,
+        0.06714605892319016,
+        0.0614000799639941
       ],
       "1.0": [
-        0.04102013665017272,
-        0.06531936549983922,
-        0.03995291408786742,
-        0.03693630431342132,
-        0.047780858181170754,
-        0.03583766144215329
+        0.040088740428318524,
+        0.0362159460916519,
+        0.048073064231423226,
+        0.056869903880645827,
+        0.06626783422645806,
+        0.06317237782882146
       ],
       "2.0": [
-        0.032730944148810184,
-        0.06470081468599133,
-        0.06618942232474226,
-        0.031382091949119,
-        0.06147703425725428,
-        0.024251882491094737
+        0.02837150420696093,
+        0.03835946765227528,
+        0.037316518759532166,
+        0.045072541696170206,
+        0.06330069024332471,
+        0.06233363625391516
       ]
     },
-    "note": "uniform centered statistic, N>=3; no theory-floor overlay (units incommensurate)"
+    "reps_per_window": 6,
+    "n_windows_aggregated": 15,
+    "note": "uniform centered statistic, N>=3; each (noise,N) is the mean over ALL windows (sd = window-to-window spread); no theory-floor overlay (units incommensurate)"
   },
   "per_window": [
     {

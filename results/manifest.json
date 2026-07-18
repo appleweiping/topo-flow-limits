@@ -1,6 +1,6 @@
 {
-  "commit": "5d9f6a24c5be48137132c8b21535b66c6e49e738",
-  "commit_dirty": false,
+  "commit": "2c2fbcd625635008acbab5841ce3f9693e275b0e",
+  "commit_dirty": true,
   "commit_note": "This is HEAD at generation time. When the manifest is committed it becomes the PARENT of the commit that carries it, so manifest.commit == HEAD~1 for the commit that adds/updates it. Regenerate on a clean tree so commit_dirty is false.",
   "generated_by": "experiments/make_manifest.py",
   "environment": {
@@ -66,12 +66,12 @@
       "command": "python experiments/run_real_cyclone.py",
       "artifacts": {
         "results/real_cyclone.json": {
-          "sha256_16": "b37ac356f3b4aabf",
-          "bytes": 5398
+          "sha256_16": "c3cfb8db6b80d9a9",
+          "bytes": 9230
         },
         "results/figures/real_cyclone.png": {
-          "sha256_16": "c5c68c4206293c01",
-          "bytes": 357391
+          "sha256_16": "08af982b702af7e4",
+          "bytes": 360131
         }
       }
     },

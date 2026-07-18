@@ -13,8 +13,9 @@ references:
             scope: this is a SAME-FIELD consistency reference computed from
             the same u,v arrays by a different functional at 3x finer
             resolution -- not an independent measurement;
-  EXTERNAL  IBTrACS best-track cyclone positions (agency-verified, genuinely
-            independent of the reanalysis) -> ROC / precision.
+  EXTERNAL  IBTrACS best-track cyclone positions from an external,
+            separately-curated archive (agency best-tracks, not derived from
+            the reanalysis winds) -> ROC / precision.
 
 BASELINE  a classical non-simplicial comparator at the same information
           budget: pointwise finite-difference vorticity computed from the
@@ -74,6 +75,7 @@ DATA = Path(__file__).resolve().parent.parent / "data"
 MESH_STEP = 3          # 3 x 0.703 deg ~ 2.1 deg mesh (~230 km edges)
 WINDOW_LEN = 16        # 16 x 6h = 4 days
 VORT_THRESH = 3e-5     # 1/s; typhoon-scale area-mean |vorticity|
+VORT_MIN_WIND_KT = 34.0  # tropical-storm strength cutoff for external labels
 
 
 def dataset_from_flows(F: np.ndarray, B1, B2, cx) -> FlowDataset:
@@ -149,6 +151,55 @@ def cluster_bootstrap_ci(
         if l.sum() == 0 or l.sum() == len(l):
             continue
         vals.append(metric(s, l))
+    lo, hi = np.percentile(vals, [2.5, 97.5])
+    return float(lo), float(hi)
+
+
+def storm_coverage(mesh, fixes, times, windows,
+                   min_wind_kt: float = 34.0, radius_deg: float = 1.5) -> dict:
+    """Flattened (window, triangle) positive mask for each storm, keyed by
+    IBTrACS ``sid``. A storm covers a cell iff one of ITS OWN fixes (within the
+    window and >= ``min_wind_kt``) lies within ``radius_deg`` of the centroid.
+    Only storms that cover at least one cell are returned."""
+    cover: dict[str, np.ndarray] = {}
+    for sid in sorted({fx.sid for fx in fixes}):
+        fx_s = [fx for fx in fixes if fx.sid == sid]
+        m = np.concatenate([
+            cyclone_triangle_labels(mesh, fx_s, times, w, min_wind_kt, radius_deg)
+            for w in windows])
+        if m.any():
+            cover[sid] = m
+    return cover
+
+
+def storm_cluster_bootstrap_ci(scores_flat: np.ndarray, cover: dict, metric,
+                               n_boot: int = 1000, seed: int = 11):
+    """95% percentile CI for a pooled ranking metric under a STORM-cluster
+    bootstrap: the resampling unit is the whole storm (its full set of positive
+    cells), not the time window. Background negatives (cells no storm covers)
+    are held fixed; positives are the union of the resampled storms' cells, and
+    cells covered only by non-drawn storms are excluded from the evaluation set
+    (so they never contaminate the negatives). This is the storm-level analogue
+    of the moving-block CI and is reported as EXPLORATORY (single season, no
+    multi-year validation)."""
+    rng = np.random.default_rng(seed)
+    sids = list(cover.keys())
+    S = len(sids)
+    any_pos = np.zeros_like(scores_flat, dtype=bool)
+    for m in cover.values():
+        any_pos |= m
+    bg_neg = ~any_pos
+    vals = []
+    for _ in range(n_boot):
+        drawn = rng.integers(0, S, size=S)
+        pos = np.zeros_like(any_pos)
+        for j in np.unique(drawn):
+            pos |= cover[sids[j]]
+        sel = pos | bg_neg
+        lab = pos[sel].astype(float)
+        if lab.sum() == 0 or lab.sum() == len(lab):
+            continue
+        vals.append(metric(scores_flat[sel], lab))
     lo, hi = np.percentile(vals, [2.5, 97.5])
     return float(lo), float(hi)
 
@@ -286,36 +337,122 @@ def main() -> None:
         thresh_sweep[f"{th:.0e}"] = float(a)
     print("threshold sweep (internal AUC):", thresh_sweep)
 
-    # ---- degradation: snapshot budget vs detection quality ----
-    # pick the most active window (most external positives) and degrade N
+    # ---- raw archive vs eligible-in-metric counts (honest denominators) ----
+    sids_all = sorted({fx.sid for fx in fixes})
+    sids_ts = sorted({fx.sid for fx in fixes
+                      if np.isnan(fx.wind_kt) or fx.wind_kt >= VORT_MIN_WIND_KT})
+    counts = {
+        "raw_ibtracs_fixes": len(fixes),
+        "raw_storms": len(sids_all),
+        "storms_ge_34kt": len(sids_ts),
+        "eligible_triangle_windows": int(len(ext_gt_flat)),
+        "external_positive_triangle_windows": int(ext_gt_flat.sum()),
+        "internal_positive_triangle_windows": int(int_labels.sum()),
+        "note": "raw = every fix/storm in the WNP-2020 IBTrACS slice; eligible ="
+                " (triangles x windows) actually scored; external positives use "
+                "the 34-kt, 1.5-deg default labeling.",
+    }
+    print(f"counts: {len(fixes)} fixes / {len(sids_all)} storms raw "
+          f"({len(sids_ts)} >=34kt); {int(ext_gt_flat.sum())} ext-pos of "
+          f"{len(ext_gt_flat)} triangle-windows")
+
+    # ---- external-labeling sensitivity: localization radius and wind cutoff ----
+    def pooled_ext(min_wind_kt, radius_deg):
+        lab = np.concatenate([
+            cyclone_triangle_labels(mesh, fixes, times, w, min_wind_kt, radius_deg)
+            for w in windows])
+        _, _, a = roc_curve(scores_flat, lab)
+        return float(a), float(pr_auc(scores_flat, lab)), int(lab.sum())
+
+    radius_sweep = {}
+    for rdeg in (1.0, 1.5, 2.0, 2.5):
+        a, pr, npos = pooled_ext(VORT_MIN_WIND_KT, rdeg)
+        radius_sweep[f"{rdeg:.1f}deg"] = {"auc_ext": a, "pr_ext": pr, "n_pos": npos}
+    wind_sweep = {}
+    for wkt in (0.0, 34.0, 50.0, 64.0):   # 0 = all fixes incl. TD; 64 = typhoon
+        a, pr, npos = pooled_ext(wkt, 1.5)
+        wind_sweep[f"{int(wkt)}kt"] = {"auc_ext": a, "pr_ext": pr, "n_pos": npos}
+    print("radius sweep:", {k: round(v["auc_ext"], 3) for k, v in radius_sweep.items()})
+    print("wind-cutoff sweep:", {k: round(v["auc_ext"], 3) for k, v in wind_sweep.items()})
+
+    # ---- window-length sensitivity (rebuild the whole pipeline per length) ----
+    window_len_sweep = {}
+    for wl in (8, 16, 24):
+        wins = [slice(s, s + wl) for s in range(0, T - wl + 1, wl)]
+        sc, ex = [], []
+        for w in wins:
+            C = B2.T @ F_all[:, w]
+            C = C - C.mean(axis=1, keepdims=True)
+            sc.append(np.mean(C**2, axis=1) / area_norm)
+            ex.append(cyclone_triangle_labels(mesh, fixes, times, w))
+        sc_f, ex_f = np.concatenate(sc), np.concatenate(ex)
+        _, _, a = roc_curve(sc_f, ex_f)
+        window_len_sweep[f"{wl}x6h"] = {"auc_ext": float(a),
+                                        "pr_ext": float(pr_auc(sc_f, ex_f)),
+                                        "n_windows": len(wins)}
+    print("window-length sweep:", {k: round(v["auc_ext"], 3)
+                                    for k, v in window_len_sweep.items()})
+
+    # ---- bootstrap block-length sensitivity (moving-block CI width vs block) ----
+    block_len_sweep = {}
+    for bl in (1, 2, 3, 5):
+        lo, hi = cluster_bootstrap_ci(all_scores, all_ext_gt,
+                                      lambda s, l: roc_curve(s, l)[2], block_len=bl)
+        block_len_sweep[f"block{bl}"] = [lo, hi]
+    print("block-length sweep (AUC_ext CI):",
+          {k: [round(x, 3) for x in v] for k, v in block_len_sweep.items()})
+
+    # ---- storm-cluster bootstrap (resample whole storms) — EXPLORATORY ----
+    cover = storm_coverage(mesh, fixes, times, windows)
+    storm_boot = {
+        "auc_external": storm_cluster_bootstrap_ci(
+            scores_flat, cover, lambda s, l: roc_curve(s, l)[2]),
+        "pr_auc_external": storm_cluster_bootstrap_ci(scores_flat, cover, pr_auc),
+        "n_storms_resampled": len(cover),
+    }
+    print(f"storm-cluster bootstrap ({len(cover)} storms): "
+          f"AUC_ext={storm_boot['auc_external']}, "
+          f"PR_ext={storm_boot['pr_auc_external']}")
+
+    # ---- degradation: snapshot budget vs detection quality (ALL windows) ----
+    # For each (noise, N): subsample N snapshots in EVERY window, score vs that
+    # window's internal GT, average over reps; the plotted band is the mean and
+    # sd ACROSS windows (window-to-window spread), not a single hand-picked
+    # window. (wi below is used only for the illustrative Panel-A score map.)
     wi = int(np.argmax([pw["n_ext_pos"] for pw in per_window]))
-    w = windows[wi]
-    zeta = grid_vorticity(u[w], v[w], lat, lon)
-    gt_labels_w = triangle_mean_abs_vorticity(zeta, tri_pts) > VORT_THRESH
+    win_gt = [g > VORT_THRESH for g in all_int_gt]
     rng = np.random.default_rng(0)
     noise_levels = [0.0, 0.5, 1.0, 2.0]
     Ns = [3, 4, 6, 8, 12, 16]  # N >= 3 so the CENTERED statistic is used
                                # uniformly (mixing statistics across N made
                                # the curve non-monotone and uninterpretable)
+    reps = 6
     degradation = {}
     deg_std = {}
-    F_w = F_all[:, w]
-    flow_rms = float(np.sqrt(np.mean(F_w**2)))
     for nl in noise_levels:
-        aucs = []
+        means, sds = [], []
         for N in Ns:
-            vals = []
-            for rep in range(12):
-                idx = rng.choice(WINDOW_LEN, size=N, replace=False)
-                F = F_w[:, idx] + nl * flow_rms * rng.standard_normal((F_w.shape[0], N))
-                C = B2.T @ F
-                C = C - C.mean(axis=1, keepdims=True)
-                s = np.mean(C**2, axis=1) / area_norm
-                _, _, a = roc_curve(s, gt_labels_w)
-                vals.append(a)
-            aucs.append(float(np.mean(vals)))
-            deg_std.setdefault(str(nl), []).append(float(np.std(vals)))
-        degradation[str(nl)] = aucs
+            per_win = []
+            for wi_, w_ in enumerate(windows):
+                gtw = win_gt[wi_]
+                if gtw.sum() == 0 or gtw.sum() == len(gtw):
+                    continue  # no internal positives in this window -> no ROC
+                F_w = F_all[:, w_]
+                frms = float(np.sqrt(np.mean(F_w**2)))
+                vv = []
+                for _ in range(reps):
+                    idx = rng.choice(WINDOW_LEN, size=N, replace=False)
+                    F = F_w[:, idx] + nl * frms * rng.standard_normal(
+                        (F_w.shape[0], N))
+                    C = B2.T @ F
+                    C = C - C.mean(axis=1, keepdims=True)
+                    s = np.mean(C**2, axis=1) / area_norm
+                    vv.append(roc_curve(s, gtw)[2])
+                per_win.append(float(np.mean(vv)))
+            means.append(float(np.mean(per_win)))
+            sds.append(float(np.std(per_win)))
+        degradation[str(nl)] = means
+        deg_std[str(nl)] = sds
 
     # ---- figure ----
     plt.rcParams.update({"font.size": 14, "axes.titlesize": 12,
@@ -366,7 +503,7 @@ def main() -> None:
                     label=f"noise x{nl}")
     ax.set_xlabel("snapshots N in window")
     ax.set_ylabel("AUC vs internal GT")
-    ax.set_title("(C) budget degradation (±sd, 12 draws)")
+    ax.set_title(f"(C) budget degradation\n(mean ±sd across all {len(windows)} windows)")
     ax.legend(loc="lower right", fontsize=8)
 
     fig.tight_layout()
@@ -378,7 +515,16 @@ def main() -> None:
                  "mesh_step_deg": float(MESH_STEP * abs(lat[1] - lat[0]))},
         "season": {"t0": np.datetime_as_string(times[0], unit="h"),
                    "t1": np.datetime_as_string(times[-1], unit="h"),
-                   "n_snapshots": int(T), "n_windows": len(windows)},
+                   "n_snapshots": int(T), "n_windows": len(windows),
+                   "n_snapshots_used": int(len(windows) * WINDOW_LEN),
+                   "n_snapshots_dropped": int(T - len(windows) * WINDOW_LEN),
+                   "window_len": WINDOW_LEN,
+                   "note": f"{T} six-hourly snapshots; non-overlapping "
+                           f"{WINDOW_LEN}-snapshot windows use the first "
+                           f"{len(windows) * WINDOW_LEN} and drop the trailing "
+                           f"{T - len(windows) * WINDOW_LEN} (a partial window). "
+                           f"All pooled metrics are over these {len(windows)} "
+                           f"complete windows."},
         "task": "curl-based vortex localization (NOT filled-triangle "
                 "topology recovery: the mesh has no equal-image confusers "
                 "and real weather has no latent boolean support)",
@@ -414,12 +560,37 @@ def main() -> None:
                     "the mesh nodes (2.1 deg) — same information budget; the "
                     "edge-flow statistic should match it (the contribution is "
                     "the limits framework, not a new TC detector)"},
+        "counts_raw_vs_eligible": counts,
+        "sensitivity": {
+            "internal_auc_vs_vorticity_threshold": thresh_sweep,
+            "external_vs_localization_radius": radius_sweep,
+            "external_vs_wind_cutoff_kt": wind_sweep,
+            "external_vs_window_length": window_len_sweep,
+            "auc_external_ci_vs_bootstrap_block_len": block_len_sweep,
+            "note": "the headline external AUC is stable across localization "
+                    "radius (1.0-2.5 deg), wind cutoff (TD..typhoon), window "
+                    "length (2-6 days), and bootstrap block length.",
+        },
+        "storm_cluster_bootstrap_exploratory": {
+            "auc_external_ci95": list(storm_boot["auc_external"]),
+            "pr_auc_external_ci95": list(storm_boot["pr_auc_external"]),
+            "n_storms_resampled": storm_boot["n_storms_resampled"],
+            "note": "EXPLORATORY: resamples whole storms (single 2020 season, "
+                    "no multi-year validation). Complements the moving-block CI.",
+        },
+        "ci_status": "All real-data confidence intervals here are EXPLORATORY: "
+                     "one season (WNP 2020), no multi-year or out-of-sample "
+                     "validation; they quantify within-season resampling spread "
+                     "only.",
         "internal_auc_vs_vorticity_threshold": thresh_sweep,
         "degradation": {"Ns": Ns, "noise_levels": noise_levels,
                         "auc_by_noise": degradation,
                         "auc_sd_by_noise": deg_std,
-                        "note": "uniform centered statistic, N>=3; no "
-                                "theory-floor overlay (units incommensurate)"},
+                        "reps_per_window": reps, "n_windows_aggregated": len(windows),
+                        "note": "uniform centered statistic, N>=3; each (noise,N) "
+                                "is the mean over ALL windows (sd = window-to-"
+                                "window spread); no theory-floor overlay "
+                                "(units incommensurate)"},
         "per_window": per_window,
     })
     print("done.")

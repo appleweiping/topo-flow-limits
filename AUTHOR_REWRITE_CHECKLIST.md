@@ -82,12 +82,19 @@ the GNN remain **not done and not claimed as done**.
    **Also deferred:** a GPU-trained GNN detector baseline (`src/tfl/neural.py`
    was scoped but not implemented) — optional, since the GPU workload is already
    genuinely exercised by the batched Monte-Carlo.
-4. **Cyclone reprocessing.** Still TODO on the cached data (local, feasible):
-   process all 244 snapshots (or state the exact dropped dates), aggregate
-   panel C across all windows/storms, add sensitivity sweeps (localisation
-   radius, 34-kt threshold, window length, bootstrap block length), and a
-   storm-cluster bootstrap; label all real-data CIs **exploratory** (no
-   multi-year validation).
+4. **Cyclone reprocessing.** ✅ **DONE** (`run_real_cyclone.py`,
+   `results/real_cyclone.json`, supplement cyclone §). All 244 snapshots are
+   loaded; the 15 non-overlapping 16-snapshot windows use 240 and drop the
+   trailing 4 (disclosed in `season`). Panel C (budget degradation) is now the
+   mean ± sd across **all 15 windows**, not the most-active one. Raw-vs-eligible
+   denominators are reported (726 fixes / 13 storms → 414 external-positive of
+   23,310 triangle-windows). Sensitivity sweeps added: localization radius
+   (1.0–2.5°: AUC 0.95–0.87), 34-kt→typhoon wind cutoff (0.91–0.92), window
+   length (2–6 d: 0.94–0.90), bootstrap block length (CI half-width ≈0.04), plus
+   the existing vorticity-threshold sweep. A **storm-cluster bootstrap**
+   (resamples whole storms) gives AUC [0.88, 0.95], agreeing with the
+   moving-block CI [0.879, 0.951]. All real-data CIs are labeled **exploratory**
+   (one 2020 season, no multi-year validation).
 5. **CI smoke tests.** A GitHub Actions workflow running `pytest -q` and a
    figure-free smoke of the fast experiments is **not yet added**.
 6. **Clean-environment full rerun.** All experiments should be regenerated from
