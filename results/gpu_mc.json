@@ -1,0 +1,93 @@
+{
+  "gpu": "NVIDIA GeForce RTX 4080 SUPER, 32760 MiB, 595.71.05",
+  "torch": "2.8.0+cu128",
+  "crosscheck": {
+    "cpu_recovery": 1.0,
+    "gpu_recovery": 1.0,
+    "p": 60,
+    "r": 36
+  },
+  "runs": [
+    {
+      "p": 1000,
+      "r": 500,
+      "k": 16,
+      "rho2": 1.0,
+      "N": 100,
+      "B_total": 1000,
+      "B_tile": 1000,
+      "recovery": 0.967,
+      "recovery_ci95": [
+        0.9540184599711052,
+        0.9764072167492062
+      ],
+      "lipschitz": 19.964506149291992,
+      "wall_s": 65.87763513810933,
+      "peak_gpu_mb": 6033.579008,
+      "device": "cuda",
+      "dtype": "float32",
+      "regime": "headline_fully_batched"
+    },
+    {
+      "p": 1000,
+      "r": 500,
+      "k": 16,
+      "rho2": 1.0,
+      "N": 200,
+      "B_total": 1000,
+      "B_tile": 1000,
+      "recovery": 1.0,
+      "recovery_ci95": [
+        0.9961731014136095,
+        1.0
+      ],
+      "lipschitz": 19.964506149291992,
+      "wall_s": 65.44100296497345,
+      "peak_gpu_mb": 6033.237504,
+      "device": "cuda",
+      "dtype": "float32",
+      "regime": "headline_fully_batched"
+    },
+    {
+      "p": 1000,
+      "r": 500,
+      "k": 16,
+      "rho2": 1.0,
+      "N": 400,
+      "B_total": 1000,
+      "B_tile": 1000,
+      "recovery": 1.0,
+      "recovery_ci95": [
+        0.9961731014136095,
+        1.0
+      ],
+      "lipschitz": 19.964506149291992,
+      "wall_s": 65.63103137700818,
+      "peak_gpu_mb": 6813.21216,
+      "device": "cuda",
+      "dtype": "float32",
+      "regime": "headline_fully_batched"
+    },
+    {
+      "p": 10080,
+      "r": 1890,
+      "k": 24,
+      "rho2": 1.0,
+      "N": 400,
+      "B_total": 64,
+      "B_tile": 16,
+      "recovery": 1.0,
+      "recovery_ci95": [
+        0.9433739770288436,
+        1.0
+      ],
+      "lipschitz": 49.08399200439453,
+      "wall_s": 132.94825921789743,
+      "peak_gpu_mb": 2983.89504,
+      "device": "cuda",
+      "dtype": "float32",
+      "regime": "stretch_tiled_feasibility"
+    }
+  ],
+  "sigma_n": 1.0
+}

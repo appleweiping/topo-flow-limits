@@ -1,6 +1,6 @@
 {
-  "commit": "1d2ea88acf4a2c63dd0c925ca313d6ce32ef1863",
-  "commit_dirty": false,
+  "commit": "3ee2ec4a6886a0ae441284f6f0fff2d8db94af66",
+  "commit_dirty": true,
   "commit_note": "This is HEAD at generation time. When the manifest is committed it becomes the PARENT of the commit that carries it, so manifest.commit == HEAD~1 for the commit that adds/updates it. Regenerate on a clean tree so commit_dirty is false.",
   "generated_by": "experiments/make_manifest.py",
   "environment": {
@@ -21,6 +21,14 @@
     "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
     "logical_cpus": 16,
     "blas_threads_env": "(default)"
+  },
+  "server_hardware": {
+    "note": "Round-8 scale (run_scaling.py) and GPU (run_gpu_mc.py) experiments ran HERE, not on the local box. Full probe: results/hardware/server_probe.txt.",
+    "gpu_line": "0  NVIDIA GeForce RTX 4080 ...    On  |   00000000:B2:00.0 Off |                  N/A",
+    "driver_line": "NVIDIA-SMI 595.71.05              Driver Version: 595.71.05      CUDA Version: 13.2",
+    "cpu_model": "Intel(R) Xeon(R) Platinum 8352V CPU @ 2.10GHz",
+    "cpu_count": "128",
+    "probe_sha256_16": "c29a27f20eeeb85c"
   },
   "data": {
     "data/fx_rates.json": {
@@ -169,6 +177,43 @@
         "results/figures/real_fx.png": {
           "sha256_16": "a67debd75fce6dcf",
           "bytes": 101688
+        }
+      }
+    },
+    {
+      "script": "experiments/run_scaling.py",
+      "seed": 0,
+      "command": "python experiments/run_scaling.py",
+      "artifacts": {
+        "results/scaling.json": {
+          "sha256_16": "2a7efb26512b43f0",
+          "bytes": 2260
+        }
+      }
+    },
+    {
+      "script": "experiments/run_gpu_mc.py",
+      "seed": 0,
+      "command": "python experiments/run_gpu_mc.py",
+      "artifacts": {
+        "results/gpu_mc.json": {
+          "sha256_16": "a31201325ef68518",
+          "bytes": 1988
+        }
+      }
+    },
+    {
+      "script": "experiments/run_selection.py",
+      "seed": 0,
+      "command": "python experiments/run_selection.py",
+      "artifacts": {
+        "results/selection.json": {
+          "sha256_16": "bd3ad6b28a214fac",
+          "bytes": 2740
+        },
+        "results/figures/scaling.png": {
+          "sha256_16": "f78809dc0c26b719",
+          "bytes": 124394
         }
       }
     }

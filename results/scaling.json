@@ -21,12 +21,12 @@
         0.9398260695220669,
         0.9999999999999999
       ],
-      "median_solve_s": 0.009394350003276486,
-      "lipschitz": 19.925969554385325,
-      "sigma_min_A": 2.449489742783176,
+      "median_solve_s": 0.0023121285485103726,
+      "lipschitz": 19.925969554385322,
+      "sigma_min_A": 2.449489742783175,
       "nnls_theory_bound": 1.0,
       "dense_operator_gb": 0.002,
-      "peak_rss_mb": NaN,
+      "peak_rss_mb": 125.76171875,
       "recovery_active_set": 1.0
     },
     {
@@ -44,12 +44,12 @@
         0.9123754607496077,
         1.0
       ],
-      "median_solve_s": 0.5857750000068336,
-      "lipschitz": 19.98296492052422,
-      "sigma_min_A": 2.4494897427831743,
+      "median_solve_s": 0.010472623049281538,
+      "lipschitz": 19.982964920524214,
+      "sigma_min_A": 2.449489742783175,
       "nnls_theory_bound": 1.0,
       "dense_operator_gb": 0.054,
-      "peak_rss_mb": NaN
+      "peak_rss_mb": 130.27734375
     },
     {
       "p_target": 1000,
@@ -66,12 +66,12 @@
         0.8864829086095221,
         1.0
       ],
-      "median_solve_s": 2.314910900000541,
+      "median_solve_s": 0.4858132904628292,
       "lipschitz": 19.982868879364652,
       "sigma_min_A": 2.4494897427831726,
       "nnls_theory_bound": 1.0,
       "dense_operator_gb": 2.0,
-      "peak_rss_mb": NaN
+      "peak_rss_mb": 171.58203125
     },
     {
       "p_target": 1000,
@@ -88,12 +88,12 @@
         0.8864829086095221,
         1.0
       ],
-      "median_solve_s": 2.3354097499905038,
-      "lipschitz": 25.755233698468764,
-      "sigma_min_A": 2.4494897427831726,
+      "median_solve_s": 0.4054312889929861,
+      "lipschitz": 25.755233698468757,
+      "sigma_min_A": 2.4494897427831717,
       "nnls_theory_bound": 1.0,
       "dense_operator_gb": 1.152216576,
-      "peak_rss_mb": NaN
+      "peak_rss_mb": 183.73828125
     }
   ]
 }

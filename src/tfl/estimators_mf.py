@@ -142,6 +142,64 @@ def nnls_lifted_fista(C: np.ndarray, U: np.ndarray, L: float | None = None,
     return w
 
 
+def lasso_lifted_fista(C: np.ndarray, U: np.ndarray, lam: float,
+                       L: float | None = None, max_iter: int = 2000,
+                       tol: float = 1e-10, restart: bool = True) -> np.ndarray:
+    """Non-negative lifted LASSO ``min_{w>=0} 1/2||C - A w||_F^2 + lam ||w||_1``
+    by FISTA (prox = soft-threshold then clamp: ``max(0, y - grad/L - lam/L)``).
+    The convex sparse-covariance / sparse-PCA baseline (Berthet-Rigollet,
+    Amini-Wainwright lineage) evaluated against the NNLS estimator."""
+    p = U.shape[1]
+    if L is None:
+        L = lipschitz_ATA(U)
+    if L <= 0:
+        return np.zeros(p)
+    b0 = lifted_adjoint(U, C)
+    w = np.zeros(p); y = np.zeros(p); t = 1.0
+    thr = lam / L
+    for _ in range(max_iter):
+        grad = lifted_adjoint(U, lifted_apply(U, y)) - b0
+        w_new = np.maximum(0.0, y - grad / L - thr)          # nonneg soft-threshold
+        if restart and float((y - w_new) @ (w_new - w)) > 0.0:
+            t = 1.0
+        t_new = 0.5 * (1.0 + np.sqrt(1.0 + 4.0 * t * t))
+        y = w_new + ((t - 1.0) / t_new) * (w_new - w)
+        step = np.linalg.norm(w_new - w)
+        w, t = w_new, t_new
+        if step <= tol * max(1.0, np.linalg.norm(w)):
+            break
+    return w
+
+
+def lasso_lifted_support(Z: np.ndarray, U: np.ndarray, sigma_noise: float,
+                         N: int | None = None, n_lam: int = 12,
+                         L: float | None = None) -> tuple[np.ndarray, np.ndarray]:
+    """Faithful convex-sparse baseline: non-negative lifted LASSO with the
+    regularization ``lam`` chosen by Gaussian-model BIC along a geometric
+    ``lam`` path (no oracle).  Returns ``(support_mask, w_hat)``."""
+    from tfl.selection import gaussian_cov_bic
+    r, Nz = Z.shape
+    if N is None:
+        N = Nz
+    Sig = (Z @ Z.T) / N
+    C = Sig - sigma_noise ** 2 * np.eye(r)
+    if L is None:
+        L = lipschitz_ATA(U)
+    b0 = lifted_adjoint(U, C)
+    lam_max = float(np.max(b0)) if np.max(b0) > 0 else 1.0
+    lams = lam_max * np.geomspace(1.0, 1e-3, n_lam)
+    best_bic, best_w = np.inf, np.zeros(U.shape[1])
+    for lam in lams:
+        w = lasso_lifted_fista(C, U, lam, L=L)
+        supp = w > 0
+        Us = U[:, supp]
+        Sig_S = sigma_noise ** 2 * np.eye(r) + (Us * w[supp][None, :]) @ Us.T
+        bic = gaussian_cov_bic(Sig, Sig_S, N, dof=int(supp.sum()))
+        if bic < best_bic:
+            best_bic, best_w = bic, w
+    return best_w > 0, best_w
+
+
 def nnls_lifted_active_set(C: np.ndarray, U: np.ndarray, tol: float = 1e-10,
                            max_outer: int | None = None) -> np.ndarray:
     """Exact matrix-free Lawson-Hanson NNLS.  Passive-set normal equations use

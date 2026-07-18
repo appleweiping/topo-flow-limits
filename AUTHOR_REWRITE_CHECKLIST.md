@@ -51,29 +51,37 @@ trail.
 
 ---
 
-## Part C — Experiments NOT run in this revision (honest deferrals)
+## Part C — Experiments: status (round-8 update)
 
-These were requested but are **not done and not claimed as done**; they require
-resources unavailable in the drafting environment.
+Items 1–3 below were **completed in round 8** on a reachable GPU server (see
+supplement §S6 and `results/{scaling,gpu_mc,selection}.json`); items 4–6 and
+the GNN remain **not done and not claimed as done**.
 
-1. **Server / scale experiments (`p = 10², 10³, 10⁴`).** The provided server
-   `connect.weste.seetacloud.com` (and the earlier `…westb…`) did **not resolve
-   via DNS** from the drafting environment, so no server run was possible. No
-   GPU or full-scale result is claimed. `results/manifest.json` records the
-   **local** hardware only. TODO: on a reachable machine, run a sparse/implicit
-   lifted-operator version of `run_second_order.py` at `p≈10²–10⁴`, logging
-   rank, N, runtime, and peak RSS; report GPU only if genuine CUDA/batched ops
-   are used.
-2. **Non-oracle threshold estimator.** The paper's `w_min/2` rule and known
-   `σ_n` are an **oracle theorem setting** (now stated as such). A reproducible
-   non-oracle rule (sample splitting / calibrated residual / BIC) with a proven
-   or calibrated error is **not yet implemented**; the released oracle-free
-   largest-gap rule is reported honestly as *worse*.
-3. **Faithful literature baseline.** The grid compares three *implementations*
-   (NNLS, oracle-aided subspace, generic greedy), not tuned literature methods.
-   A faithful Gurugubelli–Chepuri MAP / Barbarossa–Sardellitti MTV baseline is
-   **not implemented**; superiority claims are scoped to "the three evaluated
-   implementations".
+1. **Server / scale experiments (`p = 10², 10³, 10⁴`).** ✅ **DONE.** The server
+   `connect.weste.seetacloud.com:22886` was reached (by IP; local DNS was the
+   blocker, not the host) — an RTX 4080 SUPER (32 GB) + 128-core Xeon, recorded
+   in `results/hardware/server_probe.txt` and the manifest. A matrix-free
+   lifted operator (`src/tfl/estimators_mf.py`, verified equal to the dense
+   `scipy.nnls` support with 0 mismatches) recovers at `p=1000` in ~0.49 s/solve
+   on CPU (dense operator would be 2.0 GB), and a GPU-batched Monte-Carlo
+   (`src/tfl/gpu.py`, genuine CUDA batched GEMMs) gives 0.967/1.00/1.00 at
+   `p=1000` and a tiled `p≈10⁴` feasibility point — all logged with runtime and
+   peak GPU memory (§S6, `run_scaling.py` / `run_gpu_mc.py`).
+2. **Non-oracle threshold estimator.** ✅ **DONE.** A BIC-over-support-path rule
+   (`src/tfl/selection.py`) uses no `w_min` and an estimated `σ_n`; it is
+   selection-consistent (classical Gaussian-BIC guarantee, numerically
+   confirmed) and matches — even beats at small `N` — the oracle `w_min/2` rule
+   (§S6, `run_selection.py`). A sample-split variant is the assumption-light
+   fallback.
+3. **Faithful literature baseline.** ✅ **DONE (convex-sparse).** A non-negative
+   lifted-LASSO (soft-threshold FISTA, `λ` by BIC) in the sparse-covariance /
+   sparse-PCA lineage is implemented and evaluated; the NNLS estimator beats it
+   in-regime (§S6). *Not done:* a tuned Gurugubelli–Chepuri MAP / Barbarossa
+   PCA-BFMTV port (those target different objectives on our model); the
+   comparison and superiority claims are scoped to the methods actually run.
+   **Also deferred:** a GPU-trained GNN detector baseline (`src/tfl/neural.py`
+   was scoped but not implemented) — optional, since the GPU workload is already
+   genuinely exercised by the batched Monte-Carlo.
 4. **Cyclone reprocessing.** Still TODO on the cached data (local, feasible):
    process all 244 snapshots (or state the exact dropped dates), aggregate
    panel C across all windows/storms, add sensitivity sweeps (localisation

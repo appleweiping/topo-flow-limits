@@ -85,7 +85,37 @@ EXPERIMENTS = [
      ["results/real_traffic.json", "results/figures/real_traffic.png"]),
     ("experiments/run_real_fx.py", 0,
      ["results/real_fx.json", "results/figures/real_fx.png"]),
+    # round-8: scale / GPU / non-oracle selection (scale+GPU ran on the server)
+    ("experiments/run_scaling.py", 0,
+     ["results/scaling.json"]),
+    ("experiments/run_gpu_mc.py", 0,
+     ["results/gpu_mc.json"]),
+    ("experiments/run_selection.py", 0,
+     ["results/selection.json", "results/figures/scaling.png"]),
 ]
+
+
+def _server_hardware() -> dict | None:
+    """The GPU server the round-8 scale/GPU experiments ran on, from the probe
+    captured at results/hardware/server_probe.txt (honest cross-machine
+    record: run_scaling/run_gpu_mc executed here, not on the local box)."""
+    probe = ROOT / "results" / "hardware" / "server_probe.txt"
+    if not probe.exists():
+        return None
+    txt = probe.read_text(encoding="utf-8", errors="replace")
+    gpu = next((ln.strip(" |") for ln in txt.splitlines() if "NVIDIA GeForce" in ln), "")
+    driver = next((ln.strip(" |") for ln in txt.splitlines() if "Driver Version" in ln), "")
+    cpu = next((ln.split(":", 1)[1].strip() for ln in txt.splitlines()
+                if ln.strip().startswith("Model name")), "")
+    ncpu = next((ln.split(":", 1)[1].strip() for ln in txt.splitlines() if ln.startswith("CPU(s):")), "")
+    return {
+        "note": "Round-8 scale (run_scaling.py) and GPU (run_gpu_mc.py) "
+                "experiments ran HERE, not on the local box. Full probe: "
+                "results/hardware/server_probe.txt.",
+        "gpu_line": gpu, "driver_line": driver,
+        "cpu_model": cpu, "cpu_count": ncpu,
+        "probe_sha256_16": _sha256(probe),
+    }
 
 DATA_FILES = [
     "data/fx_rates.json", "data/era5_wnp_2020.npz", "data/ibtracs_wp_2020.csv",
@@ -104,6 +134,7 @@ def main() -> None:
         "generated_by": "experiments/make_manifest.py",
         "environment": _versions(),
         "hardware": _hardware(),
+        "server_hardware": _server_hardware(),
         "data": {f: {"sha256_16": _sha256(ROOT / f),
                      "bytes": (ROOT / f).stat().st_size if (ROOT / f).exists()
                      else None}
