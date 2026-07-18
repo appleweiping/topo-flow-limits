@@ -1,0 +1,99 @@
+{
+  "config": {
+    "sigma_n": 1.0,
+    "rho2": 1.0,
+    "threshold": 0.5,
+    "seed": 0
+  },
+  "cells": [
+    {
+      "p_target": 100,
+      "block_size": 6,
+      "p": 100,
+      "rank_B2": 50,
+      "dof_ratio": 0.5,
+      "n_nodes": 22,
+      "N": 200,
+      "k": 4,
+      "n_trials": 60,
+      "recovery_fista": 1.0,
+      "recovery_ci95": [
+        0.9398260695220669,
+        0.9999999999999999
+      ],
+      "median_solve_s": 0.009394350003276486,
+      "lipschitz": 19.925969554385325,
+      "sigma_min_A": 2.449489742783176,
+      "nnls_theory_bound": 1.0,
+      "dense_operator_gb": 0.002,
+      "peak_rss_mb": NaN,
+      "recovery_active_set": 1.0
+    },
+    {
+      "p_target": 300,
+      "block_size": 6,
+      "p": 300,
+      "rank_B2": 150,
+      "dof_ratio": 0.5,
+      "n_nodes": 62,
+      "N": 300,
+      "k": 8,
+      "n_trials": 40,
+      "recovery_fista": 1.0,
+      "recovery_ci95": [
+        0.9123754607496077,
+        1.0
+      ],
+      "median_solve_s": 0.5857750000068336,
+      "lipschitz": 19.98296492052422,
+      "sigma_min_A": 2.4494897427831743,
+      "nnls_theory_bound": 1.0,
+      "dense_operator_gb": 0.054,
+      "peak_rss_mb": NaN
+    },
+    {
+      "p_target": 1000,
+      "block_size": 6,
+      "p": 1000,
+      "rank_B2": 500,
+      "dof_ratio": 0.5,
+      "n_nodes": 202,
+      "N": 400,
+      "k": 16,
+      "n_trials": 30,
+      "recovery_fista": 1.0,
+      "recovery_ci95": [
+        0.8864829086095221,
+        1.0
+      ],
+      "median_solve_s": 2.314910900000541,
+      "lipschitz": 19.982868879364652,
+      "sigma_min_A": 2.4494897427831726,
+      "nnls_theory_bound": 1.0,
+      "dense_operator_gb": 2.0,
+      "peak_rss_mb": NaN
+    },
+    {
+      "p_target": 1000,
+      "block_size": 8,
+      "p": 1008,
+      "rank_B2": 378,
+      "dof_ratio": 0.375,
+      "n_nodes": 110,
+      "N": 400,
+      "k": 16,
+      "n_trials": 30,
+      "recovery_fista": 1.0,
+      "recovery_ci95": [
+        0.8864829086095221,
+        1.0
+      ],
+      "median_solve_s": 2.3354097499905038,
+      "lipschitz": 25.755233698468764,
+      "sigma_min_A": 2.4494897427831726,
+      "nnls_theory_bound": 1.0,
+      "dense_operator_gb": 1.152216576,
+      "peak_rss_mb": NaN
+    }
+  ]
+}

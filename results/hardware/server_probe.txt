@@ -1,0 +1,57 @@
+PROBE_RESULT: CONNECTED to 116.172.94.204:22886 as root
+
+===== [uname] uname -a =====
+Linux autodl-container-p48vc3ykfm-7ba3727f 5.15.0-25-generic #25-Ubuntu SMP Wed Mar 30 15:54:22 UTC 2022 x86_64 x86_64 x86_64 GNU/Linux
+
+===== [python] python3 -V 2>&1 || python -V 2>&1 =====
+bash: line 1: python3: command not found
+bash: line 1: python: command not found
+
+===== [nproc] nproc =====
+128
+
+===== [cpu] lscpu 2>/dev/null | egrep 'Model name|Socket|Core|Thread|CPU\(s\):' | head -8 =====
+CPU(s):                          128
+Model name:                      Intel(R) Xeon(R) Platinum 8352V CPU @ 2.10GHz
+Thread(s) per core:              2
+Core(s) per socket:              32
+Socket(s):                       2
+NUMA node0 CPU(s):               0-31,64-95
+NUMA node1 CPU(s):               32-63,96-127
+
+===== [mem] free -h 2>/dev/null | head -3 =====
+total        used        free      shared  buff/cache   available
+Mem:           503Gi        54Gi       184Gi       1.5Gi       265Gi       444Gi
+Swap:             0B          0B          0B
+
+===== [nvidia] nvidia-smi 2>&1 | head -20 || echo NO_NVIDIA_SMI =====
+Sat Jul 18 13:42:17 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 595.71.05              Driver Version: 595.71.05      CUDA Version: 13.2     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4080 ...    On  |   00000000:B2:00.0 Off |                  N/A |
+| 30%   30C    P8              6W /  320W |     328MiB /  32760MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A           70628      C   /root/miniconda3/bin/python             318MiB |
++-----------------------------------------------------------------------------------------+
+
+===== [cuda] nvcc --version 2>&1 | tail -2 || echo NO_NVCC =====
+bash: line 1: nvcc: command not found
+
+===== [disk] df -h / 2>/dev/null | tail -2 =====
+Filesystem      Size  Used Avail Use% Mounted on
+overlay          30G   10G   21G  34% /
+
+===== [conda] which conda 2>/dev/null; which pip3 2>/dev/null; which git 2>/dev/null =====
+/usr/bin/git
